@@ -33,6 +33,14 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "The app needs access to your photos to let you pick them.",
+          "savePhotosPermission": "The app needs access to your photos to let you save them.",
+          "isAccessMediaLocationEnabled": true
+        }
       ]
     ],
     "experiments": {
