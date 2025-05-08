@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false
     },
     "android": {
       "adaptiveIcon": {
@@ -41,7 +41,13 @@
           "savePhotosPermission": "The app needs access to your photos to let you save them.",
           "isAccessMediaLocationEnabled": true
         }
-      ]
+      ],
+      "expo-font",
+      {
+        "fonts": [
+          "./assets/fonts/SansitaOne.ttf"
+        ]
+      }
     ],
     "experiments": {
       "typedRoutes": true
