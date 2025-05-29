@@ -1,18 +1,7 @@
-import { Link, router } from 'expo-router';
-import { useEffect } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useAuth } from '../../context/AuthContext';
+import { Link, router } from "expo-router";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Welcome() {
-    const { user, signInWithGoogle, signInWithApple } = useAuth();
-
-    // Redirect if user is already authenticated
-    useEffect(() => {
-        if (user) {
-            router.replace('../(app)/home');
-        }
-    }, [user]);
-
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -30,7 +19,7 @@ export default function Welcome() {
 
                 <TouchableOpacity
                     style={[styles.button, styles.googleButton]}
-                    onPress={signInWithGoogle}
+                    onPress={() => { }}
                 >
                     <Text style={styles.buttonText}>Continue with Google</Text>
                 </TouchableOpacity>
@@ -38,7 +27,7 @@ export default function Welcome() {
                 {Platform.OS === 'ios' && (
                     <TouchableOpacity
                         style={[styles.button, styles.appleButton]}
-                        onPress={signInWithApple}
+                        onPress={() => { }}
                     >
                         <Text style={styles.buttonText}>Continue with Apple</Text>
                     </TouchableOpacity>
@@ -60,9 +49,8 @@ export default function Welcome() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
-        backgroundColor: '#fff',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         marginTop: 60,
@@ -110,4 +98,6 @@ const styles = StyleSheet.create({
         color: '#007AFF',
         fontWeight: '600',
     },
-}); 
+});
+
+

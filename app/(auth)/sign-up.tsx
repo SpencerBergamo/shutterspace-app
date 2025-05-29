@@ -1,4 +1,5 @@
-import { Link, router } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
+import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
     KeyboardAvoidingView,
@@ -10,13 +11,12 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { useAuth } from '../../context/AuthContext';
 
 export default function SignUp() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-    const { signUp } = useAuth();
+    const { signUpWithPassword } = useAuth();
 
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,10 +46,9 @@ export default function SignUp() {
         }
 
         try {
-            await signUp(email, password);
-            router.replace('../(app)/home');
+            await signUpWithPassword(email, password);
+            console.log('Sign up successful');
         } catch (error) {
-            // Handle sign up error
             console.error('Sign up error:', error);
         }
     };

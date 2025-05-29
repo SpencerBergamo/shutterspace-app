@@ -73,9 +73,14 @@ const MOCK_DATA = {
             moderators: ['2'],
             permenantCover: 'https://example.com/permanent-cover2.jpg'
         }
-    ]
+    ],
+
+    media: {
+        imageCount: 13
+    }
 }
 
 export const isUsingMockData = __DEV__;
 export const userMockData = MOCK_DATA.user;
 export const albumMockData = MOCK_DATA.albums;
+export const mediaMockData = MOCK_DATA.media;

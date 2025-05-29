@@ -15,20 +15,19 @@ export interface AlbumCover {
 }
 
 export interface Album {
-    albumId: string;
-    hostId: string;
-    expiresAt?: Date;
-    joinToken: string;
+    // albumId: string;
     title: string;
     description?: string;
     createdAt: Date;
     updatedAt: Date;
-    lastMessage?: Message;
-    albumCover?: AlbumCover;
-    maxMembers: number;
+    hostId: string;
+    joinCode: string;
     openInvites: boolean;
-    joinRequests: string[];
-    members: string[];
-    moderators: string[];
-    permenantCover?: string;
+    permanentCover?: string;
+    eventDetails?: {
+        date: Date;
+        time: string;
+        location: string;
+    };
+    expiresAt?: number;
 } 

@@ -1,20 +1,15 @@
-import { useRouter } from 'expo-router';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import { albumMockData } from '../../config/env';
-import { useAuth } from '../../hooks/useAuth';
 import { Album } from '../../types/Album';
 import AlbumCard from '../components/AlbumCard';
-
+import FloatingActionButton from '../components/FloatingActionButton';
 const PADDING = 16;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = (SCREEN_WIDTH - (PADDING * 3)) / 2;
 const CARD_HEIGHT = (CARD_WIDTH * 5) / 4;
 
 export default function Home() {
-    const { user } = useAuth();
-    const router = useRouter();
-
     return (
         <View style={styles.container}>
             <View style={styles.content}>
@@ -30,6 +25,7 @@ export default function Home() {
                         </View>
                     )} />
             </View>
+            <FloatingActionButton id="fab" onPress={() => { }} />
         </View>
     );
 }

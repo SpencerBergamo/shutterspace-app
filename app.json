@@ -9,14 +9,27 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": false
+      "usesAppleSignIn": true,
+      "supportsTablet": false,
+      "bundleIdentifier": "org.bbtechnologies.shutterspace",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "org.bbtechnologies.shutterspace",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -24,33 +37,51 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
       [
-        "expo-splash-screen",
+        "expo-build-properties",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "ios": {
+            "useFrameworks": "static"
+          }
         }
       ],
+      "expo-router",
       [
         "expo-media-library",
         {
-          "photosPermission": "The app needs access to your photos to let you pick them.",
+          "photosPermission": "Shutterspace needs access to your photos to let you share them.",
           "savePhotosPermission": "The app needs access to your photos to let you save them.",
           "isAccessMediaLocationEnabled": true
         }
       ],
-      "expo-font",
-      {
-        "fonts": [
-          "./assets/fonts/SansitaOne.ttf"
-        ]
-      }
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/SansitaOne.ttf"
+          ]
+        }
+      ],
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Shutterspace needs access to your photos to let you share them.",
+          "cameraPermission": "Shutterspace needs access to your camera to let you take photos and videos."
+        }
+      ],
+      "react-native-compressor"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6b2ea930-bc68-4cea-9720-6f4df870d758"
+      }
     }
   }
 }
