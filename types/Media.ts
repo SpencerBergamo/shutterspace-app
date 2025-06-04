@@ -1,38 +1,32 @@
 import { Id } from "@/convex/_generated/dataModel";
+import { ImagePickerAsset } from "expo-image-picker";
 
 export interface Media {
     _id: Id<'media'>; // convex id
     albumId: Id<'albums'>;
     uploadedBy: Id<'profiles'>;
-    cloudinaryId: string;
-    mediaType: 'image' | 'video';
     uploadedAt: number; // unix timestamp in ms
-    exifData: ExifData | null;
+    filename: string;
+    downloadUrl: string;
+    type: 'image' | 'video';
+    width: number;
+    height: number;
+    duration?: number;
 }
 
 export interface OptimisticMedia {
     _id: string;
-    uri: string;
-    mimeType?: string;
     albumId: Id<"albums">;
-    status: 'pending' | 'uploading' | 'success' | 'error';
-    progress?: number;
     uploadedBy: Id<'profiles'>;
-    mediaType: 'image' | 'video';
-    size?: number;
-    error?: string;
-}
+    uri: ImagePickerAsset['uri'];
+    filename: string;
+    width: number;
+    height: number;
+    mimeType: ImagePickerAsset['mimeType'];
+    type: ImagePickerAsset['type'];
+    exif: ImagePickerAsset['exif'];
 
-export interface ExifData {
-    creationTime?: number; //unix timestamp
-    location?: {
-        latitude: number;
-        longitude: number;
-        altitude?: number;
-    },
-    imageInfo?: {
-        width: number;
-        height: number;
-        orientation?: number;
-    }
+    status: 'pending' | 'uploading' | 'success' | 'error' | 'paused';
+    progress?: number;
+    error?: string;
 }

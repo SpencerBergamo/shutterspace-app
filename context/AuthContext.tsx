@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 // Define what's available in the context
 interface AuthContextType {
     user: FirebaseAuthTypes.User | null;
-    loading: boolean;
+    isLoading: boolean;
     signUpWithPassword: (email: string, password: string) => Promise<void>;
     signInWithPassword: (email: string, password: string) => Promise<void>;
     signInAnonymously: () => Promise<void>;
@@ -20,13 +20,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         // Subscribe to auth state changes
         const unsubscribe = auth().onAuthStateChanged((user: FirebaseAuthTypes.User | null) => {
             setUser(user);
-            setLoading(false);
+            setIsLoading(false);
         });
 
         // Cleanup subscription
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // and the page will use `const {signInWithGoogle} = useAuth()`
     const value = {
         user,
-        loading,
+        isLoading,
         signInWithPassword,
         signUpWithPassword,
         signOut,

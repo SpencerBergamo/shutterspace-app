@@ -1,0 +1,365 @@
+[debug] [2025-06-03T01:18:40.232Z] ----------------------------------------------------------------------
+[debug] [2025-06-03T01:18:40.239Z] Command:       /opt/homebrew/Cellar/node/23.7.0/bin/node /opt/homebrew/bin/firebase emulators:start
+[debug] [2025-06-03T01:18:40.240Z] CLI Version:   14.4.0
+[debug] [2025-06-03T01:18:40.240Z] Platform:      darwin
+[debug] [2025-06-03T01:18:40.240Z] Node Version:  v23.7.0
+[debug] [2025-06-03T01:18:40.240Z] Time:          Mon Jun 02 2025 21:18:40 GMT-0400 (Eastern Daylight Time)
+[debug] [2025-06-03T01:18:40.240Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-06-03T01:18:40.388Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-06-03T01:18:40.388Z] > authorizing via signed-in user (spencerbergamo@gmail.com)
+[info] i  emulators: Starting emulators: functions, extensions {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: functions, extensions"}}
+[debug] [2025-06-03T01:18:40.390Z] Checked if tokens are valid: true, expires at: 1748914896550
+[debug] [2025-06-03T01:18:40.390Z] Checked if tokens are valid: true, expires at: 1748914896550
+[debug] [2025-06-03T01:18:40.391Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/shutterspace-eb637/services/cloudresourcemanager.googleapis.com [none]
+[debug] [2025-06-03T01:18:40.391Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/shutterspace-eb637/services/cloudresourcemanager.googleapis.com x-goog-quota-user=projects/shutterspace-eb637
+[debug] [2025-06-03T01:18:40.852Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/shutterspace-eb637/services/cloudresourcemanager.googleapis.com 200
+[debug] [2025-06-03T01:18:40.853Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/shutterspace-eb637/services/cloudresourcemanager.googleapis.com [omitted]
+[debug] [2025-06-03T01:18:40.853Z] Checked if tokens are valid: true, expires at: 1748914896550
+[debug] [2025-06-03T01:18:40.853Z] Checked if tokens are valid: true, expires at: 1748914896550
+[debug] [2025-06-03T01:18:40.853Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/shutterspace-eb637 [none]
+[debug] [2025-06-03T01:18:41.024Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/shutterspace-eb637 200
+[debug] [2025-06-03T01:18:41.024Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/shutterspace-eb637 {"projectNumber":"772964121786","projectId":"shutterspace-eb637","lifecycleState":"ACTIVE","name":"Shutterspace","labels":{"firebase":"enabled"},"createTime":"2024-06-20T15:40:13.307817Z"}
+[debug] [2025-06-03T01:18:41.392Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-06-03T01:18:41.392Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2025-06-03T01:18:41.396Z] [hub] writing locator at /var/folders/tr/yb7b1tfj3674zn3rlk57mf6r0000gn/T/hub-shutterspace-eb637.json
+[debug] [2025-06-03T01:18:41.399Z] [Extensions] Started Extensions emulator, this is a noop.
+[debug] [2025-06-03T01:18:41.697Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-06-03T01:18:41.697Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-06-03T01:18:41.697Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-06-03T01:18:41.698Z] late-assigned ports for functions and eventarc emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5001}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9299}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9499}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] ⚠  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: \u001b[1mapphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect\u001b[22m"}}
+[debug] [2025-06-03T01:18:41.728Z] defaultcredentials: writing to file /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json
+[debug] [2025-06-03T01:18:41.730Z] Setting GAC to /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json"}}
+[debug] [2025-06-03T01:18:41.730Z] Checked if tokens are valid: true, expires at: 1748914896550
+[debug] [2025-06-03T01:18:41.730Z] Checked if tokens are valid: true, expires at: 1748914896550
+[debug] [2025-06-03T01:18:41.730Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/shutterspace-eb637/adminSdkConfig [none]
+[debug] [2025-06-03T01:18:42.377Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/shutterspace-eb637/adminSdkConfig 200
+[debug] [2025-06-03T01:18:42.377Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/shutterspace-eb637/adminSdkConfig {"projectId":"shutterspace-eb637","databaseURL":"https://shutterspace-eb637-default-rtdb.firebaseio.com","storageBucket":"shutterspace-eb637.appspot.com","locationId":"us-central"}
+[info] i  ui: downloading ui-v1.15.0.zip... {"metadata":{"emulator":{"name":"ui"},"message":"downloading ui-v1.15.0.zip..."}}
+[debug] [2025-06-03T01:18:42.412Z] >>> [apiv2][query] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.15.0.zip 
+[debug] [2025-06-03T01:18:42.509Z] <<< [apiv2][status] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.15.0.zip 200
+[debug] [2025-06-03T01:18:42.510Z] <<< [apiv2][body] GET https://storage.googleapis.com/firebase-preview-drop/emulator/ui-v1.15.0.zip [stream]
+[debug] [2025-06-03T01:18:42.791Z] Data is 3538469
+[debug] [2025-06-03T01:18:42.792Z] [unzip] Entry: client/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-06-03T01:18:42.792Z] [unzip] Processing entry: client/
+[debug] [2025-06-03T01:18:42.792Z] [unzip] mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/
+[debug] [2025-06-03T01:18:42.792Z] [unzip] Entry: client/favicon-16x16.png (compressed_size=293 bytes, uncompressed_size=293 bytes)
+[debug] [2025-06-03T01:18:42.792Z] [unzip] Processing entry: client/favicon-16x16.png
+[debug] [2025-06-03T01:18:42.792Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.792Z] [unzip] Writing file: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/favicon-16x16.png
+[debug] [2025-06-03T01:18:42.793Z] [unzip] Entry: client/safari-pinned-tab.svg (compressed_size=1433 bytes, uncompressed_size=2611 bytes)
+[debug] [2025-06-03T01:18:42.793Z] [unzip] Processing entry: client/safari-pinned-tab.svg
+[debug] [2025-06-03T01:18:42.793Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.793Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/safari-pinned-tab.svg
+[debug] [2025-06-03T01:18:42.796Z] [unzip] Entry: client/favicon.ico (compressed_size=2933 bytes, uncompressed_size=13294 bytes)
+[debug] [2025-06-03T01:18:42.796Z] [unzip] Processing entry: client/favicon.ico
+[debug] [2025-06-03T01:18:42.796Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.797Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/favicon.ico
+[debug] [2025-06-03T01:18:42.798Z] [unzip] Entry: client/index.html (compressed_size=1364 bytes, uncompressed_size=3071 bytes)
+[debug] [2025-06-03T01:18:42.798Z] [unzip] Processing entry: client/index.html
+[debug] [2025-06-03T01:18:42.798Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.799Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/index.html
+[debug] [2025-06-03T01:18:42.802Z] [unzip] Entry: client/android-chrome-192x192.png (compressed_size=2684 bytes, uncompressed_size=2684 bytes)
+[debug] [2025-06-03T01:18:42.802Z] [unzip] Processing entry: client/android-chrome-192x192.png
+[debug] [2025-06-03T01:18:42.802Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.802Z] [unzip] Writing file: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/android-chrome-192x192.png
+[debug] [2025-06-03T01:18:42.803Z] [unzip] Entry: client/apple-touch-icon.png (compressed_size=2123 bytes, uncompressed_size=2152 bytes)
+[debug] [2025-06-03T01:18:42.803Z] [unzip] Processing entry: client/apple-touch-icon.png
+[debug] [2025-06-03T01:18:42.803Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.803Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/apple-touch-icon.png
+[debug] [2025-06-03T01:18:42.804Z] [unzip] Entry: client/android-chrome-512x512.png (compressed_size=5369 bytes, uncompressed_size=5411 bytes)
+[debug] [2025-06-03T01:18:42.804Z] [unzip] Processing entry: client/android-chrome-512x512.png
+[debug] [2025-06-03T01:18:42.804Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.804Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/android-chrome-512x512.png
+[debug] [2025-06-03T01:18:42.805Z] [unzip] Entry: client/manifest.json (compressed_size=245 bytes, uncompressed_size=551 bytes)
+[debug] [2025-06-03T01:18:42.805Z] [unzip] Processing entry: client/manifest.json
+[debug] [2025-06-03T01:18:42.805Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.805Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/manifest.json
+[debug] [2025-06-03T01:18:42.806Z] [unzip] Entry: client/robots.txt (compressed_size=26 bytes, uncompressed_size=26 bytes)
+[debug] [2025-06-03T01:18:42.806Z] [unzip] Processing entry: client/robots.txt
+[debug] [2025-06-03T01:18:42.806Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.807Z] [unzip] Writing file: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/robots.txt
+[debug] [2025-06-03T01:18:42.807Z] [unzip] Entry: client/mstile-150x150.png (compressed_size=2034 bytes, uncompressed_size=2034 bytes)
+[debug] [2025-06-03T01:18:42.807Z] [unzip] Processing entry: client/mstile-150x150.png
+[debug] [2025-06-03T01:18:42.807Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.807Z] [unzip] Writing file: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/mstile-150x150.png
+[debug] [2025-06-03T01:18:42.807Z] [unzip] Entry: client/assets/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-06-03T01:18:42.807Z] [unzip] Processing entry: client/assets/
+[debug] [2025-06-03T01:18:42.807Z] [unzip] mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/
+[debug] [2025-06-03T01:18:42.808Z] [unzip] Entry: client/assets/index-BX-A56oj.js (compressed_size=582089 bytes, uncompressed_size=2092775 bytes)
+[debug] [2025-06-03T01:18:42.808Z] [unzip] Processing entry: client/assets/index-BX-A56oj.js
+[debug] [2025-06-03T01:18:42.808Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets
+[debug] [2025-06-03T01:18:42.808Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/index-BX-A56oj.js
+[debug] [2025-06-03T01:18:42.823Z] [unzip] Entry: client/assets/index-CjB9C900.css (compressed_size=35979 bytes, uncompressed_size=298654 bytes)
+[debug] [2025-06-03T01:18:42.823Z] [unzip] Processing entry: client/assets/index-CjB9C900.css
+[debug] [2025-06-03T01:18:42.823Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets
+[debug] [2025-06-03T01:18:42.823Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/index-CjB9C900.css
+[debug] [2025-06-03T01:18:42.824Z] [unzip] Entry: client/assets/index-BX-A56oj.js.map (compressed_size=2362482 bytes, uncompressed_size=10036679 bytes)
+[debug] [2025-06-03T01:18:42.824Z] [unzip] Processing entry: client/assets/index-BX-A56oj.js.map
+[debug] [2025-06-03T01:18:42.824Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets
+[debug] [2025-06-03T01:18:42.824Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/index-BX-A56oj.js.map
+[debug] [2025-06-03T01:18:42.852Z] [unzip] Entry: client/assets/extensions/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-06-03T01:18:42.852Z] [unzip] Processing entry: client/assets/extensions/
+[debug] [2025-06-03T01:18:42.852Z] [unzip] mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/extensions/
+[debug] [2025-06-03T01:18:42.852Z] [unzip] Entry: client/assets/extensions/default-extension.png (compressed_size=1646 bytes, uncompressed_size=1657 bytes)
+[debug] [2025-06-03T01:18:42.852Z] [unzip] Processing entry: client/assets/extensions/default-extension.png
+[debug] [2025-06-03T01:18:42.852Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/extensions
+[debug] [2025-06-03T01:18:42.852Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/extensions/default-extension.png
+[debug] [2025-06-03T01:18:42.853Z] [unzip] Entry: client/assets/img/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-06-03T01:18:42.853Z] [unzip] Processing entry: client/assets/img/
+[debug] [2025-06-03T01:18:42.853Z] [unzip] mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/img/
+[debug] [2025-06-03T01:18:42.853Z] [unzip] Entry: client/assets/img/database.png (compressed_size=29449 bytes, uncompressed_size=29988 bytes)
+[debug] [2025-06-03T01:18:42.853Z] [unzip] Processing entry: client/assets/img/database.png
+[debug] [2025-06-03T01:18:42.853Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/img
+[debug] [2025-06-03T01:18:42.853Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/img/database.png
+[debug] [2025-06-03T01:18:42.854Z] [unzip] Entry: client/assets/provider-icons/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-06-03T01:18:42.854Z] [unzip] Processing entry: client/assets/provider-icons/
+[debug] [2025-06-03T01:18:42.854Z] [unzip] mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/
+[debug] [2025-06-03T01:18:42.854Z] [unzip] Entry: client/assets/provider-icons/auth_service_saml.svg (compressed_size=575 bytes, uncompressed_size=1226 bytes)
+[debug] [2025-06-03T01:18:42.854Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_saml.svg
+[debug] [2025-06-03T01:18:42.854Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.854Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_saml.svg
+[debug] [2025-06-03T01:18:42.854Z] [unzip] Entry: client/assets/provider-icons/auth_service_phone.svg (compressed_size=261 bytes, uncompressed_size=414 bytes)
+[debug] [2025-06-03T01:18:42.854Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_phone.svg
+[debug] [2025-06-03T01:18:42.854Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.854Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_phone.svg
+[debug] [2025-06-03T01:18:42.855Z] [unzip] Entry: client/assets/provider-icons/auth_service_facebook.svg (compressed_size=289 bytes, uncompressed_size=457 bytes)
+[debug] [2025-06-03T01:18:42.855Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_facebook.svg
+[debug] [2025-06-03T01:18:42.855Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.855Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_facebook.svg
+[debug] [2025-06-03T01:18:42.855Z] [unzip] Entry: client/assets/provider-icons/auth_service_game_center.svg (compressed_size=991 bytes, uncompressed_size=3921 bytes)
+[debug] [2025-06-03T01:18:42.855Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_game_center.svg
+[debug] [2025-06-03T01:18:42.855Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.855Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_game_center.svg
+[debug] [2025-06-03T01:18:42.856Z] [unzip] Entry: client/assets/provider-icons/auth_service_apple.svg (compressed_size=230 bytes, uncompressed_size=334 bytes)
+[debug] [2025-06-03T01:18:42.856Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_apple.svg
+[debug] [2025-06-03T01:18:42.856Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.856Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_apple.svg
+[debug] [2025-06-03T01:18:42.856Z] [unzip] Entry: client/assets/provider-icons/auth_service_github.svg (compressed_size=466 bytes, uncompressed_size=838 bytes)
+[debug] [2025-06-03T01:18:42.856Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_github.svg
+[debug] [2025-06-03T01:18:42.856Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.856Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_github.svg
+[debug] [2025-06-03T01:18:42.856Z] [unzip] Entry: client/assets/provider-icons/auth_service_mslive.svg (compressed_size=203 bytes, uncompressed_size=378 bytes)
+[debug] [2025-06-03T01:18:42.856Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_mslive.svg
+[debug] [2025-06-03T01:18:42.856Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.856Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_mslive.svg
+[debug] [2025-06-03T01:18:42.857Z] [unzip] Entry: client/assets/provider-icons/auth_service_yahoo.svg (compressed_size=577 bytes, uncompressed_size=1182 bytes)
+[debug] [2025-06-03T01:18:42.857Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_yahoo.svg
+[debug] [2025-06-03T01:18:42.857Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.857Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_yahoo.svg
+[debug] [2025-06-03T01:18:42.857Z] [unzip] Entry: client/assets/provider-icons/auth_service_twitter.svg (compressed_size=444 bytes, uncompressed_size=751 bytes)
+[debug] [2025-06-03T01:18:42.857Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_twitter.svg
+[debug] [2025-06-03T01:18:42.857Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.857Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_twitter.svg
+[debug] [2025-06-03T01:18:42.857Z] [unzip] Entry: client/assets/provider-icons/auth_service_play_games.svg (compressed_size=565 bytes, uncompressed_size=1173 bytes)
+[debug] [2025-06-03T01:18:42.857Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_play_games.svg
+[debug] [2025-06-03T01:18:42.857Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.857Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_play_games.svg
+[debug] [2025-06-03T01:18:42.858Z] [unzip] Entry: client/assets/provider-icons/auth_service_email.svg (compressed_size=228 bytes, uncompressed_size=326 bytes)
+[debug] [2025-06-03T01:18:42.858Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_email.svg
+[debug] [2025-06-03T01:18:42.858Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.858Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_email.svg
+[debug] [2025-06-03T01:18:42.858Z] [unzip] Entry: client/assets/provider-icons/auth_service_google.svg (compressed_size=409 bytes, uncompressed_size=720 bytes)
+[debug] [2025-06-03T01:18:42.858Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_google.svg
+[debug] [2025-06-03T01:18:42.858Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.858Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_google.svg
+[debug] [2025-06-03T01:18:42.858Z] [unzip] Entry: client/assets/provider-icons/auth_service_oidc.svg (compressed_size=414 bytes, uncompressed_size=858 bytes)
+[debug] [2025-06-03T01:18:42.858Z] [unzip] Processing entry: client/assets/provider-icons/auth_service_oidc.svg
+[debug] [2025-06-03T01:18:42.858Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons
+[debug] [2025-06-03T01:18:42.858Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/assets/provider-icons/auth_service_oidc.svg
+[debug] [2025-06-03T01:18:42.859Z] [unzip] Entry: client/browserconfig.xml (compressed_size=491 bytes, uncompressed_size=822 bytes)
+[debug] [2025-06-03T01:18:42.859Z] [unzip] Processing entry: client/browserconfig.xml
+[debug] [2025-06-03T01:18:42.859Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.859Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/browserconfig.xml
+[debug] [2025-06-03T01:18:42.859Z] [unzip] Entry: client/favicon-32x32.png (compressed_size=475 bytes, uncompressed_size=475 bytes)
+[debug] [2025-06-03T01:18:42.859Z] [unzip] Processing entry: client/favicon-32x32.png
+[debug] [2025-06-03T01:18:42.859Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client
+[debug] [2025-06-03T01:18:42.859Z] [unzip] Writing file: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/client/favicon-32x32.png
+[debug] [2025-06-03T01:18:42.859Z] [unzip] Entry: server/ (compressed_size=0 bytes, uncompressed_size=0 bytes)
+[debug] [2025-06-03T01:18:42.859Z] [unzip] Processing entry: server/
+[debug] [2025-06-03T01:18:42.859Z] [unzip] mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/server/
+[debug] [2025-06-03T01:18:42.859Z] [unzip] Entry: server/server.mjs.map (compressed_size=217845 bytes, uncompressed_size=944978 bytes)
+[debug] [2025-06-03T01:18:42.860Z] [unzip] Processing entry: server/server.mjs.map
+[debug] [2025-06-03T01:18:42.860Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/server
+[debug] [2025-06-03T01:18:42.860Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/server/server.mjs.map
+[debug] [2025-06-03T01:18:42.862Z] [unzip] Entry: server/server.mjs (compressed_size=276407 bytes, uncompressed_size=933701 bytes)
+[debug] [2025-06-03T01:18:42.862Z] [unzip] Processing entry: server/server.mjs
+[debug] [2025-06-03T01:18:42.862Z] [unzip] else mkdir: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/server
+[debug] [2025-06-03T01:18:42.862Z] [unzip] deflating: /Users/spencerbergamo/.cache/firebase/emulators/ui-v1.15.0/server/server.mjs
+[info] i  ui: Removing outdated emulator files: ui-v1.14.0 {"metadata":{"emulator":{"name":"ui"},"message":"Removing outdated emulator files: ui-v1.14.0"}}
+[info] i  ui: Removing outdated emulator files: ui-v1.14.0.zip {"metadata":{"emulator":{"name":"ui"},"message":"Removing outdated emulator files: ui-v1.14.0.zip"}}
+[debug] [2025-06-03T01:18:42.872Z] [Extensions] Connecting Extensions emulator, this is a noop.
+[info] i  functions: Watching "/Users/spencerbergamo/ReactNative/Shutterspace/functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"/Users/spencerbergamo/ReactNative/Shutterspace/functions\" for Cloud Functions..."}}
+[debug] [2025-06-03T01:18:42.878Z] Validating nodejs source
+[debug] [2025-06-03T01:18:43.418Z] > [functions] package.json contents: {
+  "name": "functions",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.0",
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2025-06-03T01:18:43.419Z] Building nodejs source
+[debug] [2025-06-03T01:18:43.419Z] Failed to find version of module node: reached end of search path /Users/spencerbergamo/ReactNative/Shutterspace/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "23". Using node@23 from host. 
+[debug] [2025-06-03T01:18:43.420Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-06-03T01:18:43.426Z] Found firebase-functions binary at '/Users/spencerbergamo/ReactNative/Shutterspace/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8336
+
+[debug] [2025-06-03T01:18:43.667Z] Got response from /__/functions.yaml {"endpoints":{"testFFmpeg":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"httpsTrigger":{},"entryPoint":"testFFmpeg"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[debug] [2025-06-03T01:18:47.692Z] defaultcredentials: writing to file /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json
+[debug] [2025-06-03T01:18:47.693Z] Setting GAC to /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json"}}
+[info] ✔  functions: Loaded functions definitions from source: testFFmpeg. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: testFFmpeg."}}
+[info] ✔  functions[us-central1-testFFmpeg]: http function initialized (http://127.0.0.1:5001/shutterspace-eb637/us-central1/testFFmpeg). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/shutterspace-eb637/us-central1/testFFmpeg)."}}
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌────────────┬────────────────┬──────────────────────────────────┐
+│ Emulator   │ Host:Port      │ View in Emulator UI              │
+├────────────┼────────────────┼──────────────────────────────────┤
+│ Functions  │ 127.0.0.1:5001 │ http://127.0.0.1:4000/functions  │
+├────────────┼────────────────┼──────────────────────────────────┤
+│ Extensions │ 127.0.0.1:5001 │ http://127.0.0.1:4000/extensions │
+└────────────┴────────────────┴──────────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500
+┌─────────────────────────┬───────────────┬─────────────────────┐
+│ Extension Instance Name │ Extension Ref │ View in Emulator UI │
+└─────────────────────────┴───────────────┴─────────────────────┘
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
+[debug] [2025-06-03T01:22:28.681Z] File /Users/spencerbergamo/ReactNative/Shutterspace/functions/src/test-upload.ts changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/spencerbergamo/ReactNative/Shutterspace/functions/src/test-upload.ts changed, reloading triggers"}}
+[debug] [2025-06-03T01:22:29.687Z] Validating nodejs source
+[debug] [2025-06-03T01:22:30.189Z] > [functions] package.json contents: {
+  "name": "functions",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.0",
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2025-06-03T01:22:30.189Z] Building nodejs source
+[debug] [2025-06-03T01:22:30.189Z] Failed to find version of module node: reached end of search path /Users/spencerbergamo/ReactNative/Shutterspace/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "23". Using node@23 from host. 
+[debug] [2025-06-03T01:22:30.191Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-06-03T01:22:30.192Z] Found firebase-functions binary at '/Users/spencerbergamo/ReactNative/Shutterspace/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8741
+
+[debug] [2025-06-03T01:22:30.433Z] Got response from /__/functions.yaml {"endpoints":{"testFFmpeg":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"httpsTrigger":{},"entryPoint":"testFFmpeg"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[debug] [2025-06-03T01:22:34.465Z] defaultcredentials: writing to file /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json
+[debug] [2025-06-03T01:22:34.467Z] Setting GAC to /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json"}}
+[info] ✔  functions: Loaded functions definitions from source: testFFmpeg. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: testFFmpeg."}}
+[debug] [2025-06-03T01:24:45.247Z] File /Users/spencerbergamo/ReactNative/Shutterspace/functions/src/test-upload.ts changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/spencerbergamo/ReactNative/Shutterspace/functions/src/test-upload.ts changed, reloading triggers"}}
+[debug] [2025-06-03T01:24:46.252Z] Validating nodejs source
+[debug] [2025-06-03T01:24:46.797Z] > [functions] package.json contents: {
+  "name": "functions",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.0",
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2025-06-03T01:24:46.797Z] Building nodejs source
+[debug] [2025-06-03T01:24:46.797Z] Failed to find version of module node: reached end of search path /Users/spencerbergamo/ReactNative/Shutterspace/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "23". Using node@23 from host. 
+[debug] [2025-06-03T01:24:46.799Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-06-03T01:24:46.801Z] Found firebase-functions binary at '/Users/spencerbergamo/ReactNative/Shutterspace/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8433
+
+[debug] [2025-06-03T01:24:47.038Z] Got response from /__/functions.yaml {"endpoints":{"testFFmpeg":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"httpsTrigger":{},"entryPoint":"testFFmpeg"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[debug] [2025-06-03T01:24:51.050Z] defaultcredentials: writing to file /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json
+[debug] [2025-06-03T01:24:51.053Z] Setting GAC to /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json"}}
+[info] ✔  functions: Loaded functions definitions from source: testFFmpeg. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: testFFmpeg."}}
+[debug] [2025-06-03T01:26:18.399Z] File /Users/spencerbergamo/ReactNative/Shutterspace/functions/src/test-upload.ts changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/spencerbergamo/ReactNative/Shutterspace/functions/src/test-upload.ts changed, reloading triggers"}}
+[debug] [2025-06-03T01:26:19.404Z] Validating nodejs source
+[debug] [2025-06-03T01:26:20.008Z] > [functions] package.json contents: {
+  "name": "functions",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.0",
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2025-06-03T01:26:20.008Z] Building nodejs source
+[debug] [2025-06-03T01:26:20.009Z] Failed to find version of module node: reached end of search path /Users/spencerbergamo/ReactNative/Shutterspace/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "23". Using node@23 from host. 
+[debug] [2025-06-03T01:26:20.011Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-06-03T01:26:20.012Z] Found firebase-functions binary at '/Users/spencerbergamo/ReactNative/Shutterspace/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8139
+
+[debug] [2025-06-03T01:26:20.263Z] Got response from /__/functions.yaml {"endpoints":{"testFFmpeg":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"httpsTrigger":{},"entryPoint":"testFFmpeg"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[debug] [2025-06-03T01:26:24.309Z] defaultcredentials: writing to file /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json
+[debug] [2025-06-03T01:26:24.311Z] Setting GAC to /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to /Users/spencerbergamo/.config/firebase/spencerbergamo_gmail_com_application_default_credentials.json"}}
+[info] ✔  functions: Loaded functions definitions from source: testFFmpeg. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: testFFmpeg."}}

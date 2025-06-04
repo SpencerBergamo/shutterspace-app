@@ -1,6 +1,6 @@
 export interface Profile {
-    id: string;
-    joined: Date;
+    _id: string;
+    joined: number;
     authProvider: "email" | "google" | "apple";
     email: string;
     avatarUrl: string;
@@ -9,18 +9,18 @@ export interface Profile {
     storageUsage: {
         total: number;
         limit: number;
-        lastCalculated: Date;
+        lastCalculated: number;
     },
 
     friends: {
         id: string;
         status: "pending" | "accepted" | "rejected";
-        since: Date;
+        since: number;
     }[];
 
     blockedUsers: {
         id: string;
-        since: Date;
+        since: number;
         reason?: string;
     }[];
 }

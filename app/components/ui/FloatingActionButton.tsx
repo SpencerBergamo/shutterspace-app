@@ -1,36 +1,28 @@
-import { useHapticPress } from '@/hooks/useHapticPress';
-import { Ionicons } from '@expo/vector-icons';
+import { LucideIcon, Plus } from 'lucide-react-native';
 import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 interface FABProps {
     onPress: () => void;
-    icon?: keyof typeof Ionicons.glyphMap;
+    icon?: LucideIcon;
     style?: ViewStyle;
     id: string;
 }
 
 export default function FloatingActionButton({
     onPress,
-    icon = 'add',
+    icon: Icon = Plus,
     style,
     id
 }: FABProps) {
-    const handleHaptic = useHapticPress('medium');
-
-    const handlePress = () => {
-        handleHaptic();
-        onPress();
-    }
-
     return (
         <Animated.View
             sharedTransitionTag={id}
             style={[styles.fab, style]}>
             <TouchableOpacity
                 style={styles.button}
-                onPress={handlePress}>
-                <Ionicons name={icon} size={24} color="#fff" />
+                onPress={onPress}>
+                <Icon size={24} color="#fff" />
             </TouchableOpacity>
         </Animated.View>
     );

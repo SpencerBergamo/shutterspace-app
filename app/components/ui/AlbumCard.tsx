@@ -1,19 +1,16 @@
+import { Album } from '@/types/Album';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Album } from '../../types/Album';
 
-interface AlbumCardProps {
-    album: Album;
-}
+export default function AlbumCard({ album }: { album: Album }) {
 
-export default function AlbumCard({ album }: AlbumCardProps) {
     return (
         <Pressable style={styles.container}
-            onPress={() => router.push(`/album/${album.albumId}`)}
+            onPress={() => router.push(`/album/${album._id}`)}
         >
             <Image
-                source={{ uri: album.albumCover?.url }}
+                source={{ uri: album.thumbnail || '@/assets/images/default-album-cover.png' }}
                 style={styles.coverImage}
                 contentFit="cover"
             />
@@ -48,13 +45,13 @@ const styles = StyleSheet.create({
         padding: 12,
     },
     textContainer: {
-        alignItems: 'center',
+        alignItems: 'flex-start',
     },
     title: {
         color: '#fff',
         fontFamily: 'SansitaOne',
         fontSize: 16,
-        textAlign: 'center',
+        textAlign: 'left',
         marginBottom: 4,
     },
     date: {

@@ -9,6 +9,12 @@ import { router, Stack } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+/* Common header configs, nav patterns, shared nav UI elements,
+nav state management, and common nav behaviors. 
+
+Layouts are used to wrap the app's content and provide a consistent UI structure.
+They are used to manage the app's navigation and state. */
+
 export default function AppLayout() {
     const { user } = useAuth();
     const { profile } = useProfile();
@@ -33,75 +39,74 @@ export default function AppLayout() {
         );
     }
 
+    const BackButton = () => (
+        <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 16 }} >
+            <Ionicons name="arrow-back" size={24} color='black' />
+        </TouchableOpacity>
+    )
+
     return (
         <SafeAreaView edges={['bottom']} style={styles.container}>
             <Stack screenOptions={{
                 headerShown: false,
+                headerTitleAlign: 'left',
+                headerBackButtonDisplayMode: 'minimal',
                 headerBackground: () => (
                     <View style={{ backgroundColor: '#F2F1F6', flex: 1 }} />
                 )
             }}>
-                <Stack.Screen name="home" options={{
-                    headerShown: true,
-                    headerBackground: () => (
-                        <View style={{ backgroundColor: '#F2F1F6', flex: 1 }} />
-                    ),
+                {/* Home Screen */}
+                <Stack.Screen
+                    name="home"
+                    options={{
+                        headerTitle: () => (<NetworkHeader />),
 
-                    headerTitle: () => (<NetworkHeader />),
+                        headerRight: () => (
+                            <TouchableOpacity
+                                onPress={() => { router.push('/profile') }}
+                                style={{ marginRight: 16 }}>
+                                <Avatar
+                                    source={{ uri: profile?.avatarUrl }}
+                                    email={profile?.email || user?.email || ''}
+                                    size={32}
+                                />
+                            </TouchableOpacity>
+                        ),
+                    }} />
 
-                    headerRight: () => (
-                        <TouchableOpacity
-                            onPress={() => { router.push('/profile') }}
-                            style={{ marginRight: 16 }}>
-                            <Avatar
-                                source={{ uri: profile?.avatarUrl }}
-                                email={profile?.email || user?.email || ''}
-                                size={32}
-                            />
-                        </TouchableOpacity>
-                    ),
-                }} />
-                <Stack.Screen name="profile"
+                {/* Album Screen */}
+                <Stack.Screen
+                    name="album/[albumId]"
+                    options={({ route }) => {
+                        const { albumId } = route.params as { albumId: string };
+                        const album = albumMockData.find((album) => album.albumId === albumId);
+
+                        return {
+                            title: album?.title || "Album",
+                            headerLeft: () => <BackButton />,
+                            headerRight: () => (
+                                <TouchableOpacity onPress={() => { }} style={{ marginRight: 16 }}>
+                                    <Ionicons name='ellipsis-horizontal' size={24} color='black' />
+                                </TouchableOpacity>
+                            ),
+                        }
+                    }} />
+
+                {/* Profile Screen */}
+                <Stack.Screen
+                    name="profile"
                     getId={({ }) => String(Date.now())}
                     options={{
                         title: "Profile",
-                        headerShown: true,
-                        headerTitleAlign: "left",
-                        headerBackButtonDisplayMode: 'minimal',
-
-                        headerLeft: () => (
-                            <TouchableOpacity onPress={() => { router.back() }}>
-                                <Ionicons name="arrow-back" size={24} color="black" />
-                            </TouchableOpacity>
-                        )
+                        headerLeft: () => (<BackButton />),
                     }} />
+
+                {/* Edit Profile Screen */}
                 <Stack.Screen name="edit-profile" options={{
                     title: "Edit Profile",
-                    headerShown: true,
-                    headerTitleAlign: "left",
-                    headerBackButtonDisplayMode: 'minimal',
-                    headerLeft: () => (
-                        <TouchableOpacity onPress={() => { router.back() }}>
-                            <Ionicons name="arrow-back" size={24} color="black" />
-                        </TouchableOpacity>
-                    )
+                    headerLeft: () => (<BackButton />)
                 }} />
-                <Stack.Screen name="album/[albumId]" options={({ route }) => {
-                    const { albumId } = route.params as { albumId: string };
-                    const album = albumMockData.find((album) => album.albumId === albumId);
 
-                    return {
-                        title: album?.title || "Album Error",
-                        headerShown: true,
-                        headerTitleAlign: "left",
-                        headerBackButtonDisplayMode: 'minimal',
-                        headerLeft: () => (
-                            <TouchableOpacity onPress={() => { router.back() }}>
-                                <Ionicons name="arrow-back" size={24} color="black" />
-                            </TouchableOpacity>
-                        )
-                    }
-                }} />
             </Stack>
         </SafeAreaView>
     );

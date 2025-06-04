@@ -3,7 +3,6 @@ import { v } from "convex/values";
 
 export default defineSchema({
     profiles: defineTable({
-        userId: v.string(),
         joined: v.number(),
         authProvider: v.union(v.literal("email"), v.literal("google"), v.literal("apple")),
         email: v.string(),
@@ -28,7 +27,7 @@ export default defineSchema({
                 reason: v.optional(v.string()),
             })
         ),
-    }).index("by_userId", ["userId"]),
+    }),
 
     albums: defineTable({
         title: v.string(),
@@ -59,10 +58,13 @@ export default defineSchema({
     media: defineTable({
         albumId: v.id("albums"),
         uploadedById: v.id("profiles"),
-        cloudinaryId: v.string(),
-        mediaType: v.union(v.literal("image"), v.literal("video")),
         uploadedAt: v.number(),
-
+        filename: v.string(),
+        downloadUrl: v.string(),
+        type: v.union(v.literal("image"), v.literal("video")),
+        width: v.number(),
+        height: v.number(),
+        duration: v.optional(v.number()),
     }).index("by_albumId", ["albumId"])
         .index("by_profileId", ["uploadedById"]),
 
@@ -71,8 +73,11 @@ export default defineSchema({
         profileId: v.id("profiles"),
         text: v.string(),
         createdAt: v.number(),
+        parentCommentId: v.optional(v.id('comments')),
     }).index("by_mediaId", ["mediaId"])
-        .index("by_profileId", ["profileId"]),
+        .index("by_profileId", ["profileId"])
+        .index("by_parentCommentId", ["parentCommentId"]) // for threaded replies
+        .index('by_mediaId_createdAt', ['mediaId', 'createdAt']), // for chronological ordering
 
     likes: defineTable({
         mediaId: v.id("media"),
@@ -81,15 +86,5 @@ export default defineSchema({
     })
         .index("by_mediaId", ["mediaId"])
         .index("by_profileId", ["profileId"])
-        // Ensure a user can only like a piece of media once
-        .index("by_mediaId_profileId", ["mediaId", "profileId"]),
-
-    reactions: defineTable({
-        mediaId: v.id("media"),
-        profileId: v.id("profiles"),
-        emoji: v.string(), // Store the emoji as a string
-        createdAt: v.number(), // Timestamp
-    })
-        .index("by_mediaId", ["mediaId"])
-        .index("by_profileId", ["profileId"]),
+        .index("by_mediaId_profileId", ["mediaId", "profileId"]), // for tracking likes per media
 });

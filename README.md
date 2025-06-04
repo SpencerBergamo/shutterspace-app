@@ -133,3 +133,33 @@ useEffect(() => {
 2. Use empty array `[]` for one-time setup
 3. Return cleanup function when needed
 4. Avoid infinite loops by carefully managing dependencies
+
+### Async Functions and Dependencies
+```typescript
+// function declaration
+async function myFunc() {}
+
+// arrow funcion
+const myFunc= async () => {}
+
+// With Dependencies in useEffect
+useEffect(() => {}, [/* Dependencies */])
+```
+
+#### When to use Each Pattern
+1. **Function Declaration `async function`**
+    - Use for standalone functions
+    - better for hoisting
+    - clearer stack traces
+
+2. **Arry Functions `const func = async () => {}`**
+    - Use for callbacks and event handlers
+    - Maintains `this` context
+    - Common in React components
+
+3. **Async Functions in useEffect**
+    - Must be defined inside useEffect
+    - Need proper dependency management
+    - should handle cleanup
+
+

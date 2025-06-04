@@ -39,6 +39,7 @@
     "plugins": [
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
+      "@react-native-firebase/storage",
       [
         "expo-build-properties",
         {
@@ -54,6 +55,14 @@
           "photosPermission": "Shutterspace needs access to your photos to let you share them.",
           "savePhotosPermission": "The app needs access to your photos to let you save them.",
           "isAccessMediaLocationEnabled": true
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Shutterspace needs access to your camera to let you take photos.",
+          "microphonePermission": "Shutterspace needs access to your microphone to let you take videos.",
+          "recordAudioAndroid": true
         }
       ],
       [

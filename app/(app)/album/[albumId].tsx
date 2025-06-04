@@ -2,12 +2,9 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useGridConfig } from "@/hooks/useGridConfig";
 import { useImagePicker } from "@/hooks/useImagePicker";
-import { Media } from "@/types/Media";
-import { useMutation, useQuery } from "convex/react";
-import * as ImagePicker from "expo-image-picker";
-import * as Network from 'expo-network';
-import { useState } from "react";
-import { Alert, Dimensions, StyleSheet } from "react-native";
+import { useMediaUpload } from "@/hooks/useMediaUpload";
+import { useQuery } from "convex/react";
+import { Dimensions, FlatList, StyleSheet, View } from "react-native";
 
 const { width } = Dimensions.get('window');
 const NUM_COLUMNS = 3;
@@ -56,36 +53,21 @@ interface AlbumPageProps {
 export default function AlbumPage({ albumId, profileId }: AlbumPageProps) {
     const { numColumns, spacing, itemSize } = useGridConfig();
     const pickAssets = useImagePicker();
-    const state = Network.useNetworkState();
+    const { optimisticMedia } = useMediaUpload(albumId, profileId);
+    const mediaQuery = useQuery(api.media.getMediaForAlbum,
+        { albumId, pagination: { numItems: 50, cursor: null } });
 
-    const [media, setMedia] = useState<Media[]>([]);
-    const [isUploading, setIsUploading] = useState(false);
-
-    const [image, setImage] = useState<string | null>(null);
-
-    // const generateSignature = useAction(api.cloudinary.generateUploadSignature);
-    const createMedia = useMutation(api.media.createMedia);
-
-
-    const albumMedia = useQuery(api.media.getByAlbumId, { albumId });
-
-    const checkPermissions = async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-        if (status !== "granted") {
-            Alert.alert("Permission needed", "Shutterspace needs permission to your device gallery to upload media."); return false;
-        }
-
-        return true;
-    }
-
-
-
-
-
-
-
-
+    return (
+        <View style={{ flex: 1 }}>
+            <FlatList
+                data={mediaQuery?.page ?? []}
+                keyExtractor={(item) => item._id}
+                renderItem={({ item }) => {
+                    return (<></>);
+                }}
+            />
+        </View>
+    );
 
 
 }

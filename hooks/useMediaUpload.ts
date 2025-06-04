@@ -1,323 +1,210 @@
 import { Id } from '@/convex/_generated/dataModel';
 import { OptimisticMedia } from '@/types/Media';
+import { createOptimisticMedia } from '@/utils/mediaFactory';
 import { processImage, processVideo } from '@/utils/processAssets';
-import storage, { FirebaseStorageTypes } from '@react-native-firebase/storage';
+import storage from '@react-native-firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
-import { getNetworkStateAsync } from 'expo-network';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import Toast from 'react-native-toast-message';
+import { useNetworkListener } from './useNetworkListener';
+import { useUploadQueue } from './useUploadQueue';
 
-interface UploadTask {
-    mediaId: string;
-    task?: FirebaseStorageTypes.TaskSnapshot; //firebase upload task
-    retryCount: number;
-    maxRetries: number;
-}
+/* 
+1. add the optimistic media to the upload queue
+2. begin processing the media in the queue
+3. handle network & failed upload errors by setting the optimistic media to error
+4. if the error is a network error, use automatic retry with exponential backoff
+5. if the error was an upload error, set the optimistic media to error and allow manual retry
+6. if the upload is successful, set the optimistic media to success 
+
+- i haven't gotten this far but when the upload is successful, will i be able to remove
+  the optimsitc media and convex handle the data sync? will this lead to weird UI behavior?
+
+*/
 
 export const useMediaUpload = (albumId: Id<'albums'>, profileId: Id<'profiles'>) => {
-    const [optimisticMedia, setOptimisticMedia] = useState<OptimisticMedia[]>([]);
+    const { isConnected, isNetworkError, calcRetryDelay } = useNetworkListener();
+
     const storageRef = storage().ref(`albums/${albumId}`);
-    const processingQueue = useRef<OptimisticMedia[]>([]);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const currentTask = useRef<any>(null);
-    const timeoutRef = useRef<NodeJS.Timeout>(null);
 
-    const removeOptimisticMedia = useCallback((mediaId: string) => {
-        // find and remove the media from optimistic media, upload tasks, and retry queue
-        setOptimisticMedia(prev => prev.filter(item => item._id !== mediaId));
-        processingQueue.current = processingQueue.current.filter(item => item._id !== mediaId);
-    }, []);
+    const { queue, addMedia, updateMedia, removeMedia, getFailedUploads, resumeQueue, pauseQueue, isPaused } = useUploadQueue();
 
-    const updateOptimisticMedia = useCallback((
-        mediaId: string,
-        updates: Partial<OptimisticMedia>
-    ) => {
-        setOptimisticMedia(prev => prev.map(item => item._id === mediaId
-            ? { ...item, ...updates } : item
-        ));
-    }, []);
-
-    const generateId = useCallback(() =>
-        `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`, []);
+    // We can use a ref to track if a processing cycle is active, independent of the queue's length
+    const isProcessingRef = useRef(false);
+    const currentProcessingIndexRef = useRef(0); // to keep track of the current item being processed
+    const timeoutIdsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
 
-    /* createOptimisticMedia useCallback 
-    why use a callback and use the dependencies array?
-    answer: because we want to create a new optimistic media object for each asset,
-    and we want to use the albumId and profileId from the parent component.
-    and we want to use the generateId function to create a new id for each asset.
-    and we want to use the useCallback hook to memoize the function so that it doesn't
-    recreate the function on every render.
-    */
-    const createOptimisticMedia = useCallback((
-        assets: ImagePicker.ImagePickerAsset[]): OptimisticMedia[] => {
-        return assets.map(asset => ({
-            _id: generateId(),
-            albumId: albumId,
-            uploadedBy: profileId,
-            uri: asset.uri,
-            mimeType: asset.mimeType,
-            filename: asset.fileName,
-            width: asset.width,
-            height: asset.height,
-            type: asset.type,
-            exif: asset.exif,
-            status: 'pending',
-        })) as OptimisticMedia[];
-    }, [albumId, profileId, generateId]);
+    // effect to handle network changes and resume processing
+    useEffect(() => {
+        if (isConnected) {
+            if (isPaused) resumeQueue();
 
-    const checkNetworkStatus = useCallback(async (): Promise<boolean> => {
-        const status = await getNetworkStateAsync();
-        return status.isConnected ?? false;
-    }, []);
+            if (queue.length > 0 && !isProcessingRef.current) {
+                console.log('Network restored, attepting to resume processing');
+                processNextInQueue();
+            }
+        } else {
+            console.warn('Network disconnected, pausing queue');
+            pauseQueue();
+        }
+    }, [isConnected, isPaused, queue.length, pauseQueue, resumeQueue]);
 
     // 2. Upload Process
     // - processes the next item in the queue
     // - handles retry logic, exponential backoff, and network error handling
     // - updates UI with progress and status
     const processNextInQueue = useCallback(async () => {
-        // if the processingQueue is empty, set isProcessing to false and return
-        if (processingQueue.current.length === 0) {
-            setIsProcessing(false);
+
+        // prevent concurrent processing cycles
+        if (isProcessingRef.current || isPaused) {
+            console.warn('Processing already in progress or queue is paused, skipping');
             return;
         }
 
-        const media = processingQueue.current.shift();
+        const startIndex = currentProcessingIndexRef.current;
+        const mediaToProcess = queue[startIndex]; // media to process
+
+        // if no more items in the queue at the current index, stop processing
+        if (!mediaToProcess) {
+            console.log('Queue is empty or all items have been processed');
+            isProcessingRef.current = false;
+            currentProcessingIndexRef.current = 0;
+            return;
+        }
+
+        isProcessingRef.current = true;
         const maxRetries = 3;
 
-        // we already checked the processingQueue length, so this check is for 
-        // the case the shift operation is executed and media is undefined
-        if (!media) return;
+        const processWithRetry = async (
+            media: OptimisticMedia,
+            attempt: number = 1
+        ): Promise<void> => {
 
-        const processWithRetry = async (attempt: number = 1): Promise<void> => {
+            // clear any existing timeout for this media item
+            if (timeoutIdsRef.current[media._id]) {
+                clearTimeout(timeoutIdsRef.current[media._id]);
+                delete timeoutIdsRef.current[media._id];
+            }
+
+
             try {
-                const isConnected = await checkNetworkStatus();
+
+                // check connection before starting an upload attempt
                 if (!isConnected) {
-                    updateOptimisticMedia(media._id, {
+                    console.warn(`No internet connection, pausing ${media._id}`);
+                    updateMedia(media._id, {
                         status: 'error',
                         error: 'No internet connection',
                     });
 
-                    processNextInQueue();
+                    isProcessingRef.current = false;
                     return;
                 }
 
-                updateOptimisticMedia(media._id, { status: 'uploading', progress: 0 });
+                updateMedia(media._id, { status: 'uploading', progress: 0 });
 
                 const onProgress = (progress: number) => {
-                    updateOptimisticMedia(media._id, { progress: Math.min(progress, 99) });
+                    updateMedia(media._id, { progress: Math.min(progress, 99) });
                 }
 
                 const onError = async (error: string) => {
                     console.error(`Upload error for ${media._id} (attempt ${attempt})`, error);
 
-                    const isNetworkError = error.toLowerCase().includes('network') ||
-                        error.toLowerCase().includes('timeout') ||
-                        error.toLowerCase().includes('connection');
-
-                    if (attempt < maxRetries && isNetworkError) {
+                    if (attempt < maxRetries && isNetworkError(error)) {
                         // exponential backoff: 2^attempt seconds
-                        const delay = Math.pow(2, attempt) * 1000;
+                        const delay = calcRetryDelay(attempt);
 
-                        updateOptimisticMedia(media._id, {
-                            status: 'retrying',
-                            error: `Retrying in ${delay / 1000}s... (${attempt}/${maxRetries})`
+                        updateMedia(media._id, {
+                            status: 'uploading',
+                            error: `Retrying...`
                         });
 
-                        const timeout = setTimeout(() => {
-                            processWithRetry(attempt + 1);
+                        console.log(`Retrying ${media._id} in ${delay} ms... (attempt: ${attempt}/${maxRetries})`);
+                        timeoutIdsRef.current[media._id] = setTimeout(() => {
+                            processWithRetry(media, attempt + 1);
                         }, delay);
+
                     } else {
-                        updateOptimisticMedia(media._id, {
+                        updateMedia(media._id, {
                             status: 'error',
                             error: attempt >= maxRetries
                                 ? `Failed after ${maxRetries} attempts: ${error}`
                                 : error,
                         });
 
-                        // Continue with the next item in the queue
+                        currentProcessingIndexRef.current++;
                         processNextInQueue();
                     }
                 };
 
                 const onSuccess = () => {
-                    updateOptimisticMedia(media._id, {
+                    updateMedia(media._id, {
                         status: 'success',
                         progress: 100,
                     });
 
-                    // Continue with the next item in the queue
+                    currentProcessingIndexRef.current++;
                     processNextInQueue();
                 };
 
                 if (media.type === 'video') {
-                    // await processVideo(media, storageRef, onProgress, onError, onSuccess);
-                    currentTask.current = await processVideo(media, storageRef, onProgress, onError, onSuccess);
+                    await processVideo(media, storageRef, onProgress, onError, onSuccess);
                 } else {
-                    currentTask.current = await processImage(media, storageRef, onProgress, onError, onSuccess);
+                    await processImage(media, storageRef, onProgress, onError, onSuccess);
                 }
             } catch (e: any) {
                 console.error(`Unexpected error processing ${media._id}:`, e);
 
-                updateOptimisticMedia(media._id, {
+                updateMedia(media._id, {
                     status: 'error',
                     error: e.message || 'Unknown error',
                 });
 
+                currentProcessingIndexRef.current++;
                 processNextInQueue();
             }
         };
 
-        await processWithRetry();
-    }, [storageRef, updateOptimisticMedia, checkNetworkStatus]);
+        await processWithRetry(mediaToProcess);
+    }, [queue, storageRef, updateMedia, isConnected, isNetworkError, calcRetryDelay, isPaused]);
+
 
     const uploadAssets = useCallback(async (assets: ImagePicker.ImagePickerAsset[]) => {
-        const newOptimisticMedia = createOptimisticMedia(assets);
-        setOptimisticMedia(prev => [...prev, ...newOptimisticMedia]);
-
-        // Add to processing queue
-        processingQueue.current.push(...newOptimisticMedia);
+        const newOptimisticMedia = createOptimisticMedia(assets, albumId, profileId);
+        addMedia(newOptimisticMedia);
 
         Toast.show({
             type: 'info',
             text1: `Uploading ${newOptimisticMedia.length} file(s)`,
         });
 
-        if (!isProcessing) {
-            setIsProcessing(true);
+        if (!isProcessingRef.current && !isPaused) {
+            console.log('Starting upload cycle');
+
+            currentProcessingIndexRef.current = 0;
             processNextInQueue();
+        } else if (isProcessingRef.current) {
+            console.log('Upload cycle already in progress, skipping new uploads');
+        } else if (isPaused) {
+            console.log('Queue is paused, new items added but won\'t be processed until resumed');
         }
 
-        /*
-        try {
-            for (const media of newOptimisticMedia) {
-                await Promise.allSettled(
-                    newOptimisticMedia.map(media => processMediaWithRetry(media))
-                );
-            }
+    }, [createOptimisticMedia, addMedia, isPaused, processNextInQueue]);
 
-            const successCount = newOptimisticMedia.filter(m =>
-                optimisticMedia.find(om => om._id === m._id)?.status === 'success'
-            ).length;
-
-            const failedCount = newOptimisticMedia.length - successCount;
-
-            if (failedCount > 0) {
-                Toast.show({
-                    type: 'error',
-                    text1: `${failedCount} file(s) failed to upload`,
-                    text2: 'Please check your internet connection and try again.',
-                });
-            } else {
-                Toast.show({
-                    type: 'success',
-                    text1: `${successCount} file(s) uploaded successfully`,
-                });
-            }
-
-        } catch (e) {
-            console.error('Unknown error uploading assets:', e);
-            Toast.show({
-                type: 'error',
-                text1: 'Upload failed',
-                text2: 'Please try again later.',
-            });
-        }
-            */
-    }, [createOptimisticMedia, isProcessing, processNextInQueue]);
-
-    const cancelCurrentUpload = useCallback(() => {
-        if (currentTask.current) {
-            currentTask.current.cancel?.();
-            currentTask.current = null;
-        }
-    }, []);
-
-    const clearQueue = useCallback(() => {
-        processingQueue.current = [];
-        cancelCurrentUpload();
-        setIsProcessing(false);
-
-        setOptimisticMedia(prev => prev.map(item =>
-            item.status === 'pending' || item.status === 'uploading'
-                ? { ...item, status: 'error', error: 'Cancelled' }
-                : item
-        ));
-    }, [cancelCurrentUpload]);
-
-    /*
-        const retryFailedUploads = useCallback(async () => {
-            const failedMedia = optimisticMedia.filter(m =>
-                m.status === 'error' && retryQueue.current.has(m._id)
-            );
-    
-            if (failedMedia.length === 0) return;
-    
-            const isConnected = await checkNetworkStatus();
-            if (!isConnected) {
-                Toast.show({
-                    type: 'error',
-                    text1: 'No Internet Connection',
-                    text2: 'Please check your internet connection and try again.',
-                });
-                return;
-            }
-    
-            for (const media of failedMedia) {
-                await processMediaWithRetry(media, 1);
-            }
-    
-        }, [optimisticMedia, processMediaWithRetry, checkNetworkStatus]);
-    
-        const cancelUpload = useCallback((mediaId: string) => {
-            const task = uploadTasks.current.get(mediaId);
-            if (task?.task) {
-                task.task.ref.delete();
-            }
-            removeOptimisticMedia(mediaId);
-        }, [removeOptimisticMedia]);
-    
-        // listen for network changes and retry failed uploads
-        const handleNetworkChange = useCallback(async (state: any) => {
-            if (state.isConnected && retryQueue.current.size > 0) {
-                Toast.show({
-                    type: 'info',
-                    text1: 'Network connection restored',
-                    text2: 'Retrying failed uploads...',
-                });
-                await retryFailedUploads();
-            }
-        }, [retryFailedUploads]);
-        */
-
-    // cleanup timeout on unmount to prevent memory leaks
+    // cleanup timeouts on unmount
     useEffect(() => {
         return () => {
-            // cancel current upload
-            if (currentTask.current) {
-                currentTask.current.cancel();
-            }
-
-            // clear timeout
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
-
-            // clear queue
-            processingQueue.current = [];
-
-            // reset optimistic media
-            setOptimisticMedia([]);
+            Object.values(timeoutIdsRef.current).forEach(clearTimeout);
         };
     }, []);
 
     return {
-        optimisticMedia,
-        isProcessing,
-        queueLength: processingQueue.current.length,
-        removeOptimisticMedia,
+        optimisticMedia: queue,
+        isProcessing: isProcessingRef.current,
+        queueLength: queue.length,
         uploadAssets,
-        cancelCurrentUpload,
-        clearQueue,
+        getFailedUploads,
+        resumeQueue,
     }
 }

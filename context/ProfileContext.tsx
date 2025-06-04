@@ -20,7 +20,6 @@ const CACHE_KEY = '@profile_cache';
 
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
-
     const [profile, setProfile] = useState<Profile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);

@@ -1,21 +1,20 @@
 // where we make the request to the Profile convex table
 
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 
 
 export const getProfile = query({
     args: {
-        userId: v.id('profiles')
+        userId: v.string()
     }, handler: async (ctx, { userId }) => {
-        const profile = await ctx.db.query('profiles')
-            .withIndex('by_userId', q => q.eq('userId', userId))
-            .first();
+        const profile = await ctx.db.get(userId as Id<'profiles'>);
 
         if (!profile) return null;
 
         return {
-            id: profile._id,
+            _id: profile._id,
             joined: new Date(profile.joined),
             authProvider: profile.authProvider,
             email: profile.email,
