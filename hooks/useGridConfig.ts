@@ -7,12 +7,18 @@ interface GridConfig {
     itemSize: number;
 }
 
+const DEFAULT_CONFIG: GridConfig = {
+    numColumns: 3,
+    spacing: 2,
+    itemSize: 0,
+}
+
 export const useGridConfig = (options?: Partial<GridConfig>): GridConfig => {
     const { width } = Dimensions.get('window');
 
     return useMemo(() => {
-        const numColumns = options?.numColumns ?? 3;
-        const spacing = options?.spacing ?? 2;
+        const numColumns = options?.numColumns ?? DEFAULT_CONFIG.numColumns;
+        const spacing = options?.spacing ?? DEFAULT_CONFIG.spacing;
 
         const itemSize = (width - (spacing * (numColumns - 1))) / numColumns;
 

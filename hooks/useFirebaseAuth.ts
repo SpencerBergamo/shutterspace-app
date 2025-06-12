@@ -1,7 +1,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 
-function useConvexAuthFromFirebase() {
+function useFirebaseAuth() {
     const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
     const [token, setToken] = useState<string | null>(null);
@@ -37,4 +37,4 @@ function useConvexAuthFromFirebase() {
     }
 }
 
-export default useConvexAuthFromFirebase;
+export default useFirebaseAuth;

@@ -1,7 +1,7 @@
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import useConvexAuthFromFirebase from "@/hooks/useConvexAuthFromFirebase";
+import useFirebaseAuth from "@/hooks/useFirebaseAuth";
 import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
@@ -50,7 +50,7 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <ConvexProviderWithAuth client={convex} useAuth={useConvexAuthFromFirebase}>
+      <ConvexProviderWithAuth client={convex} useAuth={useFirebaseAuth}>
         <ThemeProvider>
           <ProfileProvider>
             <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>

@@ -4,11 +4,13 @@ import { mutation, query } from "./_generated/server";
 
 export const createMedia = mutation({
     args: {
+        filename: v.string(),
+        createdAt: v.number(),
         albumId: v.id("albums"),
         uploadedById: v.id("profiles"),
         uploadedAt: v.number(),
-        filename: v.string(),
         downloadUrl: v.string(),
+        thumbnailUrl: v.string(),
         type: v.union(v.literal("image"), v.literal("video")),
         width: v.number(),
         height: v.number(),
@@ -25,15 +27,16 @@ export const createMedia = mutation({
         }
 
         const mediaId = await ctx.db.insert("media", {
+            filename: args.filename,
+            createdAt: args.createdAt,
             albumId: args.albumId,
             uploadedById: args.uploadedById,
-            filename: args.filename,
             downloadUrl: args.downloadUrl,
+            thumbnailUrl: args.thumbnailUrl,
             type: args.type,
             width: args.width,
             height: args.height,
             duration: args.duration,
-            uploadedAt: args.uploadedAt,
         });
 
         return mediaId;
@@ -43,31 +46,16 @@ export const createMedia = mutation({
 // TODO: add comments and likes to the query later
 export const getMediaForAlbum = query({
     args: {
+        paginationOpts: paginationOptsValidator,
         albumId: v.id("albums"),
-        pagination: paginationOptsValidator,
-    }, handler: async (ctx, { albumId, pagination }) => {
-        const media = await ctx.db.query('media')
-            .withIndex('by_albumId', q => q.eq('albumId', albumId))
+    }, handler: async (ctx, args) => {
+        return await ctx.db.query('media')
+            .withIndex('by_albumId', q => q.eq('albumId', args.albumId))
             .order('desc')
-            .paginate(pagination);
-
-        return media;
+            .paginate(args.paginationOpts);
     }
 });
 
-/// I think i would prefer to collect the entire media object than to separate the queries?
-/// how does convex order documents in descending order?
-
-export const getByAlbumId = query({
-    args: {
-        albumId: v.id("albums"),
-    },
-    handler: async (ctx, args) => {
-        const media = await ctx.db.query("media").withIndex("by_albumId", (q) => q.eq("albumId", args.albumId)).order("desc").collect();
-
-        return media;
-    }
-});
 
 export const deleteMedia = mutation({
     args: {

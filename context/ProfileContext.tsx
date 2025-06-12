@@ -57,6 +57,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
     const updateOptimistically = (updates: Partial<Profile>) => {
         if (!profile) return;
+        console.log("Updating profile optimistically", updates);
 
         const updatedProfile = { ...profile, ...updates };
         setProfile(updatedProfile);

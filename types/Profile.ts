@@ -1,26 +1,10 @@
+import { Id } from "@/convex/_generated/dataModel";
+
 export interface Profile {
-    _id: string;
+    _id: Id<'profiles'>;
     joined: number;
     authProvider: "email" | "google" | "apple";
     email: string;
     avatarUrl: string;
     nickname: string;
-
-    storageUsage: {
-        total: number;
-        limit: number;
-        lastCalculated: number;
-    },
-
-    friends: {
-        id: string;
-        status: "pending" | "accepted" | "rejected";
-        since: number;
-    }[];
-
-    blockedUsers: {
-        id: string;
-        since: number;
-        reason?: string;
-    }[];
 }

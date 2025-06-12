@@ -163,3 +163,16 @@ useEffect(() => {}, [/* Dependencies */])
     - should handle cleanup
 
 
+### Components Directory
+```
+components/
+  ├── ui/                    # Reusable UI components
+  │   ├── Button.tsx
+  │   ├── Input.tsx
+  │   ├── MediaTile.tsx
+  │   └── FloatingActionButton.tsx
+  ├── AlbumGrid.tsx         # Feature component
+  ├── ProfileHeader.tsx     # Feature component
+  └── layout/              # Layout components
+      └── MainLayout.tsx
+```

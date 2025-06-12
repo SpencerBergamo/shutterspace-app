@@ -8,26 +8,23 @@ export default defineSchema({
         email: v.string(),
         avatarUrl: v.string(),
         nickname: v.string(),
-        storageUsage: v.object({
-            total: v.number(),
-            limit: v.number(),
-            lastCalculated: v.number(),
-        }),
-        friends: v.array(
-            v.object({
-                id: v.string(),
-                status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("rejected")),
-                since: v.number(),
-            })
-        ),
-        blockedUsers: v.array(
-            v.object({
-                id: v.string(),
-                since: v.number(),
-                reason: v.optional(v.string()),
-            })
-        ),
     }),
+
+    friendships: defineTable({
+        userId: v.id('profiles'),
+        friendId: v.id('profiles'),
+        status: v.union(
+            v.literal('pending'),
+            v.literal('accepted'),
+            v.literal('blocked'),
+        ),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    }).index('by_userId', ['userId'])
+        .index('by_friendId', ['friendId'])
+        .index('by_user_and_status', ['userId', 'friendId', 'status'])
+        .index('by_pair', ['userId', 'friendId'])
+        .index('by_pair_reverse', ['friendId', 'userId']),
 
     albums: defineTable({
         title: v.string(),
@@ -56,11 +53,12 @@ export default defineSchema({
         .index("by_album_profileId", ["albumId", "profileId"]),
 
     media: defineTable({
+        filename: v.string(),
+        createdAt: v.number(),
         albumId: v.id("albums"),
         uploadedById: v.id("profiles"),
-        uploadedAt: v.number(),
-        filename: v.string(),
         downloadUrl: v.string(),
+        thumbnailUrl: v.string(),
         type: v.union(v.literal("image"), v.literal("video")),
         width: v.number(),
         height: v.number(),
