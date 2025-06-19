@@ -16,17 +16,7 @@ export const createMedia = mutation({
         height: v.number(),
         duration: v.optional(v.number()),
     }, handler: async (ctx, args) => {
-        const membership = await ctx.db
-            .query("albumMembers")
-            .withIndex("by_album_profileId", (q) => q.eq("albumId", args.albumId)
-                .eq("profileId", args.uploadedById))
-            .first();
-
-        if (!membership) {
-            throw new Error("You are not a member of this album");
-        }
-
-        const mediaId = await ctx.db.insert("media", {
+        return await ctx.db.insert("media", {
             filename: args.filename,
             createdAt: args.createdAt,
             albumId: args.albumId,
@@ -38,8 +28,6 @@ export const createMedia = mutation({
             height: args.height,
             duration: args.duration,
         });
-
-        return mediaId;
     }
 });
 
@@ -61,11 +49,12 @@ export const deleteMedia = mutation({
     args: {
         mediaId: v.id("media"),
         profileId: v.id("profiles"),
+        admin: v.optional(v.boolean()),
     }, handler: async (ctx, args) => {
         const media = await ctx.db.get(args.mediaId);
         if (!media) { throw new Error("Media not found"); }
 
-        const canDelete = media.uploadedById === args.profileId;
+        const canDelete = media.uploadedById === args.profileId || args.admin;;
 
         if (!canDelete) {
             throw new Error("You don't have permission to delete this media");

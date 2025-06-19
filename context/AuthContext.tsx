@@ -3,8 +3,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 
 // Define what's available in the context
 interface AuthContextType {
-    user: FirebaseAuthTypes.User | null;
     isLoading: boolean;
+    firebaseUser: FirebaseAuthTypes.User | null;
     signUpWithPassword: (email: string, password: string) => Promise<void>;
     signInWithPassword: (email: string, password: string) => Promise<void>;
     signInAnonymously: () => Promise<void>;
@@ -12,21 +12,23 @@ interface AuthContextType {
     signInWithApple: (idToken: string) => Promise<void>;
     // updateEmail: (email: string) => Promise<void>;
     // updatePassword: (password: string) => Promise<void>;
-    deleteAccount: () => Promise<void>;
     signOut: () => Promise<void>;
+    deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
+    const [firebaseUser, setFirebaseUser] = useState<FirebaseAuthTypes.User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         // Subscribe to auth state changes
         const unsubscribe = auth().onAuthStateChanged((user: FirebaseAuthTypes.User | null) => {
-            setUser(user);
-            setIsLoading(false);
+            setFirebaseUser(user);
+            if (!user) {
+                setIsLoading(false);
+            }
         });
 
         // Cleanup subscription
@@ -51,6 +53,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const signInAnonymously = async () => {
+        try {
+            await auth().signInAnonymously();
+        } catch (e) {
+            console.error('Sign in anonymously error:', e);
+            throw e;
+        }
+    }
+
+    const signInWithGoogle = async (idToken: string) => {
+        try {
+            await auth().signInWithCredential(GoogleAuthProvider.credential(idToken));
+        } catch (e) {
+            console.error('Sign in with Google error:', e);
+            throw e;
+        }
+    }
+
+    const signInWithApple = async (idToken: string) => {
+        try {
+            await auth().signInWithCredential(AppleAuthProvider.credential(idToken));
+        } catch (e) {
+            console.error('Sign in with Apple error:', e);
+            throw e;
+        }
+    };
+
     const signOut = async () => {
         try {
             await auth().signOut();
@@ -60,50 +89,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    // provide the actual implementations and actual firebase calls
-    // and the page will use `const {signInWithGoogle} = useAuth()`
-    const value = {
-        user,
-        isLoading,
-        signInWithPassword,
-        signUpWithPassword,
-        signOut,
-        signInAnonymously: async () => {
-            try {
-                await auth().signInAnonymously();
-            } catch (e) {
-                console.error('Sign in anonymously error:', e);
-                throw e;
-            }
-        },
-        signInWithGoogle: async (idToken: string) => {
-            try {
-                await auth().signInWithCredential(GoogleAuthProvider.credential(idToken));
-            } catch (e) {
-                console.error('Sign in with Google error:', e);
-                throw e;
-            }
-        },
-        signInWithApple: async (idToken: string) => {
-            try {
-                await auth().signInWithCredential(AppleAuthProvider.credential(idToken));
-            } catch (e) {
-                console.error('Sign in with Apple error:', e);
-                throw e;
-            }
-        },
-
-        deleteAccount: async () => {
-            try {
-                await auth().currentUser?.delete();
-            } catch (e) {
-                console.error('Delete account error:', e);
-                throw e;
-            }
+    const deleteAccount = async () => {
+        try {
+            await auth().currentUser?.delete();
+        } catch (e) {
+            console.error('Delete account error:', e);
+            throw e;
         }
     };
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return <AuthContext.Provider value={{
+        isLoading,
+        firebaseUser,
+        signInWithPassword,
+        signUpWithPassword,
+        signInAnonymously,
+        signInWithGoogle,
+        signInWithApple,
+        signOut,
+        deleteAccount,
+    }}>
+        {children}
+    </AuthContext.Provider>;
 }
 
 export function useAuth() {
@@ -112,4 +119,4 @@ export function useAuth() {
         throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
-} 
+}

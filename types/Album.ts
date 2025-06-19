@@ -2,17 +2,10 @@
 
 import { Id } from "@/convex/_generated/dataModel";
 
-export interface Album {
-    // albumId: string;
-    _id: Id<'albums'>;
+interface AlbumBase {
     title: string;
     description?: string;
-    thumbnail?: string;
-    createdAt: number;
-    updatedAt: number;
-    hostId: string;
-    joinCode: string;
-    openInvites: boolean;
+    openInvites?: boolean;
     permanentCover?: string;
     eventDetails?: {
         date?: number;
@@ -20,4 +13,15 @@ export interface Album {
         location?: string;
     };
     expiresAt?: number;
-} 
+}
+
+export interface Album extends AlbumBase {
+    _id: Id<'albums'>;
+    createdAt: number;
+    updatedAt: number;
+    hostId: Id<'profiles'>;
+    joinCode: string;
+}
+
+export type CreateAlbumData = AlbumBase;
+export type UpdateAlbumData = Partial<AlbumBase>;

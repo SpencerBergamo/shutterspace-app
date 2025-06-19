@@ -3,12 +3,13 @@ import { v } from "convex/values";
 
 export default defineSchema({
     profiles: defineTable({
+        firebaseUID: v.string(),
         joined: v.number(),
         authProvider: v.union(v.literal("email"), v.literal("google"), v.literal("apple")),
         email: v.string(),
         avatarUrl: v.string(),
         nickname: v.string(),
-    }),
+    }).index('by_firebase_uid', ['firebaseUID']),
 
     friendships: defineTable({
         userId: v.id('profiles'),

@@ -1,79 +1,36 @@
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Profile } from "@/types/Profile";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import { useQuery } from "convex/react";
-import { createContext, useContext, useEffect, useState } from "react";
-import { useAuth } from "./AuthContext";
-
+import { createContext, useContext } from "react";
 
 interface ProfileContextType {
-    profile: Profile | null;
-    isLoading: boolean;
-    error: Error | null;
-    updateOptimistically: (update: Partial<Profile>) => void;
+    profile: Profile;
+    profileId: Id<'profiles'>;
 }
 
-const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
+const ProfileContext = createContext<ProfileContextType | null>(null);
 
-const CACHE_KEY = '@profile_cache';
+export const ProfileProvider = ({ children, firebaseUser }: {
+    children: React.ReactNode;
+    firebaseUser: FirebaseAuthTypes.User;
+}) => {
+    const profile = useQuery(api.profile.getProfile, {
+        firebaseUID: firebaseUser.uid
+    });
 
-export function ProfileProvider({ children }: { children: React.ReactNode }) {
-    const { user } = useAuth();
-    const [profile, setProfile] = useState<Profile | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
+    if (!profile) return null;
 
-    // query the profile from convex
-    const convexProfile = useQuery(api.profile.getProfile, user ? {
-        userId: user.uid as Id<'profiles'>
-    } : 'skip');
-
-    useEffect(() => {
-        async function loadProfile() {
-            if (!user) {
-                setProfile(null);
-                setIsLoading(false);
-                return;
-            }
-
-            try {
-                const cached = await AsyncStorage.getItem(CACHE_KEY);
-                if (cached) {
-                    setProfile(JSON.parse(cached));
-                }
-
-                if (convexProfile) {
-                    setProfile(convexProfile);
-                    await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(convexProfile));
-                }
-            } catch (e) {
-                setError(e instanceof Error ? e : new Error("Failed to load Profile"));
-            } finally { setIsLoading(false); }
-        }
-
-        loadProfile();
-    }, [user, convexProfile]);
-
-    const updateOptimistically = (updates: Partial<Profile>) => {
-        if (!profile) return;
-        console.log("Updating profile optimistically", updates);
-
-        const updatedProfile = { ...profile, ...updates };
-        setProfile(updatedProfile);
-        AsyncStorage.setItem(CACHE_KEY, JSON.stringify(updatedProfile))
-            .catch(e => console.error("Failed to cache profile update: ", e));
-    }
-
-    return (<ProfileContext.Provider value={{ profile, isLoading, error, updateOptimistically }}>
+    return <ProfileContext.Provider value={{ profile, profileId: profile._id }}>
         {children}
-    </ProfileContext.Provider>);
+    </ProfileContext.Provider>;
 }
 
 export function useProfile() {
     const context = useContext(ProfileContext);
-    if (context === undefined) {
-        throw new Error("useProfile must be used within a ProfileProvider");
+    if (!context) {
+        throw new Error('useProfile must be used within a ProfileProvider');
     }
     return context;
 }

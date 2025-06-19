@@ -3,22 +3,23 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
 
-
 export const getProfile = query({
     args: {
-        userId: v.id('profiles')
-    }, handler: async (ctx, { userId }) => {
-        const profile = await ctx.db.get(userId);
+        firebaseUID: v.string(),
+    }, handler: async (ctx, { firebaseUID }) => {
+        return await ctx.db.query('profiles')
+            .withIndex('by_firebase_uid', q => q.eq('firebaseUID', firebaseUID))
+            .first();
 
-        if (!profile) return null;
+        // if (!profile) return null;
 
-        return {
-            _id: profile._id,
-            joined: profile.joined,
-            authProvider: profile.authProvider,
-            email: profile.email,
-            avatarUrl: profile.avatarUrl,
-            nickname: profile.nickname,
-        }
+        // return {
+        //     _id: profile._id,
+        //     joined: profile.joined,
+        //     authProvider: profile.authProvider,
+        //     email: profile.email,
+        //     avatarUrl: profile.avatarUrl,
+        //     nickname: profile.nickname,
+        // }
     }
 });

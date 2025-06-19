@@ -1,13 +1,13 @@
-import { albumMockData } from '@/config/env';
+import { ASSETS } from '@/constants/assets';
 import { useAuth } from '@/context/AuthContext';
 import { useProfile } from '@/context/ProfileContext';
+import { useNetworkListener } from '@/hooks/useNetworkListener';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from "@kolking/react-native-avatar";
 import { Image } from 'expo-image';
-import { useNetworkState } from 'expo-network';
 import { router, Stack } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { defaultScreenOptions } from '../../components/navigation';
 
 /* Common header configs, nav patterns, shared nav UI elements,
 nav state management, and common nav behaviors. 
@@ -16,11 +16,11 @@ Layouts are used to wrap the app's content and provide a consistent UI structure
 They are used to manage the app's navigation and state. */
 
 export default function AppLayout() {
-    const { user } = useAuth();
+    const { firebaseUser: user } = useAuth();
     const { profile } = useProfile();
 
     function NetworkHeader() {
-        const isConnected = useNetworkState();
+        const isConnected = useNetworkListener();
 
         if (!isConnected.isConnected) {
             return (
@@ -33,11 +33,25 @@ export default function AppLayout() {
 
         return (
             <Image
-                source={require('@/assets/logos/logo_simple.svg')}
+                source={ASSETS.logoSimple}
                 style={{ height: 24, width: 140 }}
                 contentFit="contain" />
         );
     }
+
+    const headerRight = () => (
+        <TouchableOpacity
+            onPress={() => { router.push('/profile') }}
+            style={{ marginRight: 16 }}>
+            <Avatar
+                source={{ uri: profile.avatarUrl }}
+                email={profile.email}
+                size={32}
+            />
+        </TouchableOpacity>
+    );
+
+
 
     const BackButton = () => (
         <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 16 }} >
@@ -46,69 +60,28 @@ export default function AppLayout() {
     )
 
     return (
-        <SafeAreaView edges={['bottom']} style={styles.container}>
-            <Stack screenOptions={{
-                headerShown: false,
-                headerTitleAlign: 'left',
-                headerBackButtonDisplayMode: 'minimal',
-                headerBackground: () => (
-                    <View style={{ backgroundColor: '#F2F1F6', flex: 1 }} />
-                )
-            }}>
-                {/* Home Screen */}
-                <Stack.Screen
-                    name="home"
-                    options={{
-                        headerTitle: () => (<NetworkHeader />),
-
-                        headerRight: () => (
-                            <TouchableOpacity
-                                onPress={() => { router.push('/profile') }}
-                                style={{ marginRight: 16 }}>
-                                <Avatar
-                                    source={{ uri: profile?.avatarUrl }}
-                                    email={profile?.email || user?.email || ''}
-                                    size={32}
-                                />
-                            </TouchableOpacity>
-                        ),
-                    }} />
-
-                {/* Album Screen */}
-                <Stack.Screen
-                    name="album/[albumId]"
-                    options={({ route }) => {
-                        const { albumId } = route.params as { albumId: string };
-                        const album = albumMockData.find((album) => album.albumId === albumId);
-
-                        return {
-                            title: album?.title || "Album",
-                            headerLeft: () => <BackButton />,
-                            headerRight: () => (
-                                <TouchableOpacity onPress={() => { }} style={{ marginRight: 16 }}>
-                                    <Ionicons name='ellipsis-horizontal' size={24} color='black' />
-                                </TouchableOpacity>
-                            ),
-                        }
-                    }} />
-
-                {/* Profile Screen */}
-                <Stack.Screen
-                    name="profile"
-                    getId={({ }) => String(Date.now())}
-                    options={{
-                        title: "Profile",
-                        headerLeft: () => (<BackButton />),
-                    }} />
-
-                {/* Edit Profile Screen */}
-                <Stack.Screen name="edit-profile" options={{
-                    title: "Edit Profile",
-                    headerLeft: () => (<BackButton />)
+        <Stack screenOptions={defaultScreenOptions}>
+            <Stack.Screen
+                name="index"
+                options={{
+                    headerTitle: () => (<NetworkHeader />),
+                    headerRight: headerRight
                 }} />
 
-            </Stack>
-        </SafeAreaView>
+            <Stack.Screen
+                name="(profile)"
+                options={{
+                    headerShown: false
+                }} />
+
+            <Stack.Screen
+                name="(media)"
+                options={{ headerShown: false }} />
+
+            <Stack.Screen name="[albumId]" />
+
+            <Stack.Screen name="(create)" />
+        </Stack>
     );
 }
 

@@ -1,7 +1,8 @@
+import { ASSETS } from "@/constants/assets";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import useFirebaseAuth from "@/hooks/useFirebaseAuth";
+import useFirebaseToken from "@/hooks/useFirebaseToken";
 import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
@@ -10,35 +11,41 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 SplashScreen.preventAutoHideAsync();
 
-function RootLayoutNav() {
-  const { user } = useAuth();
+function AuthLayout() {
+  const { firebaseUser, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     const inAppGroup = segments[0] === '(app)';
 
-    if (user && !inAppGroup) {
-      router.replace("/(app)/home");
+    if (firebaseUser && !inAppGroup) {
+      router.replace('/(app)/home');
     }
-  }, [user, segments]);
+  }, [firebaseUser, segments]);
 
-  return (
-    <Stack screenOptions={{ headerShadowVisible: false }}>
-      <Stack.Screen name='(app)' options={{ headerShown: false }} />
-      <Stack.Screen name='(auth)' options={{ headerShown: false }} />
+  if (isLoading) return null;
+
+  return <>
+    <Stack >
+      {firebaseUser ? (
+        <ProfileProvider firebaseUser={firebaseUser}>
+          <Stack.Screen name='(app)' options={{ headerShown: false }} />
+        </ProfileProvider>
+      ) : (
+        <Stack.Screen name='(auth)' options={{ headerShown: false }} />
+      )}
     </Stack>
-  );
+  </>;
 }
 
 export default function RootLayout() {
+
   const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
     unsavedChangesWarning: false,
   });
 
-  const [fontsLoaded] = useFonts({
-    'SansitaOne': require("../assets/fonts/SansitaOne.ttf")
-  });
+  const [fontsLoaded] = useFonts(ASSETS.fonts);
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded) {
@@ -50,13 +57,11 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <ConvexProviderWithAuth client={convex} useAuth={useFirebaseAuth}>
+      <ConvexProviderWithAuth client={convex} useAuth={useFirebaseToken}>
         <ThemeProvider>
-          <ProfileProvider>
-            <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-              <RootLayoutNav />
-            </GestureHandlerRootView>
-          </ProfileProvider>
+          <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+            <AuthLayout />
+          </GestureHandlerRootView>
         </ThemeProvider>
       </ConvexProviderWithAuth>
     </AuthProvider>
