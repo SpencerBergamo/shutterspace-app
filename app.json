@@ -37,9 +37,8 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-router",
       "@react-native-firebase/app",
-      "@react-native-firebase/auth",
-      "@react-native-firebase/storage",
       [
         "expo-build-properties",
         {
@@ -48,7 +47,6 @@
           }
         }
       ],
-      "expo-router",
       [
         "expo-media-library",
         {
@@ -84,10 +82,9 @@
       "react-native-compressor"
     ],
     "experiments": {
-      "typedRoutes": true
+      "turbomodule": true
     },
     "extra": {
-      "router": {},
       "eas": {
         "projectId": "6b2ea930-bc68-4cea-9720-6f4df870d758"
       }

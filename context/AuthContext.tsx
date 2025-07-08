@@ -1,10 +1,11 @@
-import auth, { AppleAuthProvider, FirebaseAuthTypes, GoogleAuthProvider } from '@react-native-firebase/auth';
+import auth, { AppleAuthProvider, FirebaseAuthTypes, GoogleAuthProvider, getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
 import { createContext, useContext, useEffect, useState } from 'react';
 
 // Define what's available in the context
 interface AuthContextType {
     isLoading: boolean;
     firebaseUser: FirebaseAuthTypes.User | null;
+    getToken: (forceRefreshToken?: boolean) => Promise<string | null>;
     signUpWithPassword: (email: string, password: string) => Promise<void>;
     signInWithPassword: (email: string, password: string) => Promise<void>;
     signInAnonymously: () => Promise<void>;
@@ -22,18 +23,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [firebaseUser, setFirebaseUser] = useState<FirebaseAuthTypes.User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    function handleAuthStateChanged(user: FirebaseAuthTypes.User | null) {
+        setFirebaseUser(user);
+        setIsLoading(false);
+    }
+
+    const getToken = async (forceRefreshToken = false) => {
+        if (!firebaseUser) return null;
+        try {
+            return await firebaseUser.getIdToken(forceRefreshToken);
+        } catch (e) {
+            console.error('forceRefreshToken Error: ', e);
+            return null;
+        }
+    }
+
     useEffect(() => {
         // Subscribe to auth state changes
-        const unsubscribe = auth().onAuthStateChanged((user: FirebaseAuthTypes.User | null) => {
-            setFirebaseUser(user);
-            if (!user) {
-                setIsLoading(false);
-            }
-        });
+        // const unsubscribe = auth().onAuthStateChanged((user: FirebaseAuthTypes.User | null) => {
+        //     setFirebaseUser(user);
+        //     setIsLoading(false);
+        // });
+        const unsubscribe = onAuthStateChanged(getAuth(), handleAuthStateChanged);
 
         // Cleanup subscription
         return unsubscribe;
     }, []);
+
 
     const signUpWithPassword = async (email: string, password: string) => {
         try {
@@ -98,9 +114,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    if (isLoading) return null;
+
     return <AuthContext.Provider value={{
         isLoading,
         firebaseUser,
+        getToken,
         signInWithPassword,
         signUpWithPassword,
         signInAnonymously,

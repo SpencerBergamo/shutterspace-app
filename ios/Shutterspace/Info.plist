@@ -59,10 +59,22 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSCameraUsageDescription</key>
+    <string>Shutterspace needs access to your camera to let you take photos.</string>
+    <key>NSContactsUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your contacts</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Shutterspace needs access to your microphone to let you take videos.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>The app needs access to your photos to let you save them.</string>
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>The app needs access to your photos to let you pick them.</string>
+    <string>Shutterspace needs access to your photos to let you share them.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

@@ -1,19 +1,17 @@
 import { useAuth } from "@/context/AuthContext";
+import { useCallback, useMemo } from "react";
 
 export default function useFirebaseToken() {
-    const { firebaseUser: user } = useAuth();
+    const { isLoading, firebaseUser: user, getToken } = useAuth();
 
-    return {
-        isLoading: user === undefined,
+    const fetchAccessToken = useCallback(async ({ forceRefreshToken }: { forceRefreshToken: boolean }) => {
+        return await getToken(forceRefreshToken);
+    }, [getToken]);
+
+    return useMemo(() => ({
+        isLoading: isLoading,
         isAuthenticated: !!user,
-        fetchAccessToken: async ({ forceRefreshToken }: { forceRefreshToken: boolean }) => {
-            if (!user) return null;
-            try {
-                return await user.getIdToken(forceRefreshToken);
-            } catch (e) {
-                console.error("Error fetching token", e);
-                return null;
-            }
-        }
-    }
+        fetchAccessToken,
+    }), [user, isLoading, fetchAccessToken]);
+
 }

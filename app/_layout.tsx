@@ -1,69 +1,64 @@
 import { ASSETS } from "@/constants/assets";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { ProfileProvider } from "@/context/ProfileContext";
-import { ThemeProvider } from "@/context/ThemeContext";
 import useFirebaseToken from "@/hooks/useFirebaseToken";
 import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
-import { useCallback, useEffect } from "react";
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SplashScreen, Stack } from "expo-router";
+import { useCallback, useMemo } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
 
 function AuthLayout() {
-  const { firebaseUser, isLoading } = useAuth();
-  const segments = useSegments();
-  const router = useRouter();
+    const { firebaseUser, isLoading } = useAuth();
 
-  useEffect(() => {
-    const inAppGroup = segments[0] === '(app)';
+    if (isLoading) return null;
 
-    if (firebaseUser && !inAppGroup) {
-      router.replace('/(app)/home');
-    }
-  }, [firebaseUser, segments]);
+    return (
+        <Stack screenOptions={{ headerShown: false }}>
+            {/* <Stack.Protected guard={firebaseUser ? true : false}>
+                <Stack.Screen name="(app)" />
+            </Stack.Protected>
+            <Stack.Protected guard={!firebaseUser }>
+                <Stack.Screen name="(auth)" />
+            </Stack.Protected> */}
+            {firebaseUser ? (
+                <Stack.Screen name="(app)" />
+            ) : (
+                <Stack.Screen name="(auth)" />
+            )}
+        </Stack>
+    );
 
-  if (isLoading) return null;
-
-  return <>
-    <Stack >
-      {firebaseUser ? (
-        <ProfileProvider firebaseUser={firebaseUser}>
-          <Stack.Screen name='(app)' options={{ headerShown: false }} />
-        </ProfileProvider>
-      ) : (
-        <Stack.Screen name='(auth)' options={{ headerShown: false }} />
-      )}
-    </Stack>
-  </>;
 }
 
 export default function RootLayout() {
+    // const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
+    //     unsavedChangesWarning: false,
+    // });
+    const convexUrl = process.env.EXPO_PUBLIC_CONVEX_URL!;
+    const convex = useMemo(() => new ConvexReactClient(convexUrl, {
+        unsavedChangesWarning: false,
+    }), [convexUrl]);
 
-  const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
-    unsavedChangesWarning: false,
-  });
+    console.log(convexUrl);
 
-  const [fontsLoaded] = useFonts(ASSETS.fonts);
 
-  const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded) {
-      await SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
 
-  if (!fontsLoaded) return null;
+    const [fontsLoaded] = useFonts(ASSETS.fonts);
+    const onLayoutRootView = useCallback(async () => {
+        if (fontsLoaded) await SplashScreen.hideAsync();
+    }, [fontsLoaded]);
 
-  return (
-    <AuthProvider>
-      <ConvexProviderWithAuth client={convex} useAuth={useFirebaseToken}>
-        <ThemeProvider>
-          <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-            <AuthLayout />
-          </GestureHandlerRootView>
-        </ThemeProvider>
-      </ConvexProviderWithAuth>
-    </AuthProvider>
-  );
+    if (!fontsLoaded) return null;
+
+    return (
+        <AuthProvider>
+            <ConvexProviderWithAuth client={convex} useAuth={useFirebaseToken}>
+                <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+                    <AuthLayout />
+                </GestureHandlerRootView>
+            </ConvexProviderWithAuth>
+        </AuthProvider>
+    );
 }

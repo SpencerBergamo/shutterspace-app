@@ -1,5 +1,5 @@
 export const ASSETS = {
-    defaultAlbumCover: require('@/assets/images/default-album-cover.png'),
+    defaultAlbumCover: require('@/assets/images/partial-react-logo.png'),
     logoSimple: require('@/assets/logos/logo_simple.svg'),
 
     fonts: {
