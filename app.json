@@ -7,6 +7,9 @@
     "icon": "./assets/images/icon.png",
     "scheme": "shutterspace",
     "userInterfaceStyle": "automatic",
+    "deepLinking": {
+      "url": "https://shutterspace.app"
+    },
     "newArchEnabled": true,
     "ios": {
       "usesAppleSignIn": true,

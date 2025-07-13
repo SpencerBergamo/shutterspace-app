@@ -22,6 +22,8 @@ function AuthLayout() {
             <Stack.Protected guard={!firebaseUser }>
                 <Stack.Screen name="(auth)" />
             </Stack.Protected> */}
+            <Stack.Screen name="join/[albumId]" />
+            <Stack.Screen name="deep-link-test" />
             {firebaseUser ? (
                 <Stack.Screen name="(app)" />
             ) : (
