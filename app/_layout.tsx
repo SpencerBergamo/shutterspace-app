@@ -1,10 +1,9 @@
 import { ASSETS } from "@/constants/assets";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import useFirebaseToken from "@/hooks/useFirebaseToken";
-import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
@@ -16,12 +15,6 @@ function AuthLayout() {
 
     return (
         <Stack screenOptions={{ headerShown: false }}>
-            {/* <Stack.Protected guard={firebaseUser ? true : false}>
-                <Stack.Screen name="(app)" />
-            </Stack.Protected>
-            <Stack.Protected guard={!firebaseUser }>
-                <Stack.Screen name="(auth)" />
-            </Stack.Protected> */}
             {firebaseUser ? (
                 <Stack.Screen name="(app)" />
             ) : (
@@ -29,22 +22,9 @@ function AuthLayout() {
             )}
         </Stack>
     );
-
 }
 
 export default function RootLayout() {
-    // const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
-    //     unsavedChangesWarning: false,
-    // });
-    const convexUrl = process.env.EXPO_PUBLIC_CONVEX_URL!;
-    const convex = useMemo(() => new ConvexReactClient(convexUrl, {
-        unsavedChangesWarning: false,
-    }), [convexUrl]);
-
-    console.log(convexUrl);
-
-
-
     const [fontsLoaded] = useFonts(ASSETS.fonts);
     const onLayoutRootView = useCallback(async () => {
         if (fontsLoaded) await SplashScreen.hideAsync();
@@ -53,12 +33,12 @@ export default function RootLayout() {
     if (!fontsLoaded) return null;
 
     return (
-        <AuthProvider>
-            <ConvexProviderWithAuth client={convex} useAuth={useFirebaseToken}>
+        <ThemeProvider>
+            <AuthProvider>
                 <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
                     <AuthLayout />
                 </GestureHandlerRootView>
-            </ConvexProviderWithAuth>
-        </AuthProvider>
+            </AuthProvider>
+        </ThemeProvider>
     );
 }

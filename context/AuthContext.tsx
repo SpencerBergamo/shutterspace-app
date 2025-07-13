@@ -1,18 +1,21 @@
-import auth, { AppleAuthProvider, FirebaseAuthTypes, GoogleAuthProvider, getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
 import { createContext, useContext, useEffect, useState } from 'react';
+
+// Mock user for demo purposes
+interface MockUser {
+    email: string;
+    uid: string;
+}
 
 // Define what's available in the context
 interface AuthContextType {
     isLoading: boolean;
-    firebaseUser: FirebaseAuthTypes.User | null;
+    firebaseUser: MockUser | null;
     getToken: (forceRefreshToken?: boolean) => Promise<string | null>;
     signUpWithPassword: (email: string, password: string) => Promise<void>;
     signInWithPassword: (email: string, password: string) => Promise<void>;
     signInAnonymously: () => Promise<void>;
     signInWithGoogle: (idToken: string) => Promise<void>;
     signInWithApple: (idToken: string) => Promise<void>;
-    // updateEmail: (email: string) => Promise<void>;
-    // updatePassword: (password: string) => Promise<void>;
     signOut: () => Promise<void>;
     deleteAccount: () => Promise<void>;
 }
@@ -20,98 +23,63 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [firebaseUser, setFirebaseUser] = useState<FirebaseAuthTypes.User | null>(null);
+    // Mock user for demo purposes - simulate being logged in
+    const [firebaseUser, setFirebaseUser] = useState<MockUser | null>({ 
+        email: 'demo@shutterspace.com', 
+        uid: 'demo-user-123' 
+    });
     const [isLoading, setIsLoading] = useState(true);
-
-    function handleAuthStateChanged(user: FirebaseAuthTypes.User | null) {
-        setFirebaseUser(user);
-        setIsLoading(false);
-    }
 
     const getToken = async (forceRefreshToken = false) => {
         if (!firebaseUser) return null;
-        try {
-            return await firebaseUser.getIdToken(forceRefreshToken);
-        } catch (e) {
-            console.error('forceRefreshToken Error: ', e);
-            return null;
-        }
+        // Return a mock token for demo
+        return 'mock-token-123';
     }
 
     useEffect(() => {
-        // Subscribe to auth state changes
-        // const unsubscribe = auth().onAuthStateChanged((user: FirebaseAuthTypes.User | null) => {
-        //     setFirebaseUser(user);
-        //     setIsLoading(false);
-        // });
-        const unsubscribe = onAuthStateChanged(getAuth(), handleAuthStateChanged);
+        // Simulate loading time and set user as authenticated
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
 
-        // Cleanup subscription
-        return unsubscribe;
+        return () => clearTimeout(timer);
     }, []);
 
-
     const signUpWithPassword = async (email: string, password: string) => {
-        try {
-            await auth().createUserWithEmailAndPassword(email, password);
-        } catch (error) {
-            console.error('Sign up error:', error);
-            throw error;
-        }
+        // Mock implementation
+        console.log('Mock sign up:', email);
     };
 
     const signInWithPassword = async (email: string, password: string) => {
-        try {
-            await auth().signInWithEmailAndPassword(email, password);
-        } catch (error) {
-            console.error('Sign in error:', error);
-            throw error;
-        }
+        // Mock implementation
+        console.log('Mock sign in:', email);
     };
 
     const signInAnonymously = async () => {
-        try {
-            await auth().signInAnonymously();
-        } catch (e) {
-            console.error('Sign in anonymously error:', e);
-            throw e;
-        }
+        // Mock implementation
+        console.log('Mock anonymous sign in');
     }
 
     const signInWithGoogle = async (idToken: string) => {
-        try {
-            await auth().signInWithCredential(GoogleAuthProvider.credential(idToken));
-        } catch (e) {
-            console.error('Sign in with Google error:', e);
-            throw e;
-        }
+        // Mock implementation
+        console.log('Mock Google sign in');
     }
 
     const signInWithApple = async (idToken: string) => {
-        try {
-            await auth().signInWithCredential(AppleAuthProvider.credential(idToken));
-        } catch (e) {
-            console.error('Sign in with Apple error:', e);
-            throw e;
-        }
+        // Mock implementation
+        console.log('Mock Apple sign in');
     };
 
     const signOut = async () => {
-        try {
-            await auth().signOut();
-        } catch (error) {
-            console.error('Sign out error:', error);
-            throw error;
-        }
+        // Mock implementation
+        console.log('Mock sign out');
+        setFirebaseUser(null);
     };
 
     const deleteAccount = async () => {
-        try {
-            await auth().currentUser?.delete();
-        } catch (e) {
-            console.error('Delete account error:', e);
-            throw e;
-        }
+        // Mock implementation
+        console.log('Mock delete account');
+        setFirebaseUser(null);
     };
 
     if (isLoading) return null;
