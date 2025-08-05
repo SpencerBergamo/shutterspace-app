@@ -57,25 +57,30 @@ export async function processImage(
         // Compression phase (0-30%)
         const compressedUri = await Image.compress(asset.uri, {
             output: 'jpg',
-            quality: 0.8,
+            quality: 0.9,
         });
         onProgress(30);
 
         // Upload phase (30-90%)
-        uploadTask = storageRef.child(`images/${media.filename}.jpg`).putFile(compressedUri, {
-            contentType: 'image/jpeg',
-        });
 
         const downloadUrl = await new Promise<string>((resolve, reject) => {
-            uploadTask?.on('state_changed',
+            uploadTask = storageRef.child(`images/${media.filename}.jpg`).putFile(compressedUri, {
+                contentType: 'image/jpeg',
+            });
+
+            uploadTask.on('state_changed',
                 (snapshot) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     onProgress(30 + (progress * 0.6));
                 },
-                (error) => reject(error),
+                (error) => {
+                    uploadTask?.cancel();
+                    reject(error);
+                },
                 async () => {
                     const url = await uploadTask?.snapshot?.ref.getDownloadURL();
                     if (url) resolve(url);
+                    else reject(new Error(`Failed to get image download URL`));
                 }
             );
         });
@@ -99,17 +104,8 @@ export async function processImage(
         onProgress(100);
         onSuccess();
     } catch (e: any) {
-        console.error('Error processing image:', e);
-
-        if (uploadTask) {
-            try {
-                uploadTask.cancel();
-            } catch (cancelError) {
-                console.warn('Failed to cancel upload task: ', cancelError);
-            }
-        }
-
-        onError(e.message || 'Image processing failed');
+        console.error('mediaFactory:processImage (FAIL)', e);
+        onError('unknown');
     }
 }
 
@@ -131,9 +127,7 @@ export async function processVideo(
         // Video compression phase (5-35%)
         const compressedUri = await Video.compress(
             asset.uri,
-            {
-                compressionMethod: 'auto',
-            },
+            { compressionMethod: 'auto' },
             (progress) => onProgress(5 + (progress * 0.3))
         );
 
@@ -145,46 +139,53 @@ export async function processVideo(
 
         // Parallel upload phase (40-85%)
         const videoUploadPromise = new Promise<string>((resolve, reject) => {
-            videoTask = storageRef.child(`videos/${media.filename}.mp4`).putFile(compressedUri, {
-                contentType: 'video/mp4',
-            });
+            videoTask = storageRef
+                .child(`videos/${media.filename}.mp4`)
+                .putFile(compressedUri, { contentType: 'video/mp4' });
 
             videoTask.on('state_changed',
                 (snapshot: any) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     onProgress(40 + (progress * 0.35));
                 },
-                (error) => reject(new Error(`Video upload failed: ${error.message}`)),
+                (error) => {
+                    videoTask?.cancel();
+                    reject(error);
+                },
                 async () => {
                     try {
                         const url = await videoTask?.snapshot?.ref.getDownloadURL();
                         if (url) resolve(url);
                         else reject(new Error(`Failed to get video download URL`));
-                    } catch (e: any) {
-                        reject(new Error(`Unexpected error: ${e.message}`));
+                    } catch (error: any) {
+                        reject(error);
                     }
                 },
             );
         });
 
+
         const thumbnailUploadPromise = new Promise<string>((resolve, reject) => {
-            thumbnailTask = storageRef.child(`thumbnails/${media.filename}_thumb.jpg`).putFile(thumbnail.uri, {
-                contentType: 'image/jpeg',
-            });
+            thumbnailTask = storageRef
+                .child(`thumbnails/${media.filename}_thumb.jpg`)
+                .putFile(thumbnail.uri, { contentType: 'image/jpeg' });
 
             thumbnailTask.on('state_changed',
                 (snapshot: any) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     onProgress(75 + (progress * 0.1)); // 75-80%
                 },
-                (error: any) => reject(new Error(`Thumbnail upload failed: ${error.message}`)),
+                (error: any) => {
+                    thumbnailTask?.cancel();
+                    reject(error);
+                },
                 async () => {
                     try {
                         const url = await thumbnailTask?.snapshot?.ref.getDownloadURL();
                         if (url) resolve(url);
                         else reject(new Error(`Failed to get thumbnail download URL`));
-                    } catch (e: any) {
-                        reject(new Error(`Unexpected error: ${e.message}`));
+                    } catch (error: any) {
+                        reject(error);
                     }
                 },
             );
@@ -209,6 +210,7 @@ export async function processVideo(
         onProgress(100);
         onSuccess();
     } catch (e: any) {
-        onError(e.message);
+        console.error('mediaFactory:processVideo (FAIL)', e);
+        onError('unknown');
     }
 }

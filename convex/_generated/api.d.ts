@@ -19,6 +19,7 @@ import type * as cloudinary from "../cloudinary.js";
 import type * as comment from "../comment.js";
 import type * as media from "../media.js";
 import type * as profile from "../profile.js";
+import type * as r2 from "../r2.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   comment: typeof comment;
   media: typeof media;
   profile: typeof profile;
+  r2: typeof r2;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

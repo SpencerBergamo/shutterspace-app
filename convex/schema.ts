@@ -28,21 +28,21 @@ export default defineSchema({
         .index('by_pair_reverse', ['friendId', 'userId']),
 
     albums: defineTable({
-        title: v.string(),
-        description: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),
         hostId: v.id("profiles"),
-        joinCode: v.string(),
-        openInvites: v.boolean(),
-        permanentCover: v.optional(v.string()),
-        eventDetails: v.optional(v.object({
-            date: v.optional(v.number()),
-            time: v.optional(v.string()),
-            location: v.optional(v.string()),
+        title: v.string(),
+        description: v.optional(v.string()),
+        coverImageUrl: v.optional(v.string()),
+        staticCover: v.boolean(),
+        dateRange: v.optional(v.object({
+            start: v.string(),
+            end: v.optional(v.string()),
         })),
+        location: v.optional(v.string()),
+        openInvites: v.boolean(),
         expiresAt: v.optional(v.number()),
-    }).index("by_joinCode", ["joinCode"]),
+    }),
 
     albumMembers: defineTable({
         albumId: v.id("albums"),

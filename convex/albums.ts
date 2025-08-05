@@ -13,7 +13,7 @@ export const getAlbumMembership = query({
                 .eq('profileId', profileId))
             .first();
 
-        return membership?.role || null;
+        return membership?.role;
     }
 });
 
@@ -42,15 +42,20 @@ export const getUserAlbums = query({
 
 export const createAlbum = mutation({
     args: {
+        createdAt: v.number(),
+        updatedAt: v.number(),
+        hostId: v.id("profiles"),
         title: v.string(),
         description: v.optional(v.string()),
-        openInvites: v.optional(v.boolean()),
-        permanentCover: v.optional(v.string()),
-        eventDetails: v.optional(v.object({
-            date: v.optional(v.number()),
-            time: v.optional(v.string()),
-            location: v.optional(v.string()),
+        coverImageUrl: v.optional(v.string()),
+        staticCover: v.boolean(),
+        dateRange: v.optional(v.object({
+            start: v.string(),
+            end: v.optional(v.string()),
         })),
+        location: v.optional(v.string()),
+        openInvites: v.boolean(),
+        expiresAt: v.optional(v.number()),
     }, handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) throw new Error("Not Authorized to Create Albums");
@@ -58,15 +63,17 @@ export const createAlbum = mutation({
         const userId = identity.subject as Id<'profiles'>;
 
         const albumId = await ctx.db.insert('albums', {
-            title: args.title,
-            description: args.description,
             createdAt: Date.now(),
             updatedAt: Date.now(),
             hostId: userId,
-            joinCode: '',
+            title: args.title,
+            description: args.description,
+            coverImageUrl: args.coverImageUrl,
+            staticCover: args.staticCover,
+            dateRange: args.dateRange,
+            location: args.location,
             openInvites: args.openInvites ?? true,
-            permanentCover: args.permanentCover,
-            eventDetails: args.eventDetails,
+            expiresAt: args.expiresAt,
         });
 
         await ctx.db.insert('albumMembers', {
@@ -85,13 +92,15 @@ export const updateAlbum = mutation({
         albumId: v.id('albums'),
         title: v.optional(v.string()),
         description: v.optional(v.string()),
-        openInvites: v.optional(v.boolean()),
-        permanentCover: v.optional(v.string()),
-        eventDetails: v.optional(v.object({
-            date: v.optional(v.number()),
-            time: v.optional(v.string()),
-            location: v.optional(v.string()),
+        coverImageUrl: v.optional(v.string()),
+        staticCover: v.boolean(),
+        dateRange: v.optional(v.object({
+            start: v.string(),
+            end: v.optional(v.string()),
         })),
+        location: v.optional(v.string()),
+        openInvites: v.boolean(),
+        expiresAt: v.optional(v.number()),
     }, handler: async (ctx, { albumId, ...updates }) => {
         // const identity = await ctx.auth.getUserIdentity();
         // if (!identity) throw new Error("Not authenticated");

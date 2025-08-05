@@ -20,7 +20,7 @@ export type OptimisticMedia = Omit<DbMedia, '_id' | 'downloadUrl' | 'thumbnailUr
     asset: ImagePickerAsset;
     status: 'pending' | 'uploading' | 'success' | 'error' | 'paused';
     progress?: number;
-    error?: 'network' | 'maxretries' | 'unknown';
+    error?: string;
 }
 
 export type Media = DbMedia | OptimisticMedia;

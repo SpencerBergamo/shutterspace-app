@@ -1,42 +1,62 @@
+import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Album, CreateAlbumData, UpdateAlbumData } from "@/types/Album";
+import { Album, AlbumFormData, MemberRole } from "@/types/Album";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback } from "react";
 
 interface UseAlbumsResult {
     albums: Album[];
     isLoading: boolean;
-    getAlbumById: (id: Id<'albums'>) => Album;
-    createAlbum: (data: CreateAlbumData) => Promise<Id<'albums'>>;
-    updateAlbum: (albumId: Id<'albums'>, data: UpdateAlbumData) => Promise<Id<'albums'> | null>;
+    getAlbumById: (id: Id<'albums'>) => Album | undefined;
+    createAlbum: (data: AlbumFormData) => Promise<Id<'albums'>>;
+    updateAlbum: (albumId: Id<'albums'>, data: AlbumFormData) => Promise<Id<'albums'> | null>;
     deleteAlbum: (albumId: Id<'albums'>) => Promise<void>;
 }
 
-export const useAlbums = (profileId: Id<'profiles'>): UseAlbumsResult => {
-    const albums = useQuery(api.albums.getUserAlbums, { profileId });
+export const useAlbums = (): UseAlbumsResult => {
+    const { profile } = useProfile();
+
+    const albums = useQuery(api.albums.getUserAlbums, { profileId: profile?._id });
     const createMutation = useMutation(api.albums.createAlbum);
     const updateMutation = useMutation(api.albums.updateAlbum);
     const deleteMutation = useMutation(api.albums.deleteAlbum);
 
     const getAlbumById = useCallback((albumId: Id<'albums'>) => {
-        const album = albums?.find(album => album._id === albumId);
-        if (!album) throw new Error('Album not found');
-        return album;
+        return albums?.find(album => album._id === albumId);
     }, [albums]);
 
-    const getMemberRole = useCallback(async (albumId: Id<'albums'>) => {
+    const getMemberRole = useCallback(async (albumId: Id<'albums'>): Promise<MemberRole> => {
         return useQuery(api.albums.getAlbumMembership, {
             albumId,
-            profileId,
+            profileId: profile._id,
+        }) || 'not-a-member';
+    }, [profile._id]);
+
+    const createAlbum = useCallback(async (data: AlbumFormData) => {
+
+        // TODO: Add cover image upload
+
+        // AlbumMember table insert
+
+        return await createMutation({
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            hostId: profile._id,
+            title: data.title,
+            description: data.description,
+            openInvites: data.openInvites ?? true,
+            // coverImageUrl: data.coverImageUrl,
+            staticCover: data.staticCover ?? false,
+            dateRange: data.dateRange ? {
+                start: data.dateRange.start.toISOString(),
+                end: data.dateRange.end?.toISOString(),
+            } : undefined,
+            location: data.location,
         });
-    }, [profileId]);
+    }, [createMutation, profile._id]);
 
-    const createAlbum = useCallback(async (data: CreateAlbumData) => {
-        return await createMutation(data);
-    }, [createMutation, profileId]);
-
-    const updateAlbum = useCallback(async (albumId: Id<'albums'>, data: UpdateAlbumData) => {
+    const updateAlbum = useCallback(async (albumId: Id<'albums'>, data: AlbumFormData) => {
 
         const role = await getMemberRole(albumId);
         if (!role || (role !== 'host' && role !== 'moderator')) {
@@ -45,7 +65,18 @@ export const useAlbums = (profileId: Id<'profiles'>): UseAlbumsResult => {
 
         return await updateMutation({
             albumId,
-            ...data,
+            ...{
+                title: data.title,
+                description: data.description,
+                coverImageUrl: data.coverImageUrl,
+                staticCover: data.staticCover ?? false,
+                dateRange: data.dateRange ? {
+                    start: data.dateRange.start.toISOString(),
+                    end: data.dateRange.end?.toISOString(),
+                } : undefined,
+                location: data.location,
+                openInvites: data.openInvites ?? true,
+            },
         });
     }, [updateMutation]);
 
@@ -56,7 +87,7 @@ export const useAlbums = (profileId: Id<'profiles'>): UseAlbumsResult => {
         }
 
         await deleteMutation({ albumId });
-    }, [deleteMutation, profileId]);
+    }, [deleteMutation, profile._id]);
 
     return {
         albums: albums || [],

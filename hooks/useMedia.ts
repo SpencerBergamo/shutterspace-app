@@ -3,7 +3,6 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { DbMedia, Media, OptimisticMedia } from "@/types/Media";
 import { createOptimisticMedia } from "@/utils/mediaFactory";
-import storage from "@react-native-firebase/storage";
 import { usePaginatedQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useMemo } from "react";
@@ -27,8 +26,8 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         { initialNumItems: 30 }
     );
 
-    const storageRef = storage().ref(`albums/${albumId}`);
-    const { queue, uploadMedia } = useUploadQueue(storageRef);
+    // const storageRef = storage().ref(`albums/${albumId}`);
+    const { queue, uploadMedia } = useUploadQueue(albumId);
 
     const media = useMemo(() => {
         return [

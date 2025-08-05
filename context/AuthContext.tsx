@@ -1,11 +1,20 @@
+/**
+ * @fileoverview Firebase Authentication Context
+ * @author Spencer Bergamo
+ * @created 2025-08-04
+ * 
+ * Documentation Reference:
+ * - React Native Firebase Auth: https://rnfirebase.io/auth/usage
+ */
+
 import auth, { AppleAuthProvider, FirebaseAuthTypes, GoogleAuthProvider, getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // Define what's available in the context
 interface AuthContextType {
-    isLoading: boolean;
-    firebaseUser: FirebaseAuthTypes.User | null;
-    getToken: (forceRefreshToken?: boolean) => Promise<string | null>;
+    user: FirebaseAuthTypes.User | null;
+
+    // -- Auth Methods --
     signUpWithPassword: (email: string, password: string) => Promise<void>;
     signInWithPassword: (email: string, password: string) => Promise<void>;
     signInAnonymously: () => Promise<void>;
@@ -20,33 +29,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [firebaseUser, setFirebaseUser] = useState<FirebaseAuthTypes.User | null>(null);
+    const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     function handleAuthStateChanged(user: FirebaseAuthTypes.User | null) {
-        setFirebaseUser(user);
+        setUser(user);
         setIsLoading(false);
     }
 
-    const getToken = async (forceRefreshToken = false) => {
-        if (!firebaseUser) return null;
-        try {
-            return await firebaseUser.getIdToken(forceRefreshToken);
-        } catch (e) {
-            console.error('forceRefreshToken Error: ', e);
-            return null;
-        }
-    }
+    const fetchAccessToken = useCallback(async ({ forceRefreshToken }: { forceRefreshToken: boolean }) => {
+        if (!user) return null;
+
+        return await user.getIdToken(forceRefreshToken);
+    }, [user]);
 
     useEffect(() => {
-        // Subscribe to auth state changes
-        // const unsubscribe = auth().onAuthStateChanged((user: FirebaseAuthTypes.User | null) => {
-        //     setFirebaseUser(user);
-        //     setIsLoading(false);
-        // });
         const unsubscribe = onAuthStateChanged(getAuth(), handleAuthStateChanged);
-
-        // Cleanup subscription
         return unsubscribe;
     }, []);
 
@@ -114,12 +112,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    if (isLoading) return null;
+    const contextValue = {
+        user,
 
-    return <AuthContext.Provider value={{
-        isLoading,
-        firebaseUser,
-        getToken,
+
+        // -- Auth Methods --
         signInWithPassword,
         signUpWithPassword,
         signInAnonymously,
@@ -127,9 +124,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithApple,
         signOut,
         deleteAccount,
-    }}>
-        {children}
-    </AuthContext.Provider>;
+    }
+
+    return (
+        <AuthContext.Provider value={contextValue}>
+            {children}
+        </AuthContext.Provider>
+    );
 }
 
 export function useAuth() {
