@@ -1,23 +1,52 @@
 import { useProfile } from '@/context/ProfileContext';
+import { validateNickname } from '@/utils/validators';
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { getStorage } from '@react-native-firebase/storage';
+import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
 import { Camera } from 'lucide-react-native';
-import React, { useRef, useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image } from 'react-native-compressor';
 
 export default function EditProfileScreen() {
-    const { profile } = useProfile();
+    const { profile, updateProfile } = useProfile();
     const { showActionSheetWithOptions } = useActionSheet();
+    const storage = getStorage();
 
-    const [isLoading, setIsLoading] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState<number | null>(null);
     const [nickname, setNickname] = useState(profile?.nickname);
-    const [avatar, setAvatar] = useState<string | ImagePicker.ImagePickerAsset>(profile?.avatarUrl);
-    const nicknameInputRef = useRef<TextInput>(null);
+    const [avatar, setAvatar] = useState<{ url?: string, uri?: ImagePicker.ImagePickerAsset }>({
+        url: profile?.avatarUrl,
+    });
+
+    const [validationState, setValidationState] = useState({
+        nickname: { isValid: false, error: null as string | null },
+    });
+
+    const isFormValid = useMemo(() => {
+        const hasNicknameChanged = nickname !== profile?.nickname;
+        const hasAvatarChanged = avatar.uri !== undefined;
+        const hasChanges = hasNicknameChanged || hasAvatarChanged;
+
+        return hasChanges && validationState.nickname.isValid;
+    }, [nickname, avatar.uri, validationState.nickname.isValid]);
 
     // Validation: nickname must be 3-30 characters
-    const isNicknameValid = nickname.length >= 3 && nickname.length <= 30;
-    const isSubmitEnabled = isNicknameValid && nickname !== profile?.nickname;
     const isApproachingLimit = nickname.length >= 25;
+
+    const nicknameInputRef = useRef<TextInput>(null);
+    const storageRef = storage.ref(`profiles/${profile._id}`);
+
+    useEffect(() => {
+        const nicknameError = validateNickname(nickname);
+
+        setValidationState(prev => ({
+            ...prev,
+            nickname: { isValid: !nicknameError, error: nicknameError },
+        }));
+    }, [nickname]);
 
     const handleAvatarPress = () => {
         console.log('Avatar pressed');
@@ -70,15 +99,76 @@ export default function EditProfileScreen() {
         }
 
         if (result.assets && result.assets.length > 0) {
-            setAvatar(result.assets[0]);
+            setAvatar({
+                uri: result.assets[0],
+            });
         }
-
     }
 
-    const handleChangeNickname = () => {
-        // TODO: Implement nickname change functionality
-        console.log('Change nickname pressed:', nickname);
-    };
+    const handleUpdateProfile = useCallback(async () => {
+        if (!validationState.nickname.isValid) return;
+
+        setLoadingProgress(0);
+
+        try {
+            if (avatar.uri) {
+                const compressedUri = await Image.compress(avatar.uri.uri, {
+                    output: 'jpg',
+                    quality: 0.9,
+                });
+
+                const downloadUrl = await new Promise<string>((resolve, reject) => {
+                    const uploadTask = storageRef.child(`avatar.jpg`).putFile(compressedUri);
+
+                    uploadTask.on('state_changed', (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        setLoadingProgress(progress);
+                    });
+
+                    uploadTask.then((snapshot) => {
+                        snapshot.ref.getDownloadURL().then(resolve).catch(reject);
+                    }).catch(reject);
+                });
+
+                await updateProfile({
+                    nickname,
+                    avatarUrl: downloadUrl,
+                })
+            } else {
+                await updateProfile({ nickname });
+            }
+
+        } catch (e) {
+            console.error('Error updating profile', e);
+        } finally {
+            setLoadingProgress(null);
+            router.back();
+        }
+    }, [nickname, avatar, updateProfile]);
+
+    const renderSubmitButton = useCallback(() => (
+        <TouchableOpacity
+            style={[
+                styles.submitButton,
+                !isFormValid && styles.submitButtonDisabled
+            ]}
+            onPress={handleUpdateProfile}
+            disabled={!isFormValid}
+            activeOpacity={0.8}
+        >
+            {loadingProgress ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+                <Text style={[
+                    styles.submitButtonText,
+                    !isFormValid && styles.submitButtonTextDisabled
+                ]}>
+                    Change Nickname
+                </Text>
+
+            )}
+        </TouchableOpacity>
+    ), [loadingProgress, isFormValid, handleUpdateProfile]);
 
     return (
         <View style={styles.container}>
@@ -88,8 +178,13 @@ export default function EditProfileScreen() {
                     style={styles.avatarContainer}
                     onPress={handleAvatarPress}
                     activeOpacity={0.8} >
-                    {/* <ProfileAvatar size={120} nickname={profile?.nickname} borderRadius={100} /> */}
-                    <View style={{ width: 120, height: 120, borderRadius: 100, backgroundColor: 'pink' }}></View>
+                    {avatar.uri || avatar.url ? (
+                        <ExpoImage
+                            source={{ uri: avatar.uri?.uri ?? avatar.url }}
+                            style={{ width: 120, height: 120, borderRadius: 100 }}
+                            contentFit="cover"
+                        />
+                    ) : (<View style={styles.avatarPlaceholder}></View>)}
                     <View style={styles.avatarOverlay}>
                         <Camera size={24} color="#FFFFFF" />
                     </View>
@@ -104,7 +199,7 @@ export default function EditProfileScreen() {
                     ref={nicknameInputRef}
                     style={[
                         styles.nicknameInput,
-                        nickname.length > 0 && !isNicknameValid && styles.inputError
+                        nickname.length > 0 && !validationState.nickname.isValid && styles.inputError
                     ]}
                     value={nickname}
                     onChangeText={setNickname}
@@ -119,31 +214,16 @@ export default function EditProfileScreen() {
                         {nickname.length}/30 characters
                     </Text>
                 )}
-                {nickname.length > 0 && !isNicknameValid && (
+                {nickname.length > 0 && !validationState.nickname.isValid && (
                     <Text style={styles.errorText}>
-                        Nickname must be between 3-30 characters
+                        {validationState.nickname.error}
                     </Text>
                 )}
             </View>
 
             {/* Submit Button */}
             <View style={styles.buttonSection}>
-                <TouchableOpacity
-                    style={[
-                        styles.submitButton,
-                        !isSubmitEnabled && styles.submitButtonDisabled
-                    ]}
-                    onPress={handleChangeNickname}
-                    disabled={!isSubmitEnabled}
-                    activeOpacity={0.8}
-                >
-                    <Text style={[
-                        styles.submitButtonText,
-                        !isSubmitEnabled && styles.submitButtonTextDisabled
-                    ]}>
-                        Change Nickname
-                    </Text>
-                </TouchableOpacity>
+                {renderSubmitButton()}
             </View>
         </View>
     );
@@ -179,6 +259,9 @@ const styles = StyleSheet.create({
     avatarPlaceholder: {
         backgroundColor: '#E5E5E5',
         color: '#999999',
+        width: 120,
+        height: 120,
+        borderRadius: 100,
     },
     avatarLabel: {
         fontSize: 14,

@@ -23,7 +23,6 @@ export default function NewAlbum() {
 
     const { createAlbum, isLoading } = useAlbums();
 
-
     const titleInputRef = useRef<TextInput>(null);
     const [isFormValid, setIsFormValid] = useState(false);
 

@@ -1,7 +1,7 @@
 import { Id } from "@/convex/_generated/dataModel";
 import { OptimisticMedia } from "@/types/Media";
 import { processImage, processVideo } from "@/utils/mediaFactory";
-import storage from "@react-native-firebase/storage";
+import { getStorage } from "@react-native-firebase/storage";
 import { useCallback, useState } from "react";
 
 type useUploadQueueResult = {
@@ -13,7 +13,8 @@ export const useUploadQueue = (
     albumId: Id<'albums'>,
 ): useUploadQueueResult => {
     const [queue, setQueue] = useState<OptimisticMedia[]>([]);
-    const storageRef = storage().ref(`albums/${albumId}`);
+    const storage = getStorage();
+    const storageRef = storage.ref(`albums/${albumId}`);
 
     const updateState = useCallback((mediaId: string, update: Partial<OptimisticMedia>) => {
         setQueue(prev => prev.map(

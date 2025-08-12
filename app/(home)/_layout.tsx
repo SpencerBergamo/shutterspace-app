@@ -80,11 +80,10 @@ function HomeLayout() {
 
 export default function Layout() {
     const { user } = useAuth();
-
     if (!user) throw new Error('Not Authenticated');
 
     return (
-        <ProfileProvider firebaseUser={user}>
+        <ProfileProvider fuid={user.uid}>
             <ThemeProvider>
                 <ActionSheetProvider>
                     <HomeLayout />
