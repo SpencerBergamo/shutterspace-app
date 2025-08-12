@@ -1,21 +1,79 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Avatar } from '@kolking/react-native-avatar';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useProfile } from '@/context/ProfileContext';
+import { useActionSheet } from '@expo/react-native-action-sheet';
+import * as ImagePicker from 'expo-image-picker';
+import { Camera } from 'lucide-react-native';
+import React, { useRef, useState } from 'react';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function EditProfileScreen() {
-    const [nickname, setNickname] = useState('');
-    const [avatarUrl, setAvatarUrl] = useState('');
+    const { profile } = useProfile();
+    const { showActionSheetWithOptions } = useActionSheet();
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [nickname, setNickname] = useState(profile?.nickname);
+    const [avatar, setAvatar] = useState<string | ImagePicker.ImagePickerAsset>(profile?.avatarUrl);
+    const nicknameInputRef = useRef<TextInput>(null);
 
     // Validation: nickname must be 3-30 characters
     const isNicknameValid = nickname.length >= 3 && nickname.length <= 30;
-    const isSubmitEnabled = isNicknameValid;
+    const isSubmitEnabled = isNicknameValid && nickname !== profile?.nickname;
     const isApproachingLimit = nickname.length >= 25;
 
     const handleAvatarPress = () => {
-        // TODO: Implement avatar selection functionality
-        console.log('Avatar pressed - open image picker');
+        console.log('Avatar pressed');
+        const options = ['Camera', 'Gallery', 'Cancel'];
+
+        showActionSheetWithOptions({
+            options,
+            cancelButtonIndex: 2,
+        }, (selectedIndex) => {
+            switch (selectedIndex) {
+                case 0:
+                    handleImagePicker('camera');
+                    break;
+                case 1:
+                    handleImagePicker('gallery');
+                    break;
+            }
+        });
+
     };
+
+    const handleImagePicker = async (source: 'camera' | 'gallery') => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission required', 'Please grant permission to access your media library');
+            return;
+        }
+
+        let result: ImagePicker.ImagePickerResult;
+
+        if (source === 'camera') {
+            result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                allowsMultipleSelection: false,
+                allowsEditing: true,
+                quality: 1,
+                exif: true,
+            });
+        } else if (source === 'gallery') {
+            result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsMultipleSelection: false,
+                allowsEditing: true,
+                quality: 1,
+                exif: true,
+            });
+        } else {
+            console.error('Not supported source', source);
+            return;
+        }
+
+        if (result.assets && result.assets.length > 0) {
+            setAvatar(result.assets[0]);
+        }
+
+    }
 
     const handleChangeNickname = () => {
         // TODO: Implement nickname change functionality
@@ -30,10 +88,10 @@ export default function EditProfileScreen() {
                     style={styles.avatarContainer}
                     onPress={handleAvatarPress}
                     activeOpacity={0.8} >
-                    <Avatar
-                        size={120} />
+                    {/* <ProfileAvatar size={120} nickname={profile?.nickname} borderRadius={100} /> */}
+                    <View style={{ width: 120, height: 120, borderRadius: 100, backgroundColor: 'pink' }}></View>
                     <View style={styles.avatarOverlay}>
-                        <Ionicons name="camera" size={24} color="#FFFFFF" />
+                        <Camera size={24} color="#FFFFFF" />
                     </View>
                 </TouchableOpacity>
             </View>
@@ -42,6 +100,8 @@ export default function EditProfileScreen() {
             <View style={styles.nicknameSection}>
                 <Text style={styles.sectionTitle}>Nickname</Text>
                 <TextInput
+
+                    ref={nicknameInputRef}
                     style={[
                         styles.nicknameInput,
                         nickname.length > 0 && !isNicknameValid && styles.inputError
@@ -109,8 +169,8 @@ const styles = StyleSheet.create({
         right: 0,
         backgroundColor: '#007AFF',
         borderRadius: 20,
-        width: 40,
-        height: 40,
+        width: 50,
+        height: 50,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 3,

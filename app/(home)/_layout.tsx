@@ -1,8 +1,9 @@
 import { useAuth } from "@/context/AuthContext";
 import { ProfileProvider, useProfile } from "@/context/ProfileContext";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
+import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { router, Stack } from "expo-router";
-import { X } from "lucide-react-native";
+import { ArrowLeft, X } from "lucide-react-native";
 import { useMemo } from "react";
 import { Pressable } from "react-native";
 
@@ -35,20 +36,25 @@ function HomeLayout() {
         </Pressable>
     ), [router]);
 
+    const backButton = useMemo(() => (
+        <Pressable style={[iconButton]} onPress={() => router.back()} >
+            <ArrowLeft size={iconButton.size} color={themeStyles.colors.text} />
+        </Pressable>
+    ), [router]);
+
     return (
         <Stack screenOptions={{
             headerBackButtonDisplayMode: 'minimal',
             headerShadowVisible: false,
             headerStyle: {
-                backgroundColor: 'white',
-            },
+                backgroundColor: '#F2F1F6',
+            }
         }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
 
             <Stack.Screen name="settings" options={{
                 headerTitle: 'Settings',
-                presentation: 'fullScreenModal',
-                headerLeft: () => closeButton,
+                headerLeft: () => backButton,
             }} />
 
             <Stack.Screen name="new-album" options={{
@@ -59,6 +65,11 @@ function HomeLayout() {
 
             <Stack.Screen name="album/[albumId]/index" options={{
                 headerShown: true,
+            }} />
+
+            <Stack.Screen name="(profile)/edit" options={{
+                headerTitle: 'Edit Profile',
+                headerLeft: () => backButton,
             }} />
 
 
@@ -75,7 +86,9 @@ export default function Layout() {
     return (
         <ProfileProvider firebaseUser={user}>
             <ThemeProvider>
-                <HomeLayout />
+                <ActionSheetProvider>
+                    <HomeLayout />
+                </ActionSheetProvider>
             </ThemeProvider>
         </ProfileProvider>
     );

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { FileText, HelpCircle, Hexagon, LogOut, Shield, User } from 'lucide-react-native';
+import { FileText, HelpCircle, Hexagon, LogOut, Shield, Signature, Star, UserPen } from 'lucide-react-native';
 import React from 'react';
 import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -54,7 +54,7 @@ const SettingsGroup: React.FC<SettingsGroupProps> = ({ title, children }) => {
                 {
                     backgroundColor: '#FFFFFF',
                     borderColor: '#E5E5E5',
-                    borderRadius: 6
+                    borderRadius: 12
                 }
             ]}>
                 {children}
@@ -96,9 +96,9 @@ export default function ProfileSettings() {
                 {/* Account Section */}
                 <SettingsGroup title="Account">
                     <SettingsItem
-                        icon={<User size={20} color="#999999" />}
+                        icon={<UserPen size={20} color={iconColor} />}
                         title="Edit Account"
-                        onPress={() => router.push('/(profile)/edit-profile')}
+                        onPress={() => router.push('(profile)/edit')}
                     />
                     <SettingsItem
                         icon={<Hexagon style={{ transform: [{ rotate: '30deg' }] }} size={20} color={iconColor} />}
@@ -106,7 +106,7 @@ export default function ProfileSettings() {
                         onPress={() => handleSettingsPress('Shutterspace Plan')}
                     />
                     <SettingsItem
-                        icon={<Ionicons name="star-outline" size={20} color={iconColor} />}
+                        icon={<Star size={20} color={iconColor} />}
                         title="Rate Shutterspace"
                         onPress={() => handleSettingsPress('Rate Shutterspace')}
                         isLast
@@ -155,18 +155,18 @@ export default function ProfileSettings() {
                         title="Report a Problem"
                         onPress={() => handleSettingsPress('Report a Problem')}
                     />
-                    <SettingsItem
+                    {/* <SettingsItem
                         icon={<Ionicons name="help-circle-outline" size={20} color={iconColor} />}
                         title="Support (FAQ)"
                         onPress={() => handleSettingsPress('Support (FAQ)')}
                         isLast
-                    />
+                    /> */}
                 </SettingsGroup>
 
                 {/* Legal Section */}
                 <SettingsGroup title="Legal">
                     <SettingsItem
-                        icon={<FileText size={20} color={iconColor} />}
+                        icon={<Signature size={20} color={iconColor} />}
                         title="Terms of Service"
                         onPress={() => handleOpenUrl("https://shutterspace.app/terms.html")}
                     />
@@ -176,7 +176,7 @@ export default function ProfileSettings() {
                         onPress={() => handleOpenUrl("https://shutterspace.app/privacy.html")}
                     />
                     <SettingsItem
-                        icon={<Ionicons name="document-text-outline" size={20} color={iconColor} />}
+                        icon={<FileText size={20} color={iconColor} />}
                         title="Software Licenses"
                         onPress={() => handleSettingsPress('Software Licenses')}
                         isLast
@@ -190,7 +190,7 @@ export default function ProfileSettings() {
                         {
                             backgroundColor: '#FFFFFF',
                             borderColor: '#E5E5E5',
-                            borderRadius: 6
+                            borderRadius: 12
                         }
                     ]}>
                         <TouchableOpacity

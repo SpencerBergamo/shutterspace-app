@@ -7,17 +7,19 @@ interface ProfileAvatarProps {
     avatarUrl?: string;
     nickname: string;
     size: number;
+    borderRadius?: number;
     color?: ColorValue;
     onPress?: () => void;
 }
 
-export default function ProfileAvatar({ avatarUrl, nickname, size, onPress }: ProfileAvatarProps) {
+export default function ProfileAvatar({ avatarUrl, nickname, size, borderRadius, onPress }: ProfileAvatarProps) {
     const { themeStyles } = useTheme();
     return (
         <TouchableOpacity onPress={onPress} style={[styles.container, {
             width: size,
             height: size,
             backgroundColor: themeStyles.colors.accent,
+            borderRadius: borderRadius || 16,
         }]}>
             {avatarUrl && avatarUrl !== '' ? (
                 <Image source={{ uri: avatarUrl }} style={styles.avatar} contentFit="cover" />
@@ -32,7 +34,6 @@ const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 16,
         overflow: 'hidden',
     },
     avatar: {
