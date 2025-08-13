@@ -1,24 +1,26 @@
 import { useProfile } from '@/context/ProfileContext';
+import { api } from '@/convex/_generated/api';
 import { validateNickname } from '@/utils/validators';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { getStorage } from '@react-native-firebase/storage';
+import { useMutation } from 'convex/react';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
 import { Camera } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Image } from 'react-native-compressor';
 
 export default function EditProfileScreen() {
     const { profile, updateProfile } = useProfile();
+
+    const updateProfileMutation = useMutation(api.profile.updateProfile);
     const { showActionSheetWithOptions } = useActionSheet();
     const storage = getStorage();
 
     const [loadingProgress, setLoadingProgress] = useState<number | null>(null);
     const [nickname, setNickname] = useState(profile?.nickname);
     const [avatar, setAvatar] = useState<{ url?: string, uri?: ImagePicker.ImagePickerAsset }>({
-        url: profile?.avatarUrl,
+        url: profile?.avatarKey,
     });
 
     const [validationState, setValidationState] = useState({
@@ -106,44 +108,21 @@ export default function EditProfileScreen() {
     }
 
     const handleUpdateProfile = useCallback(async () => {
-        if (!validationState.nickname.isValid) return;
+        if (!isFormValid) return;
 
         setLoadingProgress(0);
 
         try {
-            if (avatar.uri) {
-                const compressedUri = await Image.compress(avatar.uri.uri, {
-                    output: 'jpg',
-                    quality: 0.9,
-                });
 
-                const downloadUrl = await new Promise<string>((resolve, reject) => {
-                    const uploadTask = storageRef.child(`avatar.jpg`).putFile(compressedUri);
+            await updateProfileMutation({
+                profileId: profile._id,
+                nickname,
 
-                    uploadTask.on('state_changed', (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        setLoadingProgress(progress);
-                    });
+            })
+        } catch (e) { }
 
-                    uploadTask.then((snapshot) => {
-                        snapshot.ref.getDownloadURL().then(resolve).catch(reject);
-                    }).catch(reject);
-                });
 
-                await updateProfile({
-                    nickname,
-                    avatarUrl: downloadUrl,
-                })
-            } else {
-                await updateProfile({ nickname });
-            }
 
-        } catch (e) {
-            console.error('Error updating profile', e);
-        } finally {
-            setLoadingProgress(null);
-            router.back();
-        }
     }, [nickname, avatar, updateProfile]);
 
     const renderSubmitButton = useCallback(() => (

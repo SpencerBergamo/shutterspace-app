@@ -8,7 +8,7 @@ import { createContext, useContext } from "react";
 interface ProfileContextType {
     profile: Profile;
     profileId: Id<'profiles'>;
-    updateProfile: (updates: Partial<Profile>) => Promise<void>;
+    updateProfile: (nickname?: string, base64?: string) => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -22,15 +22,13 @@ export const ProfileProvider = ({ children, fuid }: {
 
     if (!profile) return null;
 
-    const updateProfile = async (updates: Partial<Profile>) => {
+    const updateProfile = async (nickname?: string, base64?: string) => {
         if (!profile) return;
 
         await updateProfileMutation({
             profileId: profile._id,
-            updates: {
-                nickname: updates.nickname ?? profile.nickname,
-                avatarUrl: updates.avatarUrl ?? profile.avatarUrl,
-            },
+            nickname: nickname,
+            base64: base64,
         });
     }
 

@@ -7,7 +7,8 @@ export default defineSchema({
         joined: v.number(),
         authProvider: v.union(v.literal("email"), v.literal("google"), v.literal("apple")),
         email: v.string(),
-        avatarUrl: v.string(),
+        avatarKey: v.optional(v.string()),
+        ssoAvatarUrl: v.optional(v.string()),
         nickname: v.string(),
     }).index('by_firebase_uid', ['firebaseUID']),
 
