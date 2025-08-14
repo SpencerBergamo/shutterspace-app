@@ -7,33 +7,33 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D375735EAD34D9E86754D94 /* SansitaOne.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0604118989AC4FD0B429B854 /* SansitaOne.ttf */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		15FE7A90DF1902F89726AD63 /* Pods_Shutterspace.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6DF7AB37BF0540704EAB5C3 /* Pods_Shutterspace.framework */; };
-		183303BF5CE2967CF2A9AD8E /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EADD7826962EEA82F6974A4 /* ExpoModulesProvider.swift */; };
+		347131B819A4738B06A317C9 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12A42D9B044A45E481870C2C /* ExpoModulesProvider.swift */; };
+		3907C4565ACD2814DC2E9785 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EAB0C67453A16F449E3AB3E5 /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		63618B4CCE6B4788936584EF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = FF4A972E43D34617A0F7A6F7 /* GoogleService-Info.plist */; };
-		7B889F3ADC2347B98247C5C3 /* SansitaOne.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E729F9BD58F34B4C8AA6F1CC /* SansitaOne.ttf */; };
+		830CA45D99DE0C5EAF7F11B6 /* Pods_Shutterspace.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 08530705344803D1BE21AA21 /* Pods_Shutterspace.framework */; };
+		B148F95480EC4D5CB1825026 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 23D217966BF44AB3BC9824CB /* GoogleService-Info.plist */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		CB460B25442AAD00A30F1D7E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 899A615773B35DAFFE3126D4 /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0604118989AC4FD0B429B854 /* SansitaOne.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = SansitaOne.ttf; path = ../assets/fonts/SansitaOne.ttf; sourceTree = "<group>"; };
+		08530705344803D1BE21AA21 /* Pods_Shutterspace.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Shutterspace.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		12A42D9B044A45E481870C2C /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Shutterspace/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* Shutterspace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Shutterspace.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Shutterspace/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Shutterspace/Info.plist; sourceTree = "<group>"; };
-		4EADD7826962EEA82F6974A4 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Shutterspace/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		899A615773B35DAFFE3126D4 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Shutterspace/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		23D217966BF44AB3BC9824CB /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Shutterspace/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Shutterspace/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		D10C4651DBEC38145CF4BEEF /* Pods-Shutterspace.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Shutterspace.debug.xcconfig"; path = "Target Support Files/Pods-Shutterspace/Pods-Shutterspace.debug.xcconfig"; sourceTree = "<group>"; };
-		DA11488F4E39054E51722A14 /* Pods-Shutterspace.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Shutterspace.release.xcconfig"; path = "Target Support Files/Pods-Shutterspace/Pods-Shutterspace.release.xcconfig"; sourceTree = "<group>"; };
-		E729F9BD58F34B4C8AA6F1CC /* SansitaOne.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = SansitaOne.ttf; path = ../assets/fonts/SansitaOne.ttf; sourceTree = "<group>"; };
+		EAB0C67453A16F449E3AB3E5 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Shutterspace/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F01235B72170CD506C72E5FF /* Pods-Shutterspace.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Shutterspace.debug.xcconfig"; path = "Target Support Files/Pods-Shutterspace/Pods-Shutterspace.debug.xcconfig"; sourceTree = "<group>"; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Shutterspace/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Shutterspace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Shutterspace-Bridging-Header.h"; path = "Shutterspace/Shutterspace-Bridging-Header.h"; sourceTree = "<group>"; };
-		F6DF7AB37BF0540704EAB5C3 /* Pods_Shutterspace.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Shutterspace.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		FF4A972E43D34617A0F7A6F7 /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Shutterspace/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		F603DB79BE07A87EDDC912BF /* Pods-Shutterspace.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Shutterspace.release.xcconfig"; path = "Target Support Files/Pods-Shutterspace/Pods-Shutterspace.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,7 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				15FE7A90DF1902F89726AD63 /* Pods_Shutterspace.framework in Frameworks */,
+				830CA45D99DE0C5EAF7F11B6 /* Pods_Shutterspace.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -57,8 +57,8 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				FF4A972E43D34617A0F7A6F7 /* GoogleService-Info.plist */,
-				899A615773B35DAFFE3126D4 /* PrivacyInfo.xcprivacy */,
+				23D217966BF44AB3BC9824CB /* GoogleService-Info.plist */,
+				EAB0C67453A16F449E3AB3E5 /* PrivacyInfo.xcprivacy */,
 			);
 			name = Shutterspace;
 			sourceTree = "<group>";
@@ -67,27 +67,36 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				F6DF7AB37BF0540704EAB5C3 /* Pods_Shutterspace.framework */,
+				08530705344803D1BE21AA21 /* Pods_Shutterspace.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		6BDBE1DDE39B390827B26CAA /* Pods */ = {
+		49ED1112C62C4032A6197026 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				D10C4651DBEC38145CF4BEEF /* Pods-Shutterspace.debug.xcconfig */,
-				DA11488F4E39054E51722A14 /* Pods-Shutterspace.release.xcconfig */,
+				0604118989AC4FD0B429B854 /* SansitaOne.ttf */,
+			);
+			name = Resources;
+			path = "";
+			sourceTree = "<group>";
+		};
+		55C81C96BBBA6ADEC286C6E1 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				F01235B72170CD506C72E5FF /* Pods-Shutterspace.debug.xcconfig */,
+				F603DB79BE07A87EDDC912BF /* Pods-Shutterspace.release.xcconfig */,
 			);
 			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
-		766E520800BAE626B55D8A9A /* Shutterspace */ = {
+		64444E75148FCC6882480599 /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				4EADD7826962EEA82F6974A4 /* ExpoModulesProvider.swift */,
+				C9E4A3F870D9770EF39B88B1 /* Shutterspace */,
 			);
-			name = Shutterspace;
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -104,9 +113,9 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				FFBA44FF50DA4B9EB807EC66 /* Resources */,
-				6BDBE1DDE39B390827B26CAA /* Pods */,
-				B65404340E3DDB72E13EC201 /* ExpoModulesProviders */,
+				49ED1112C62C4032A6197026 /* Resources */,
+				55C81C96BBBA6ADEC286C6E1 /* Pods */,
+				64444E75148FCC6882480599 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -121,14 +130,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		B65404340E3DDB72E13EC201 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				766E520800BAE626B55D8A9A /* Shutterspace */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -138,13 +139,12 @@
 			path = Shutterspace/Supporting;
 			sourceTree = "<group>";
 		};
-		FFBA44FF50DA4B9EB807EC66 /* Resources */ = {
+		C9E4A3F870D9770EF39B88B1 /* Shutterspace */ = {
 			isa = PBXGroup;
 			children = (
-				E729F9BD58F34B4C8AA6F1CC /* SansitaOne.ttf */,
+				12A42D9B044A45E481870C2C /* ExpoModulesProvider.swift */,
 			);
-			name = Resources;
-			path = "";
+			name = Shutterspace;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -155,14 +155,14 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Shutterspace" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				2040B9CE31725D40E67DE92F /* [Expo] Configure project */,
+				456572A4D2292C3500864F72 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				C5940DCC4B97FFA2BF0E4956 /* [CP] Embed Pods Frameworks */,
-				29912584147BCD63154CD164 /* [CP-User] [RNFB] Core Configuration */,
+				B44622763A8D8AABCD72C208 /* [CP] Embed Pods Frameworks */,
+				7AA8DA3DE4CB73DA7784833D /* [CP-User] [RNFB] Core Configuration */,
 			);
 			buildRules = (
 			);
@@ -212,9 +212,9 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				63618B4CCE6B4788936584EF /* GoogleService-Info.plist in Resources */,
-				7B889F3ADC2347B98247C5C3 /* SansitaOne.ttf in Resources */,
-				CB460B25442AAD00A30F1D7E /* PrivacyInfo.xcprivacy in Resources */,
+				B148F95480EC4D5CB1825026 /* GoogleService-Info.plist in Resources */,
+				0D375735EAD34D9E86754D94 /* SansitaOne.ttf in Resources */,
+				3907C4565ACD2814DC2E9785 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -258,7 +258,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		2040B9CE31725D40E67DE92F /* [Expo] Configure project */ = {
+		456572A4D2292C3500864F72 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -277,7 +277,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Shutterspace/expo-configure-project.sh\"\n";
 		};
-		29912584147BCD63154CD164 /* [CP-User] [RNFB] Core Configuration */ = {
+		7AA8DA3DE4CB73DA7784833D /* [CP-User] [RNFB] Core Configuration */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -360,7 +360,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Shutterspace/Pods-Shutterspace-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C5940DCC4B97FFA2BF0E4956 /* [CP] Embed Pods Frameworks */ = {
+		B44622763A8D8AABCD72C208 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -386,7 +386,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				183303BF5CE2967CF2A9AD8E /* ExpoModulesProvider.swift in Sources */,
+				347131B819A4738B06A317C9 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -395,7 +395,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D10C4651DBEC38145CF4BEEF /* Pods-Shutterspace.debug.xcconfig */;
+			baseConfigurationReference = F01235B72170CD506C72E5FF /* Pods-Shutterspace.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -431,7 +431,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = DA11488F4E39054E51722A14 /* Pods-Shutterspace.release.xcconfig */;
+			baseConfigurationReference = F603DB79BE07A87EDDC912BF /* Pods-Shutterspace.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
