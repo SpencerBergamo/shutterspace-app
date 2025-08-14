@@ -11,10 +11,11 @@ import { ASSETS } from "@/constants/assets";
 import { AuthProvider } from "@/context/AuthContext";
 import useFirebaseAuth from "@/hooks/useFirebaseToken";
 // import useFirebaseToken from "@/hooks/useFirebaseToken";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { ConvexProviderWithAuth, ConvexReactClient, useConvexAuth } from "convex/react";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -46,6 +47,14 @@ export default function RootLayout() {
     const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL! as string, {
         unsavedChangesWarning: false,
     });
+
+    useEffect(() => {
+        GoogleSignin.configure({
+            webClientId: "772964121786-k7bm9fjhhac6mh5koi0nojd0tf7k3kaf.apps.googleusercontent.com",
+            iosClientId: "772964121786-gdf4k494q4kq0882o9clht1hrfhaih15.apps.googleusercontent.com",
+            offlineAccess: true,
+        })
+    }, []);
 
     const [fontsLoaded, fontError] = useFonts(ASSETS.fonts);
     const onLayoutRootView = useCallback(async () => {

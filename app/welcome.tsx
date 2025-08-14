@@ -5,7 +5,10 @@ import { Link, router } from "expo-router";
 import { Mail } from 'lucide-react-native';
 import { Dimensions, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-
+import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from '@react-native-firebase/auth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { signInAsync } from 'expo-apple-authentication';
+import { v4 as uuidv4 } from 'uuid';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -49,12 +52,29 @@ export default function WelcomeScreen() {
         }
     }
 
-    const handleAppleAuth = async () => {
-        // if (!isLoaded) return;
+    async function handleAppleAuth() {
+        const nonce = uuidv4();
+        const response = await signInAsync({
+            requestedScopes: [
+                AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                AppleAuthentication.AppleAuthenticationScope.EMAIL,
+            ],
+            nonce: nonce,
+        });
 
+        if (!response.identityToken) throw new Error('No identity token');
 
+        const credential = AppleAuthProvider.credential(response.identityToken, nonce);
+        return signInWithCredential(getAuth(), credential);
+    };
 
+    async function handleGoogleAuth() {
+        const result = await GoogleSignin.signIn();
 
+        if (!result.data?.idToken) throw new Error('No ID Token Found');
+
+        const credential = GoogleAuthProvider.credential(result.data.idToken);
+        return signInWithCredential(getAuth(), credential);
     }
 
 
