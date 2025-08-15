@@ -8,9 +8,7 @@
  */
 
 import { ASSETS } from "@/constants/assets";
-import { AuthProvider } from "@/context/AuthContext";
 import useFirebaseAuth from "@/hooks/useFirebaseToken";
-// import useFirebaseToken from "@/hooks/useFirebaseToken";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { ConvexProviderWithAuth, ConvexReactClient, useConvexAuth } from "convex/react";
 import { useFonts } from "expo-font";
@@ -64,16 +62,14 @@ export default function RootLayout() {
     if (!fontsLoaded && !fontError) return null;
 
     return (
-        <AuthProvider>
-            <ConvexProviderWithAuth client={convex} useAuth={useFirebaseAuth}>
-                <SafeAreaProvider>
-                    <KeyboardProvider>
-                        <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-                            <AppLayout />
-                        </GestureHandlerRootView>
-                    </KeyboardProvider>
-                </SafeAreaProvider>
-            </ConvexProviderWithAuth>
-        </AuthProvider>
+        <ConvexProviderWithAuth client={convex} useAuth={useFirebaseAuth}>
+            <SafeAreaProvider>
+                <KeyboardProvider>
+                    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+                        <AppLayout />
+                    </GestureHandlerRootView>
+                </KeyboardProvider>
+            </SafeAreaProvider>
+        </ConvexProviderWithAuth>
     );
 }

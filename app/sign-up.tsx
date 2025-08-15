@@ -1,30 +1,25 @@
-import { useSignUp } from "@clerk/clerk-expo";
+import auth from "@react-native-firebase/auth";
 import { router } from "expo-router";
-import { useCallback } from "react";
+import { useState } from "react";
 import { Button, Text, View } from "react-native";
 
 export default function SignUpScreen() {
 
+    const [formData, setFormData] = useState<{ email: string, password: string }>({
+        email: '',
+        password: '',
+    });
 
-    const { isLoaded, signUp } = useSignUp();
+    const [isFormValid, setIsFormValid] = useState(false);
 
-    const handleSignUp = useCallback(async () => {
+    async function handleSignup() {
         try {
-            if (!isLoaded) return;
-
-            const { } = await signUp.create({
-                emailAddress: '',
-                password: '',
-                unsafeMetadata: {
-                    nickname: '',
-                },
-
-            });
+            if (!isFormValid) return;
+            await auth().createUserWithEmailAndPassword(formData.email, formData.password);
         } catch (e) {
-            console.error(JSON.stringify(e, null, 2));
+            console.warn('Firebase Password Sgnup (FAIL)', e);
         }
-    }, [isLoaded]);
-
+    }
 
     return (
         <View>
