@@ -1,4 +1,3 @@
-import { OAuthStrategy } from '@clerk/types';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Link, router } from "expo-router";
@@ -37,20 +36,6 @@ const onboardingSlides: OnboardingSlide[] = [
 ];
 
 export default function WelcomeScreen() {
-    // const { startSSOFlow } = useSSO();
-    // const clerk = useClerk();
-
-    const handleSSOFlow = async (strategy: OAuthStrategy) => {
-        if (strategy === 'oauth_apple' && Platform.OS === 'android') {
-            throw new Error('Apple Auth is not supported on Android');
-        }
-
-        try {
-            // const { } = await startSSOFlow({ strategy });
-        } catch (e) {
-            console.error('SSO Flow (FAILED)', e);
-        }
-    }
 
     async function handleAppleAuth() {
         const nonce = uuidv4();
@@ -124,7 +109,7 @@ export default function WelcomeScreen() {
             <View style={styles.authContainer}>
 
                 {/* Google Auth */}
-                <TouchableOpacity onPress={() => handleSSOFlow('oauth_google')} style={{
+                <TouchableOpacity onPress={handleGoogleAuth} style={{
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -143,7 +128,7 @@ export default function WelcomeScreen() {
                 </TouchableOpacity>
 
                 {Platform.OS === 'ios' && (
-                    <TouchableOpacity onPress={() => { }} style={{
+                    <TouchableOpacity onPress={handleAppleAuth} style={{
                         flexDirection: 'row',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -161,30 +146,6 @@ export default function WelcomeScreen() {
                         <Text style={{ fontSize: 17, color: 'white' }}>Continue with Apple</Text>
                     </TouchableOpacity>
                 )}
-
-                <AppleAuthentication.AppleAuthenticationButton
-                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                    cornerRadius={12}
-                    style={{ width: '100%', height: 44 }}
-                    onPress={async () => {
-                        const credential = await AppleAuthentication.signInAsync({
-                            requestedScopes: [
-                                AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-                                AppleAuthentication.AppleAuthenticationScope.EMAIL,
-                            ],
-                        })
-
-                        // if (credential) {
-                        //     const { fullName, email } = credential;
-
-                        //     await startSSOFlow({
-                        //         strategy: 'oauth_apple',
-
-                        //     })
-                        // }
-
-                    }} />
 
                 {/* Email Sign Up */}
                 <TouchableOpacity onPress={() => router.push('/sign-up')} style={{
