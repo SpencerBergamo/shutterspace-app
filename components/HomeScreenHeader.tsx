@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreenHeader() {
     const { profile } = useProfile();
-    const { themeStyles } = useTheme();
+    const { theme } = useTheme();
     const { top } = useSafeAreaInsets();
 
     const handleAvatarPress = () => {
@@ -25,24 +25,24 @@ export default function HomeScreenHeader() {
 
     return (
         <View style={[styles.container, { paddingTop: top }]}>
-            <Hexagon size={32} color={themeStyles.colors.text} />
+            <Hexagon size={32} color={theme.colors.text} />
 
             <View style={styles.rightContainer}>
-                <Text style={[styles.greeting, { color: themeStyles.colors.text }]}>
-                    Hey, <Text style={[styles.greeting, styles.greetingNickname, { color: themeStyles.colors.text }]}>
+                <Text style={[styles.greeting, { color: theme.colors.text }]}>
+                    Hey, <Text style={[styles.greeting, styles.greetingNickname, { color: theme.colors.text }]}>
                         {profile.nickname}
                     </Text>
                 </Text>
                 <TouchableOpacity
                     style={[
                         styles.avatarContainer,
-                        { width: 48, height: 48, backgroundColor: themeStyles.colors.accent }
+                        { width: 48, height: 48, backgroundColor: theme.colors.accent }
                     ]}
                     onPress={handleAvatarPress}
                     activeOpacity={0.8} >
 
-                    {profile.avatarUrl && profile.avatarUrl !== '' ? (
-                        <Image source={{ uri: profile.avatarUrl }}
+                    {profile.ssoAvatarUrl && profile.ssoAvatarUrl !== '' ? (
+                        <Image source={{ uri: profile.ssoAvatarUrl }}
                             style={styles.avatarImage} contentFit="contain" />
                     ) : (
                         <Text style={styles.avatarInitial}>{profile.nickname.charAt(0)}</Text>

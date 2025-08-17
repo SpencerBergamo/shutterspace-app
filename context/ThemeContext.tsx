@@ -1,41 +1,61 @@
-import { AppTheme, LightTheme, ThemeStyles } from '@/constants/theme';
+import { ColorScheme, lightColors } from '@/constants/colors';
+import { LightStyles } from '@/constants/lightStyles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
+type Mode = 'light' | 'dark' | 'system';
 
-type Theme = 'light' | 'dark' | 'system';
+interface Theme {
+    mode: Mode;
+    colors: ColorScheme;
+    styles: typeof LightStyles;
+}
 
 interface ThemeContextType {
+    mode: Mode;
+    handleThemeChange: (mode: Mode) => void;
     theme: Theme;
-    setTheme: (mode: Theme) => void;
-    isDark: boolean;
-    themeStyles: ThemeStyles;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-const CACHE_KEY = '@theme_prefs';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const systemTheme = useColorScheme();
-    const [theme, setTheme] = useState<Theme>('system');
+
+    const [mode, setMode] = useState<Mode>('system');
+
+    const KEY = process.env.THEME_PREFS_STORAGE_KEY!;
+
+    const theme: Theme = useMemo(() => {
+        const effectiveTheme = mode === 'system' ? systemTheme : mode;
+
+        return {
+            mode: effectiveTheme || 'light',
+            colors: effectiveTheme === 'dark' ? lightColors : lightColors,
+            styles: LightStyles,
+        }
+    }, [mode, systemTheme]);
 
     useEffect(() => {
-        AsyncStorage.getItem(CACHE_KEY)
-            .then(saved => saved && setTheme(saved as Theme));
+        AsyncStorage.getItem(KEY)
+            .then(saved => saved && setMode(saved as Mode));
     }, []);
 
-    const handleThemeChange = (newTheme: Theme) => {
-        setTheme(newTheme);
-        AsyncStorage.setItem(CACHE_KEY, newTheme);
+    const handleThemeChange = (mode: Mode) => {
+        setMode(mode);
+        AsyncStorage.setItem(process.env.KEY, mode);
     };
 
-    const isDark: boolean = theme === 'system' ? systemTheme === 'dark' : theme === 'dark';
-    const themeStyles: AppTheme = LightTheme;
+    const contextValue: ThemeContextType = {
+        mode,
+        handleThemeChange,
+        theme,
+    }
 
     return (
         <ThemeContext.Provider
-            value={{ theme, setTheme: handleThemeChange, isDark, themeStyles }}>
+            value={contextValue}>
             {children}
         </ThemeContext.Provider>
     );

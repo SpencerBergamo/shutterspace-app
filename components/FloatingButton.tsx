@@ -32,9 +32,9 @@ export default function FloatingButton({
     menuItems,
     onPress,
 }: FloatingButtonProps) {
-    const { themeStyles } = useTheme();
+    const { theme } = useTheme();
     const scaleAnim = useSharedValue(1);
-    const fab = themeStyles.components.floatingActionButton;
+    const fab = theme.styles.iconButton;
     const animatedStyle = useAnimatedStyle(() => {
         return {
             transform: [{ scale: scaleAnim.value }],
@@ -45,15 +45,15 @@ export default function FloatingButton({
 
         switch (type ?? iconType) {
             case 'plus':
-                return <Plus size={fab.iconSize} color={fab.iconColor} />
+                return <Plus size={fab.width} color={fab.borderColor} />
             case 'arrow':
-                return <ArrowRight size={fab.iconSize} color={fab.iconColor} />
+                return <ArrowRight size={fab.width} color={fab.borderColor} />
             case 'camera':
-                return <Camera size={fab.iconSize} color={fab.iconColor} />
+                return <Camera size={fab.width} color={fab.borderColor} />
             case 'image':
-                return <Image size={fab.iconSize} color={fab.iconColor} />
+                return <Image size={fab.width} color={fab.borderColor} />
             default:
-                return <Plus size={fab.iconSize} color={fab.iconColor} />
+                return <Plus size={fab.width} color={fab.borderColor} />
 
         }
     }

@@ -9,7 +9,7 @@ interface ButtonProps {
 }
 
 export default function BackButton({ onPress, icon, iconColor = '#333333' }: ButtonProps) {
-    const { themeStyles } = useTheme();
+    const { theme } = useTheme();
 
     return (
         <Pressable style={styles.container} onPress={onPress}>

@@ -2,9 +2,9 @@ import AlbumCard from "@/components/albums/AlbumCard";
 import FloatingButton from "@/components/FloatingButton";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
 import { useProfile } from "@/context/ProfileContext";
-import { useTheme } from "@/context/ThemeContext";
 import { useAlbums } from "@/hooks/useAlbums";
 import { getGridConfig } from "@/utils/getGridConfig";
+import { useTheme } from "@react-navigation/native";
 import { router, useNavigation } from "expo-router";
 import { useCallback } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
     const { top } = useSafeAreaInsets();
-    const { themeStyles } = useTheme();
+    const theme = useTheme();
     const navigation = useNavigation();
     const { profile } = useProfile();
     const { albums, isLoading } = useAlbums();

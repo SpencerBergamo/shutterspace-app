@@ -1,10 +1,10 @@
-import { useAuth } from "@/context/AuthContext";
 import { ProfileProvider, useProfile } from "@/context/ProfileContext";
-import { ThemeProvider, useTheme } from "@/context/ThemeContext";
+
+import { useTheme } from "@/context/ThemeContext";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
+import { getAuth } from "@react-native-firebase/auth";
 import { router, Stack } from "expo-router";
 import { ArrowLeft, X } from "lucide-react-native";
-import { useMemo } from "react";
 import { Pressable } from "react-native";
 
 /* 
@@ -27,20 +27,21 @@ headerLeft: () => (
 
 function HomeLayout() {
     const { profile } = useProfile();
-    const { themeStyles } = useTheme();
-    const iconButton = themeStyles.iconButton;
+    const { theme } = useTheme();
 
-    const closeButton = useMemo(() => (
+    const iconButton = theme.styles.iconButton;
+
+    const closeButton = () => (
         <Pressable style={[iconButton]} onPress={() => router.back()}>
-            <X size={iconButton.size} color={themeStyles.colors.text} />
+            <X size={iconButton.width} color={iconButton.borderColor} />
         </Pressable>
-    ), [router]);
+    );
 
-    const backButton = useMemo(() => (
+    const backButton = () => (
         <Pressable style={[iconButton]} onPress={() => router.back()} >
-            <ArrowLeft size={iconButton.size} color={themeStyles.colors.text} />
+            <ArrowLeft size={iconButton.width} color={iconButton.borderColor} />
         </Pressable>
-    ), [router]);
+    );
 
     return (
         <Stack screenOptions={{
@@ -54,13 +55,13 @@ function HomeLayout() {
 
             <Stack.Screen name="settings" options={{
                 headerTitle: 'Settings',
-                headerLeft: () => backButton,
+                headerLeft: backButton,
             }} />
 
             <Stack.Screen name="new-album" options={{
                 headerTitle: 'Create New Album',
-                presentation: 'fullScreenModal',
-                headerLeft: () => closeButton,
+                presentation: 'modal',
+                headerLeft: closeButton,
             }} />
 
             <Stack.Screen name="album/[albumId]/index" options={{
@@ -69,7 +70,7 @@ function HomeLayout() {
 
             <Stack.Screen name="(profile)/edit" options={{
                 headerTitle: 'Edit Profile',
-                headerLeft: () => backButton,
+                headerLeft: backButton,
             }} />
 
 
@@ -79,16 +80,14 @@ function HomeLayout() {
 
 
 export default function Layout() {
-    const { user } = useAuth();
-    if (!user) throw new Error('Not Authenticated');
+    const currentUser = getAuth().currentUser;
+    if (!currentUser) throw new Error('Not Authenticated');
 
     return (
-        <ProfileProvider fuid={user.uid}>
-            <ThemeProvider>
-                <ActionSheetProvider>
-                    <HomeLayout />
-                </ActionSheetProvider>
-            </ThemeProvider>
+        <ProfileProvider fuid={currentUser.uid}>
+            <ActionSheetProvider>
+                <HomeLayout />
+            </ActionSheetProvider>
         </ProfileProvider>
     );
 }

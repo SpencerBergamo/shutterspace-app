@@ -8,6 +8,7 @@
  */
 
 import { ASSETS } from "@/constants/assets";
+import { ThemeProvider } from "@/context/ThemeContext";
 import useFirebaseAuth from "@/hooks/useFirebaseToken";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { ConvexProviderWithAuth, ConvexReactClient, useConvexAuth } from "convex/react";
@@ -63,13 +64,15 @@ export default function RootLayout() {
 
     return (
         <ConvexProviderWithAuth client={convex} useAuth={useFirebaseAuth}>
-            <SafeAreaProvider>
-                <KeyboardProvider>
-                    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-                        <AppLayout />
-                    </GestureHandlerRootView>
-                </KeyboardProvider>
-            </SafeAreaProvider>
+            <ThemeProvider>
+                <SafeAreaProvider>
+                    <KeyboardProvider>
+                        <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+                            <AppLayout />
+                        </GestureHandlerRootView>
+                    </KeyboardProvider>
+                </SafeAreaProvider>
+            </ThemeProvider>
         </ConvexProviderWithAuth>
     );
 }

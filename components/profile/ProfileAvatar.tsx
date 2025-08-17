@@ -13,12 +13,12 @@ interface ProfileAvatarProps {
 }
 
 export default function ProfileAvatar({ avatarUrl, nickname, size, borderRadius, onPress }: ProfileAvatarProps) {
-    const { themeStyles } = useTheme();
+    const { theme } = useTheme();
     return (
         <TouchableOpacity onPress={onPress} style={[styles.container, {
             width: size,
             height: size,
-            backgroundColor: themeStyles.colors.accent,
+            backgroundColor: theme.colors.accent,
             borderRadius: borderRadius || 16,
         }]}>
             {avatarUrl && avatarUrl !== '' ? (

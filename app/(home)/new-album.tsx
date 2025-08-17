@@ -6,7 +6,7 @@ import { AlbumFormData } from "@/types/Album";
 import { validateTitle } from "@/utils/validators";
 import { router, Stack } from "expo-router";
 import { X } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, TextInput, useWindowDimensions, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 
@@ -18,8 +18,8 @@ interface EnabledComponents {
 export default function NewAlbum() {
     const { profile } = useProfile();
     const { width } = useWindowDimensions();
-    const { themeStyles } = useTheme();
-    const iconButton = themeStyles.iconButton;
+    const { theme } = useTheme();
+    const iconButton = theme.styles.iconButton;
 
     const { createAlbum, isLoading } = useAlbums();
 
@@ -29,7 +29,8 @@ export default function NewAlbum() {
     // -- State Management --
     const [formData, setFormData] = useState<AlbumFormData>({
         title: '',
-    })
+    });
+
     const [validationState, setValidationState] = useState({
         title: { isValid: false, error: null as string | null },
     });
@@ -66,53 +67,18 @@ export default function NewAlbum() {
 
     }, [formData, isFormValid]);
 
-    // -- Memoized Components --
-    const titleInput = useMemo(() => (
-        <TextInput
-            ref={titleInputRef}
-            autoFocus
-            placeholder="Album Title"
-            value={formData.title}
-            multiline={true}
-            maxLength={50}
-            autoCapitalize="words"
-            autoCorrect={false}
-            spellCheck={false}
-            textAlign="center"
-            keyboardType="default"
-            returnKeyType="done"
-            submitBehavior="blurAndSubmit"
-            selectionColor={themeStyles.colors.primary}
-            onChangeText={text => updateField('title', text)}
-            onSubmitEditing={() => { }}
-            style={{
-                minHeight: 36,
-                fontSize: 21,
-                paddingHorizontal: 32,
-                marginBottom: 16,
-            }} />
-    ), [formData.title]);
-
-    const fab = useMemo(() => (
-        <FloatingButton
-            isEnabled={isFormValid}
-            iconType="arrow"
-            onPress={handleSubmit}
-        />
-    ), [isFormValid, isLoading]);
-
     const componentStyles = {
         ...styles.componentContainer,
-        backgroundColor: themeStyles.colors.background,
-        borderColor: themeStyles.borderColor,
+        backgroundColor: theme.colors.background,
+        borderColor: theme.colors.border,
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: themeStyles.colors.background }}>
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <Stack.Screen options={{
                 headerLeft: () => (
                     <Pressable style={[iconButton]} onPress={() => router.back()}>
-                        <X size={iconButton.size} color={themeStyles.colors.text} />
+                        <X size={iconButton.width} color={iconButton.borderColor} />
                     </Pressable>
                 ),
             }} />
@@ -121,12 +87,38 @@ export default function NewAlbum() {
 
                 <View style={{ width: '100%', height: 75 }} />
 
-                {titleInput}
+                <TextInput
+                    ref={titleInputRef}
+                    autoFocus
+                    placeholder="Album Title"
+                    value={formData.title}
+                    multiline={true}
+                    maxLength={50}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    spellCheck={false}
+                    textAlign="center"
+                    keyboardType="default"
+                    returnKeyType="done"
+                    submitBehavior="blurAndSubmit"
+                    selectionColor={theme.colors.primary}
+                    onChangeText={text => updateField('title', text)}
+                    onSubmitEditing={() => { }}
+                    style={{
+                        minHeight: 36,
+                        fontSize: 21,
+                        paddingHorizontal: 32,
+                        marginBottom: 16,
+                    }} />
 
             </KeyboardAwareScrollView>
 
             <KeyboardStickyView offset={{ closed: 0, opened: 30 }}>
-                {fab}
+                <FloatingButton
+                    isEnabled={isFormValid}
+                    iconType="arrow"
+                    onPress={handleSubmit}
+                />
             </KeyboardStickyView>
         </View >
     );
