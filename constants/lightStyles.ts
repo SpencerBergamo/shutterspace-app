@@ -52,5 +52,12 @@ export const LightStyles = StyleSheet.create({
         elevation: 10,
         borderWidth: 1,
         borderColor: '#D9DDE0',
+    },
+
+    floatingActionButton: {
+        backgroundColor: '#09ADA9',
+        width: 60,
+        height: 60,
+        borderRadius: 999,
     }
 })

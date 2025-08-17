@@ -34,30 +34,15 @@ export default function FloatingButton({
 }: FloatingButtonProps) {
     const { theme } = useTheme();
     const scaleAnim = useSharedValue(1);
-    const fab = theme.styles.iconButton;
+
+    const primaryColor = theme.colors.primary;
+    const iconSize = 24;
+
     const animatedStyle = useAnimatedStyle(() => {
         return {
             transform: [{ scale: scaleAnim.value }],
         }
     });
-
-    const renderIcon = (type?: IconType) => {
-
-        switch (type ?? iconType) {
-            case 'plus':
-                return <Plus size={fab.width} color={fab.borderColor} />
-            case 'arrow':
-                return <ArrowRight size={fab.width} color={fab.borderColor} />
-            case 'camera':
-                return <Camera size={fab.width} color={fab.borderColor} />
-            case 'image':
-                return <Image size={fab.width} color={fab.borderColor} />
-            default:
-                return <Plus size={fab.width} color={fab.borderColor} />
-
-        }
-    }
-
 
     const handlePress = useCallback(() => {
         if (!isEnabled) return;
@@ -81,35 +66,29 @@ export default function FloatingButton({
 
     }, [isEnabled]);
 
+    const renderIcon = (type?: IconType) => {
+
+        switch (type ?? iconType) {
+            case 'plus':
+                return <Plus size={iconSize} color='white' />
+            case 'arrow':
+                return <ArrowRight size={iconSize} color='white' />
+            case 'camera':
+                return <Camera size={iconSize} color='white' />
+            case 'image':
+                return <Image size={iconSize} color='white' />
+            default:
+                return <Plus size={iconSize} color='white' />
+
+        }
+    }
 
     return (
         <View style={styles.container}>
-
-            {/* Menu */}
-            {mode === 'menu' && openMenu && (
-                <View style={styles.menuContainer}>
-                    {menuItems?.map((item, index) => (
-                        <Pressable key={index} style={[styles.menuItem, {
-                            backgroundColor: fab.backgroundColor,
-                            borderRadius: fab.borderRadius,
-                            width: fab.width,
-                            height: fab.height,
-                        }]} onPress={item.onPress}>
-                            {renderIcon(item.iconType)}
-                        </Pressable>
-                    ))}
-                </View>
-            )}
-
-
-            {/* Main FAB */}
-            <Animated.View style={[styles.fab, animatedStyle, {
-                backgroundColor: fab.backgroundColor,
-                borderRadius: fab.borderRadius,
-                width: fab.width,
-                height: fab.height,
-            }, !isEnabled && styles.disabled]}>
-                <Pressable style={styles.pressable} onPress={handlePress}>
+            <Animated.View style={[styles.button, animatedStyle, {
+                backgroundColor: primaryColor,
+            }]}>
+                <Pressable onPress={handlePress}>
                     {renderIcon()}
                 </Pressable>
             </Animated.View>
@@ -124,28 +103,15 @@ const styles = StyleSheet.create({
         bottom: 50,
     },
 
-    fab: {
+    button: {
+        width: 56,
+        height: 56,
+        borderRadius: 999,
         justifyContent: 'center',
         alignItems: 'center',
     },
+
     disabled: {
         opacity: 0.5,
-    },
-
-
-    pressable: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-
-    menuContainer: {
-        marginBottom: 16,
-        gap: 12,
-    },
-    menuItem: {
-        justifyContent: 'center',
-        alignItems: 'center',
     },
 });
