@@ -1,8 +1,13 @@
+import { useTheme } from "@/context/ThemeContext";
 import auth from "@react-native-firebase/auth";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StyleSheet, TextInput, View } from "react-native";
 
 export default function SignInScreen() {
+    const { theme } = useTheme();
+
+    const emailInputRef = useRef<TextInput>(null);
+    const passwordInputRef = useRef<TextInput>(null);
 
     const [formData, setFormData] = useState<{ email: string, password: string }>({
         email: '',
@@ -23,8 +28,8 @@ export default function SignInScreen() {
     return (
         <View style={styles.container}>
             <TextInput
-                // ref={}
-                style={styles.textInput}
+                ref={emailInputRef}
+                style={theme.styles.textInput}
                 onChangeText={() => { }}
                 value=""
                 placeholder="Email"
@@ -49,17 +54,5 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         padding: 16,
         justifyContent: 'center',
-    },
-
-    textInput: {
-        backgroundColor: 'white',
-        borderWidth: 1,
-        borderColor: '#e9ecef', //#E5E5E5
-        borderRadius: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        fontSize: 16,
-        color: '#000000',
-        marginBottom: 8,
     },
 })

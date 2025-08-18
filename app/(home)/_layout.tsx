@@ -48,20 +48,17 @@ function HomeLayout() {
             headerBackButtonDisplayMode: 'minimal',
             headerShadowVisible: false,
             headerStyle: {
-                backgroundColor: '#F2F1F6',
+                backgroundColor: theme.colors.background,
             }
         }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
 
             <Stack.Screen name="settings" options={{
                 headerTitle: 'Settings',
-                headerLeft: backButton,
             }} />
 
             <Stack.Screen name="new-album" options={{
                 headerTitle: 'Create New Album',
-                presentation: 'modal',
-                headerLeft: closeButton,
             }} />
 
             <Stack.Screen name="album/[albumId]/index" options={{

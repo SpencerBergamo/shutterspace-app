@@ -1,70 +1,56 @@
 import { useTheme } from "@/context/ThemeContext";
 import * as Haptics from 'expo-haptics';
-import { ArrowRight, Camera, Image, Plus } from "lucide-react-native";
+import { ArrowRight, Camera, Check, Image, Plus } from "lucide-react-native";
 import { useCallback } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 
 
-type IconType = 'plus' | 'arrow' | 'camera' | 'image';
-type MenuItem = {
-    iconType: IconType;
-    label: string;
-    onPress: () => void;
-}
+type IconType = 'plus' | 'arrow' | 'camera' | 'image' | 'submit';
 
 interface FloatingButtonProps {
+    isLoading?: boolean;
     isEnabled?: boolean;
     iconType: IconType;
-    mode?: 'default' | 'menu';
-    openMenu?: boolean;
-    onOpenMenu?: () => void;
-    menuItems?: MenuItem[];
     onPress: () => void;
 }
 
 export default function FloatingButton({
+    isLoading = false,
     isEnabled = true,
     iconType,
-    mode = 'default',
-    openMenu = false,
-    onOpenMenu,
-    menuItems,
     onPress,
 }: FloatingButtonProps) {
     const { theme } = useTheme();
-    const scaleAnim = useSharedValue(1);
 
     const primaryColor = theme.colors.primary;
     const iconSize = 24;
 
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ scale: scaleAnim.value }],
-        }
-    });
+    // TODO: add animation later
+    // const scaleAnim = useSharedValue(1);
+    // const animatedStyle = useAnimatedStyle(() => {
+    //     return {
+    //         transform: [{ scale: scaleAnim.value }],
+    //     }
+    // });
+    // const handleAnimation = useCallback(() => {
+    //     scaleAnim.value = withTiming(0.85, {
+    //         duration: 100,
+    //         easing: Easing.inOut(Easing.ease),
+    //     }, () => {
+    //         scaleAnim.value = withTiming(1, {
+    //             duration: 100,
+    //             easing: Easing.inOut(Easing.ease),
+    //         });
+    //     });
+    // }, [scaleAnim]);
 
     const handlePress = useCallback(() => {
         if (!isEnabled) return;
 
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        scaleAnim.value = withTiming(0.85, {
-            duration: 100,
-            easing: Easing.inOut(Easing.ease),
-        }, () => {
-            scaleAnim.value = withTiming(1, {
-                duration: 100,
-                easing: Easing.inOut(Easing.ease),
-            });
-        });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-        if (mode === 'menu') {
-            onOpenMenu?.();
-        } else {
-            onPress();
-        }
-
-    }, [isEnabled]);
+        onPress();
+    }, [isEnabled, onPress]);
 
     const renderIcon = (type?: IconType) => {
 
@@ -77,6 +63,8 @@ export default function FloatingButton({
                 return <Camera size={iconSize} color='white' />
             case 'image':
                 return <Image size={iconSize} color='white' />
+            case 'submit':
+                return <Check size={iconSize} color='white' />
             default:
                 return <Plus size={iconSize} color='white' />
 
@@ -85,13 +73,13 @@ export default function FloatingButton({
 
     return (
         <View style={styles.container}>
-            <Animated.View style={[styles.button, animatedStyle, {
-                backgroundColor: primaryColor,
+            <View style={[styles.button, {
+                backgroundColor: isEnabled ? primaryColor : 'grey',
             }]}>
                 <Pressable onPress={handlePress}>
-                    {renderIcon()}
+                    {isLoading ? <ActivityIndicator size='small' color='white' /> : renderIcon()}
                 </Pressable>
-            </Animated.View>
+            </View>
         </View>
     )
 }

@@ -42,6 +42,12 @@
       "@react-native-google-signin/google-signin",
       "expo-apple-authentication",
       [
+        "expo-contacts",
+        {
+          "contactsPermission": "Shutterspace uses contacts to share links via SMS."
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "ios": {

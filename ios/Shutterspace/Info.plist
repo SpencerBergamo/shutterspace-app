@@ -64,7 +64,7 @@
     <key>NSCameraUsageDescription</key>
     <string>Shutterspace needs access to your camera to let you take photos.</string>
     <key>NSContactsUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your contacts</string>
+    <string>Shutterspace uses contacts to share links via SMS.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationAlwaysUsageDescription</key>

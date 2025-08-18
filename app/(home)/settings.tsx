@@ -1,67 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
+import { SettingsGroup, SettingsItem } from '@/components/SettingsGroup';
 import { router } from 'expo-router';
-import { FileText, HelpCircle, Hexagon, LogOut, Shield, Signature, Star, UserPen } from 'lucide-react-native';
+import { FileText, HelpCircle, Hexagon, LogOutIcon, Shield, Signature, Star, Trash2, UserPen } from 'lucide-react-native';
 import React from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-interface SettingsItemProps {
-    icon: React.ReactNode;
-    title: string;
-    onPress: () => void;
-    isLast?: boolean;
-}
-
-const SettingsItem: React.FC<SettingsItemProps> = ({ icon, title, onPress, isLast }) => {
-    return (
-        <TouchableOpacity
-            style={[
-                localStyles.settingsItem,
-                !isLast && { borderBottomWidth: 1, borderBottomColor: '#E5E5E5' }
-            ]}
-            onPress={onPress}
-            activeOpacity={0.7} >
-
-            <View style={localStyles.itemContent}>
-                <View style={localStyles.iconContainer}>
-                    {icon}
-                </View>
-                <Text style={localStyles.itemTitle}>
-                    {title}
-                </Text>
-            </View>
-            <Ionicons
-                name="chevron-forward"
-                size={16}
-                color="#999999" />
-
-        </TouchableOpacity>
-    );
-};
-
-interface SettingsGroupProps {
-    title: string;
-    children: React.ReactNode;
-}
-
-const SettingsGroup: React.FC<SettingsGroupProps> = ({ title, children }) => {
-    return (
-        <View style={localStyles.groupContainer}>
-            <Text style={localStyles.groupTitle}>
-                {title}
-            </Text>
-            <View style={[
-                localStyles.groupContent,
-                {
-                    backgroundColor: '#FFFFFF',
-                    borderColor: '#E5E5E5',
-                    borderRadius: 12
-                }
-            ]}>
-                {children}
-            </View>
-        </View>
-    );
-};
+import { Alert, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function ProfileSettings() {
     const iconColor = '#666666';
@@ -89,9 +30,9 @@ export default function ProfileSettings() {
     return (
         <View style={localStyles.container}>
             <ScrollView
-                style={localStyles.scrollView}
+                style={{ flex: 1 }}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={localStyles.scrollContent} >
+                contentContainerStyle={{ paddingBottom: 40 }} >
 
                 {/* Account Section */}
                 <SettingsGroup title="Account">
@@ -154,6 +95,7 @@ export default function ProfileSettings() {
                         icon={<HelpCircle size={20} color={iconColor} />}
                         title="Report a Problem"
                         onPress={() => handleSettingsPress('Report a Problem')}
+                        isLast
                     />
                     {/* <SettingsItem
                         icon={<Ionicons name="help-circle-outline" size={20} color={iconColor} />}
@@ -183,32 +125,20 @@ export default function ProfileSettings() {
                     />
                 </SettingsGroup>
 
-                {/* Logout Section */}
-                <View style={localStyles.groupContainer}>
-                    <View style={[
-                        localStyles.groupContent,
-                        {
-                            backgroundColor: '#FFFFFF',
-                            borderColor: '#E5E5E5',
-                            borderRadius: 12
-                        }
-                    ]}>
-                        <TouchableOpacity
-                            style={localStyles.logoutButton}
-                            onPress={handleLogout}
-                            activeOpacity={0.7}
-                        >
-                            <View style={localStyles.itemContent}>
-                                <View style={localStyles.iconContainer}>
-                                    <LogOut size={20} color="#FF3B30" />
-                                </View>
-                                <Text style={localStyles.logoutText}>
-                                    Logout
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                <SettingsGroup title="Danger Zone">
+                    <SettingsItem
+                        icon={<LogOutIcon size={20} color={iconColor} />}
+                        title="Sign Out"
+                        onPress={handleLogout}
+                    />
+                    <SettingsItem
+                        icon={<Trash2 size={20} color='#FF3B30' />}
+                        title="Delete Account"
+                        onPress={() => { }}
+                        isLast={true}
+                        isDestructive={true}
+                    />
+                </SettingsGroup>
 
                 {/* Footer */}
                 <View style={localStyles.footer}>
@@ -227,71 +157,7 @@ export default function ProfileSettings() {
 const localStyles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F2F1F6',
-    },
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        paddingBottom: 40,
-    },
-    groupContainer: {
-        marginTop: 24,
-        paddingHorizontal: 16,
-    },
-    groupTitle: {
-        fontSize: 13,
-        fontWeight: '600',
-        marginBottom: 8,
-        paddingHorizontal: 4,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-        color: '#666666',
-    },
-    groupContent: {
-        borderWidth: 1,
-        overflow: 'hidden',
-    },
-    settingsItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        minHeight: 52,
-    },
-    itemContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    iconContainer: {
-        width: 32,
-        height: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
-    itemIcon: {
-        color: '#666666'
-    },
-    itemTitle: {
-        fontSize: 16,
-        fontWeight: '400',
-        color: '#000000',
-    },
-    logoutButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        minHeight: 52,
-    },
-    logoutText: {
-        fontSize: 16,
-        fontWeight: '400',
-        color: '#FF3B30',
+        backgroundColor: '#F8F9FA',
     },
     footer: {
         alignItems: 'center',

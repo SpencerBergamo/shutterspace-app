@@ -6,7 +6,7 @@ import { useAlbums } from "@/hooks/useAlbums";
 import { getGridConfig } from "@/utils/getGridConfig";
 import { useTheme } from "@react-navigation/native";
 import { router, useNavigation } from "expo-router";
-import { useCallback } from "react";
+import { useMemo } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -19,7 +19,7 @@ export default function HomeScreen() {
 
     const gridConfig = getGridConfig({ columns: 2, gap: 16 });
 
-    const renderContent = useCallback(() => {
+    const renderContent = useMemo(() => {
         if (isLoading) {
             return (
                 <View style={{ flex: 1 }}>
@@ -43,18 +43,17 @@ export default function HomeScreen() {
 
     }, [profile, isLoading, albums]);
 
-
-
     return (
         <View style={styles.container}>
 
             <HomeScreenHeader />
 
-            {renderContent()}
+            {renderContent}
 
             {/* Floating Action Button */}
             <FloatingButton
                 iconType="plus"
+                isEnabled={true}
                 onPress={() => router.push('/new-album')} />
         </View>
     );

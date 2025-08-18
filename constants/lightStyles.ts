@@ -34,12 +34,14 @@ export const LightStyles = StyleSheet.create({
     },
 
     textInput: {
-        minHeight: 36,
-        borderRadius: 6,
-        padding: 16,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        backgroundColor: '#f8f9fa',
         borderColor: '#e9ecef',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 16,
+        color: '#000000',
     },
 
     iconButton: {
