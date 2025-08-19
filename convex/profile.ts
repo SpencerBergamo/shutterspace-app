@@ -3,6 +3,15 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import s3Client from "./r2";
 
+export const createProfile = mutation({
+    args: {
+        firebaseUID: v.string(),
+        email: v.string(),
+        nickname: v.string(),
+        avatarUrl: v.optional(v.string()),
+    }, handler: async (ctx) => { }
+})
+
 export const getProfile = query({
     args: {
         fuid: v.string(),

@@ -1836,6 +1836,8 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-get-random-values (1.11.0):
+    - React-Core
   - react-native-keyboard-controller (1.17.5):
     - DoubleConversion
     - glog
@@ -2823,6 +2825,7 @@ DEPENDENCIES:
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - react-native-compressor (from `../node_modules/react-native-compressor`)
+  - react-native-get-random-values (from `../node_modules/react-native-get-random-values`)
   - react-native-keyboard-controller (from `../node_modules/react-native-keyboard-controller`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-video (from `../node_modules/react-native-video`)
@@ -3067,6 +3070,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
   react-native-compressor:
     :path: "../node_modules/react-native-compressor"
+  react-native-get-random-values:
+    :path: "../node_modules/react-native-get-random-values"
   react-native-keyboard-controller:
     :path: "../node_modules/react-native-keyboard-controller"
   react-native-safe-area-context:
@@ -3267,6 +3272,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 4141a0d94d47529afb85341b9c02baa3cc2a1fd5
   React-microtasksnativemodule: 4b0f5a344ca5ce6692650fae4fb67f7672bbd1b6
   react-native-compressor: 35ef4861a8465885e1c31a84f3e3997ed9090068
+  react-native-get-random-values: d16467cf726c618e9c7a8c3c39c31faa2244bbba
   react-native-keyboard-controller: 9c9a77993f7449e8b7d8c5989289f65e08c7ab74
   react-native-safe-area-context: 5928d84c879db2f9eb6969ca70e68f58623dbf25
   react-native-video: ec52820be93b9eddea8fa77fa0423588eb2bae9f

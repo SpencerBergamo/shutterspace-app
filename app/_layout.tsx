@@ -8,7 +8,7 @@
  */
 
 import { ASSETS } from "@/constants/assets";
-import { ThemeProvider } from "@/context/ThemeContext";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import useFirebaseAuth from "@/hooks/useFirebaseToken";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { ConvexProviderWithAuth, ConvexReactClient, useConvexAuth } from "convex/react";
@@ -23,19 +23,31 @@ SplashScreen.preventAutoHideAsync();
 
 function AppLayout() {
     const { isLoading, isAuthenticated } = useConvexAuth();
+    const { theme } = useTheme();
 
     if (isLoading) return null;
 
     return (
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack screenOptions={{
+            headerShown: true,
+            headerBackButtonDisplayMode: 'minimal',
+            headerShadowVisible: false,
+            headerStyle: {
+                backgroundColor: theme.colors.background,
+            },
+        }}>
             <Stack.Protected guard={isAuthenticated} >
                 <Stack.Screen name="(home)" />
             </Stack.Protected>
 
             <Stack.Protected guard={!isAuthenticated}>
-                <Stack.Screen name="welcome" />
-                <Stack.Screen name="sign-in" />
-                <Stack.Screen name="sign-up" />
+                <Stack.Screen name="welcome" options={{ headerShown: false }} />
+                <Stack.Screen name="sign-in" options={{
+                    headerTitle: ''
+                }} />
+                <Stack.Screen name="sign-up" options={{
+                    headerTitle: '',
+                }} />
             </Stack.Protected>
         </Stack>
     );

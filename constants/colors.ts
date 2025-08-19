@@ -9,6 +9,7 @@ export interface ColorScheme {
     caption: string;
     border: string;
     surface: string;
+    danger: string;
 }
 
 export const lightColors: ColorScheme = {
@@ -21,6 +22,7 @@ export const lightColors: ColorScheme = {
     caption: '#6C757D',
     border: '#D9DDE0',
     surface: '#FFFFFF',
+    danger: '#FF3B30',
 };
 
 export const darkColors: ColorScheme = {
@@ -33,4 +35,5 @@ export const darkColors: ColorScheme = {
     caption: '#6C757D',
     border: '#D9DDE0',
     surface: '#FFFFFF',
+    danger: '#FF3B30',
 }

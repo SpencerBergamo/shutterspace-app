@@ -2,7 +2,6 @@ import { ProfileProvider, useProfile } from "@/context/ProfileContext";
 
 import { useTheme } from "@/context/ThemeContext";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
-import { getAuth } from "@react-native-firebase/auth";
 import { router, Stack } from "expo-router";
 import { ArrowLeft, X } from "lucide-react-native";
 import { Pressable } from "react-native";
@@ -76,12 +75,9 @@ function HomeLayout() {
 }
 
 
-export default function Layout() {
-    const currentUser = getAuth().currentUser;
-    if (!currentUser) throw new Error('Not Authenticated');
-
+export default async function Layout() {
     return (
-        <ProfileProvider fuid={currentUser.uid}>
+        <ProfileProvider>
             <ActionSheetProvider>
                 <HomeLayout />
             </ActionSheetProvider>

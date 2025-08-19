@@ -1,12 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Link, router } from "expo-router";
-import { Mail } from 'lucide-react-native';
+import { GalleryVerticalEnd, Mail, QrCode, SmilePlus } from 'lucide-react-native';
 import { Dimensions, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { useTheme } from '@/context/ThemeContext';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { signInAsync } from 'expo-apple-authentication';
+import { useRef, useState } from 'react';
+import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -14,73 +15,93 @@ const { width: screenWidth } = Dimensions.get('window');
 interface OnboardingSlide {
     title: string;
     description: string;
-    icon: string;
+    icon: React.ReactNode;
 }
 
 const onboardingSlides: OnboardingSlide[] = [
     {
-        title: "Create Collaborative Albums",
-        description: "Build beautiful photo collections with friends and family. Share memories together in one place.",
-        icon: "albums-outline"
+        title: "Create an Album",
+        description: "Every greate memory starts with a home. Make an album for your trip, party, or just because &#8211; it's your place to collect the moments.",
+        icon: <GalleryVerticalEnd size={60} color='#09ADA9' />
     },
     {
-        title: "Easy Album Invite",
-        description: "Invite others to your albums with a simple link. No complicated setup required.",
-        icon: "person-add-outline"
+        title: "Invite Members",
+        description: "The best memories aren't made alone. Share your album with friends and family so everyone can drop in their favorite shots.",
+        icon: <QrCode size={60} color='#09ADA9' />
     },
     {
-        title: "Like & Comment on Images",
-        description: "Engage with photos through likes and comments. Keep the conversation going.",
-        icon: "heart-outline"
+        title: "Engage with Uploads",
+        description: "Relive the laughs, the smiles, and the 'remember when?' moments. Like, comment, and celebrate every photo together.",
+        icon: <SmilePlus size={60} color='#09ADA9' />
     }
 ];
 
 export default function WelcomeScreen() {
+    const { theme } = useTheme();
+
+    const [currentSlide, setCurrentSlide] = useState<number>(0);
+    const scrollViewRef = useRef<ScrollView>(null);
+
+    function handleScroll(event: any) {
+        const contentOffset = event.nativeEvent.contentOffset.x;
+        const slide = Math.round(contentOffset / (screenWidth - 40));
+        setCurrentSlide(slide);
+    }
 
     async function handleAppleAuth() {
-        const nonce = uuidv4();
-        const response = await signInAsync({
-            requestedScopes: [
-                AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-                AppleAuthentication.AppleAuthenticationScope.EMAIL,
-            ],
-            nonce: nonce,
-        });
+        try {
+            const available = await AppleAuthentication.isAvailableAsync();
+            if (!available) {
+                console.error('Apple authentication is not available');
+                return;
+            }
 
-        if (!response.identityToken) throw new Error('No identity token');
+            const nonce = uuidv4();
+            const response = await AppleAuthentication.signInAsync({
+                requestedScopes: [
+                    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                    AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                ],
+                nonce: nonce,
+            });
 
-        const credential = AppleAuthProvider.credential(response.identityToken, nonce);
-        return signInWithCredential(getAuth(), credential);
+            if (!response.identityToken) throw new Error('No identity token');
+
+            const credential = AppleAuthProvider.credential(response.identityToken, nonce);
+            return signInWithCredential(getAuth(), credential);
+        } catch (e) {
+            console.error('Apple Auth FAIL', e);
+        }
     };
 
     async function handleGoogleAuth() {
-        const result = await GoogleSignin.signIn();
+        try {
+            const result = await GoogleSignin.signIn();
 
-        if (!result.data?.idToken) throw new Error('No ID Token Found');
+            if (!result.data?.idToken) throw new Error('No ID Token Found');
 
-        const credential = GoogleAuthProvider.credential(result.data.idToken);
-        return signInWithCredential(getAuth(), credential);
+            const credential = GoogleAuthProvider.credential(result.data.idToken);
+            return signInWithCredential(getAuth(), credential);
+        } catch (e) {
+            console.error('Google auth FAIL', e);
+        }
     }
-
 
     return (
         <View style={[styles.container, { backgroundColor: 'white' }]}>
             {/* Page View Section */}
             <ScrollView
+                ref={scrollViewRef}
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
                 style={styles.pageViewContainer}
-
+                onScroll={handleScroll}
             >
                 {onboardingSlides.map((slide, index) => (
                     <View key={index} style={styles.slide}>
                         <View style={styles.iconContainer}>
-                            <Ionicons
-                                name={slide.icon as any}
-                                size={60}
-                                color={'blue'}
-                            />
+                            {slide.icon}
                         </View>
                         <Text style={[styles.slideTitle, { color: 'black' }]}>
                             {slide.title}
@@ -99,7 +120,7 @@ export default function WelcomeScreen() {
                         key={index}
                         style={[
                             styles.paginationDot,
-                            { backgroundColor: index === 0 ? 'blue' : '#E9ECEF' }
+                            { backgroundColor: index === currentSlide ? theme.colors.primary : '#E9ECEF' }
                         ]}
                     />
                 ))}
@@ -109,18 +130,9 @@ export default function WelcomeScreen() {
             <View style={styles.authContainer}>
 
                 {/* Google Auth */}
-                <TouchableOpacity onPress={handleGoogleAuth} style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 10,
-                    padding: 12,
-                    borderRadius: 12,
-                    // marginVertical: 12,
-                    height: 44,
-                    width: '100%',
-                    backgroundColor: '#F2F2F2',
-                }} >
+                <TouchableOpacity onPress={handleGoogleAuth} style={[
+                    styles.authButton, { backgroundColor: '#F2F2F2' }
+                ]} >
                     <Image source={require('../assets/images/google-logo.png')}
                         style={{ width: 20, height: 20 }}
                         resizeMode='contain' />
@@ -128,18 +140,9 @@ export default function WelcomeScreen() {
                 </TouchableOpacity>
 
                 {Platform.OS === 'ios' && (
-                    <TouchableOpacity onPress={handleAppleAuth} style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 10,
-                        padding: 12,
-                        borderRadius: 12,
-                        // marginVertical: 12,
-                        height: 44,
-                        width: '100%',
-                        backgroundColor: 'black',
-                    }} >
+                    <TouchableOpacity onPress={handleAppleAuth} style={[
+                        styles.authButton, { backgroundColor: 'black' }
+                    ]} >
                         <Image source={require('../assets/images/apple-logo.png')}
                             style={{ width: 20, height: 20 }}
                             resizeMode='contain' />
@@ -148,19 +151,9 @@ export default function WelcomeScreen() {
                 )}
 
                 {/* Email Sign Up */}
-                <TouchableOpacity onPress={() => router.push('/sign-up')} style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 10,
-                    padding: 12,
-                    borderWidth: 1,
-                    borderColor: '#E9ECEF',
-                    borderRadius: 12,
-                    // marginVertical: 12,
-                    height: 44,
-                    backgroundColor: 'blue',
-                }}>
+                <TouchableOpacity onPress={() => router.push('/sign-up')} style={[
+                    styles.authButton, { backgroundColor: theme.colors.primary }
+                ]}>
                     <Mail size={20} color={'white'} />
                     <Text style={{ fontSize: 17, color: 'white' }}>Continue with Email</Text>
                 </TouchableOpacity>
@@ -172,26 +165,12 @@ export default function WelcomeScreen() {
                     </Text>
                     <Link href="/sign-in" asChild>
                         <Pressable>
-                            <Text style={[styles.signInLink, { color: 'blue' }]}>
+                            <Text style={[styles.signInLink, { color: theme.colors.primary }]}>
                                 Sign In
                             </Text>
                         </Pressable>
                     </Link>
                 </View>
-            </View>
-
-            {/* Terms of Service */}
-            <View style={styles.termsContainer}>
-                <Text style={[styles.termsText, { color: 'black' }]}>
-                    By continuing, you agree to our{' '}
-                    <Text style={[styles.termsLink, { color: 'blue' }]}>
-                        Terms of Service
-                    </Text>
-                    {' '}and{' '}
-                    <Text style={[styles.termsLink, { color: 'blue' }]}>
-                        Privacy Policy
-                    </Text>
-                </Text>
             </View>
         </View>
     );
@@ -252,56 +231,30 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         gap: 12,
     },
+
+    // Buttons
     authButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 20,
+        gap: 10,
+        padding: 12,
         borderRadius: 12,
-        marginBottom: 12,
-        borderWidth: 1,
+        height: 44,
     },
-    googleButton: {
-        backgroundColor: '#FFFFFF',
-        borderColor: '#E9ECEF',
-    },
-    appleButton: {
-        backgroundColor: '#000000',
-        borderColor: '#000000',
-    },
-    emailButton: {
-        backgroundColor: '#F8F9FA',
-        borderColor: '#E9ECEF',
-    },
-    authButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 12,
-    },
+
+    // Bottom Options
     signInContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
+        marginBottom: 20,
     },
     signInText: {
         fontSize: 14,
     },
     signInLink: {
         fontSize: 14,
-        fontWeight: '600',
-    },
-    termsContainer: {
-        paddingHorizontal: 20,
-        paddingBottom: 40,
-    },
-    termsText: {
-        fontSize: 12,
-        textAlign: 'center',
-        lineHeight: 18,
-        opacity: 0.7,
-    },
-    termsLink: {
         fontWeight: '600',
     },
 });

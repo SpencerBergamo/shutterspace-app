@@ -1,4 +1,5 @@
 import { SettingsGroup, SettingsItem } from '@/components/SettingsGroup';
+import { getAuth } from '@react-native-firebase/auth';
 import { router } from 'expo-router';
 import { FileText, HelpCircle, Hexagon, LogOutIcon, Shield, Signature, Star, Trash2, UserPen } from 'lucide-react-native';
 import React from 'react';
@@ -6,10 +7,10 @@ import { Alert, Linking, ScrollView, StyleSheet, Text, View } from 'react-native
 
 export default function ProfileSettings() {
     const iconColor = '#666666';
+    const auth = getAuth();
 
-    const handleLogout = () => {
-        // TODO: Implement logout functionality
-        console.log('Logout pressed');
+    const handleLogout = async () => {
+        await auth.signOut();
     };
 
     const handleSettingsPress = (setting: string) => {

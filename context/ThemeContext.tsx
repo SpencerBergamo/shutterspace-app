@@ -6,7 +6,7 @@ import { useColorScheme } from 'react-native';
 
 type Mode = 'light' | 'dark' | 'system';
 
-interface Theme {
+export interface Theme {
     mode: Mode;
     colors: ColorScheme;
     styles: typeof LightStyles;
