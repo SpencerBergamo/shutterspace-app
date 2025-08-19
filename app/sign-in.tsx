@@ -1,12 +1,11 @@
 import { useTheme } from "@/context/ThemeContext";
-import { AuthFormData, AuthFormErrors } from "@/types/Forms";
-import { validateEmail, validatePassword } from "@/utils/validators";
+import { AuthFormData } from "@/types/Forms";
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from "@react-native-firebase/auth";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Link } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -25,29 +24,8 @@ export default function SignInScreen() {
         password: null,
     });
 
-    const [errors, setErrors] = useState<AuthFormErrors>({
-        email: null,
-        password: null,
-    });
-
-    const isFormValid = useCallback(() => {
-        return Object.values(errors).every(error => !error);
-    }, [errors]);
-
-    useEffect(() => {
-        const emailError = formData.email ? validateEmail(formData.email) : null;
-        const passwordError = formData.password ? validatePassword(formData.password) : null;
-
-        setErrors(prev => ({
-            ...prev,
-            email: emailError ?? null,
-            password: passwordError ?? null,
-        }))
-    }, [formData.email, formData.password]);
-
     async function handleSignin() {
         try {
-            if (!isFormValid) return;
             await auth.signInWithEmailAndPassword(formData.email!, formData.password!);
         } catch (e) {
             console.warn('Firebase Password Sgnup (FAIL)', e);
@@ -114,14 +92,9 @@ export default function SignInScreen() {
                     onChangeText={text => setFormData(prev => ({ ...prev, email: text }))}
                     style={theme.styles.textInput}
                 />
-                {errors.email ? (
-                    <View style={styles.errorTextView}>
-                        <Text style={{ color: theme.colors.danger }}>{errors.email}</Text>
-                    </View>
-                ) : <View style={styles.space} />}
 
                 {/* Password */}
-                <View style={[theme.styles.textInput, { flexDirection: 'row', justifyContent: 'space-between' }]}>
+                <View style={[theme.styles.textInput, { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }]}>
                     <TextInput
                         ref={passwordInputRef}
                         value={formData.password ?? ''}
@@ -146,16 +119,11 @@ export default function SignInScreen() {
                         </Pressable>
                     )}
                 </View>
-                {errors.password ? (
-                    <View style={styles.errorTextView}>
-                        <Text style={{ color: theme.colors.danger }}>{errors.password}</Text>
-                    </View>
-                ) : <View style={styles.space} />}
 
                 <TouchableOpacity
                     onPress={handleSignin}
                     style={{ backgroundColor: theme.colors.primary, padding: 16, borderRadius: 8, marginTop: 16 }}>
-                    <Text style={styles.submitButtonText}>Create Account</Text>
+                    <Text style={styles.submitButtonText}>Sign In</Text>
                 </TouchableOpacity>
 
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 21, alignItems: 'center' }} >

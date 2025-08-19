@@ -1,4 +1,4 @@
-import { ProfileProvider, useProfile } from "@/context/ProfileContext";
+import { ProfileProvider } from "@/context/ProfileContext";
 
 import { useTheme } from "@/context/ThemeContext";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
@@ -25,7 +25,6 @@ headerLeft: () => (
 */
 
 function HomeLayout() {
-    const { profile } = useProfile();
     const { theme } = useTheme();
 
     const iconButton = theme.styles.iconButton;
@@ -68,14 +67,12 @@ function HomeLayout() {
                 headerTitle: 'Edit Profile',
                 headerLeft: backButton,
             }} />
-
-
         </Stack>
     );
 }
 
 
-export default async function Layout() {
+export default function Layout() {
     return (
         <ProfileProvider>
             <ActionSheetProvider>

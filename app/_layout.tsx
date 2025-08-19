@@ -37,7 +37,7 @@ function AppLayout() {
             },
         }}>
             <Stack.Protected guard={isAuthenticated} >
-                <Stack.Screen name="(home)" />
+                <Stack.Screen name="(home)" options={{ headerShown: false }} />
             </Stack.Protected>
 
             <Stack.Protected guard={!isAuthenticated}>
