@@ -1,18 +1,18 @@
 import AlbumCard from "@/components/albums/AlbumCard";
-import FloatingButton from "@/components/FloatingButton";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
 import { useProfile } from "@/context/ProfileContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useAlbums } from "@/hooks/useAlbums";
 import { getGridConfig } from "@/utils/getGridConfig";
-import { useTheme } from "@react-navigation/native";
 import { router, useNavigation } from "expo-router";
+import { Plus } from "lucide-react-native";
 import { useMemo } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
     const { top } = useSafeAreaInsets();
-    const theme = useTheme();
+    const { theme } = useTheme();
     const navigation = useNavigation();
     const { profile } = useProfile();
     const { albums, isLoading } = useAlbums();
@@ -44,17 +44,15 @@ export default function HomeScreen() {
     }, [profile, isLoading, albums]);
 
     return (
-        <View style={styles.container}>
-
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <HomeScreenHeader />
 
             {renderContent}
 
             {/* Floating Action Button */}
-            <FloatingButton
-                iconType="plus"
-                isEnabled={true}
-                onPress={() => router.push('/new-album')} />
+            <Pressable onPress={() => router.push('/new-album')} style={theme.styles.fab}>
+                <Plus size={24} color={theme.colors.secondary} />
+            </Pressable>
         </View>
     );
 }
@@ -62,7 +60,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "white",
         justifyContent: "center",
         alignItems: "center",
     },

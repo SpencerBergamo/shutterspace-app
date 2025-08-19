@@ -1,7 +1,5 @@
-import FloatingButton from "@/components/FloatingButton";
 import Thumbnail from "@/components/Thumbnail";
 import { useProfile } from "@/context/ProfileContext";
-import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
@@ -15,7 +13,6 @@ import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, View }
 export default function AlbumScreen() {
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { profile } = useProfile();
-    const { themeStyles } = useTheme();
 
     // Album and Media data
     const { getAlbumById } = useAlbums();
@@ -83,7 +80,7 @@ export default function AlbumScreen() {
                 ListFooterComponent={canLoadMoreFooter}
                 renderItem={renderTile} />
 
-            <FloatingButton onPress={handleMediaSelection} />
+            {/* <FloatingButton onPress={handleMediaSelection} /> */}
 
             <Modal visible={false} animationType="fade" />
 

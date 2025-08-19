@@ -3,7 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Album, AlbumFormData, MemberRole } from "@/types/Album";
 import { useMutation, useQuery } from "convex/react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 interface UseAlbumsResult {
     albums: Album[];
@@ -17,6 +17,7 @@ interface UseAlbumsResult {
 export const useAlbums = (): UseAlbumsResult => {
     const { profile } = useProfile();
 
+    const [isLoading, setIsLoading] = useState(false);
     const albums = useQuery(api.albums.getUserAlbums, { profileId: profile?._id });
     const createMutation = useMutation(api.albums.createAlbum);
     const updateMutation = useMutation(api.albums.updateAlbum);
@@ -33,12 +34,7 @@ export const useAlbums = (): UseAlbumsResult => {
         }) || 'not-a-member';
     }, [profile._id]);
 
-    const createAlbum = useCallback(async (data: AlbumFormData) => {
-
-        // TODO: Add cover image upload
-
-        // AlbumMember table insert
-
+    const createAlbum = useCallback(async (data: AlbumFormData): Promise<Id<'albums'>> => {
         return await createMutation({
             createdAt: Date.now(),
             updatedAt: Date.now(),

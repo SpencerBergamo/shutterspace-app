@@ -1,13 +1,12 @@
-import FloatingButton from "@/components/FloatingButton";
 import { useProfile } from "@/context/ProfileContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlbums } from "@/hooks/useAlbums";
 import { AlbumFormData } from "@/types/Album";
 import { validateTitle } from "@/utils/validators";
 import { router } from "expo-router";
-import { KeyRound } from "lucide-react-native";
+import { Check, KeyRound } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 
 export default function NewAlbum() {
@@ -19,6 +18,7 @@ export default function NewAlbum() {
     const descriptionInputRef = useRef<TextInput>(null);
 
     // -- State Management --
+    const [isLoading, setIsLoading] = useState(false);
     const [isFormValid, setIsFormValid] = useState(false);
     const [isOpenInvites, setIsOpenInvites] = useState(true);
     const [formData, setFormData] = useState<AlbumFormData>({
@@ -68,10 +68,13 @@ export default function NewAlbum() {
         if (!isFormValid) return;
 
         try {
+            setIsLoading(true);
             const albumId = await createAlbum(formData);
             router.replace(`/album/${albumId}`);
         } catch (e) {
             console.error("Failed to create album", e);
+        } finally {
+            setIsLoading(false);
         }
 
     }, [formData, isFormValid, createAlbum]);
@@ -164,44 +167,14 @@ export default function NewAlbum() {
                         trackColor={{ true: theme.colors.primary }}
                     />
                 </View>
-
-                {/* <TouchableOpacity onPress={() => { }} style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: '#e9ecef',
-                    gap: 16,
-                    borderRadius: 16,
-                    padding: 16,
-
-                }}>
-                    <Link size={24} color={theme.colors.text} />
-
-                    <View style={{
-                        flex: 1,
-                        flexDirection: 'column',
-                        flexShrink: 1,
-                        gap: 2,
-                    }}>
-                        <Text style={{
-                            fontSize: 16,
-                            fontWeight: '600',
-                        }}>
-                            Ready to Share?
-                        </Text>
-                        <Text>Tap to send an invite link to your friends and family</Text>
-
-                    </View>
-
-
-                </TouchableOpacity> */}
             </KeyboardAwareScrollView>
 
             <KeyboardStickyView offset={{ closed: 0, opened: 30 }}>
-                <FloatingButton
-                    isEnabled={isFormValid}
-                    iconType="submit"
-                    onPress={handleSubmit}
-                />
+                <Pressable onPress={handleSubmit} style={[theme.styles.fab, {
+                    backgroundColor: !isFormValid ? 'grey' : theme.colors.primary,
+                }]}>
+                    {isLoading ? <ActivityIndicator /> : <Check size={24} color={theme.colors.secondary} />}
+                </Pressable>
             </KeyboardStickyView>
         </View >
     );
