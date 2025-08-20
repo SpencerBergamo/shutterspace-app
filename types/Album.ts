@@ -45,5 +45,24 @@ export interface AlbumFormData {
     expiresAt?: Date;
 }
 
+interface ValidationField {
+    isValid: boolean;
+    error: string | null;
+}
+
+export interface AlbumFormState {
+    hasChanges: boolean;
+    isFormValid: boolean;
+
+    title: ValidationField;
+    description: ValidationField;
+
+    // -- TODO Fields --
+    // thumbnailFileId?: ValidationField;
+    // dateRange?: ValidationField;
+    // location?: ValidationField;
+    // expiresAt?: ValidationField;
+}
+
 export type CreateAlbumData = Omit<Album, '_id'>;
 export type UpdateAlbumData = Partial<AlbumFormData>;

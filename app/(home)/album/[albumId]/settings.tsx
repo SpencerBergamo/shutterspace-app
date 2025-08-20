@@ -2,16 +2,20 @@
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
-import { AlbumFormData } from "@/types/Album";
+import { AlbumFormData, AlbumFormState } from "@/types/Album";
 import { validateDescription, validateTitle } from "@/utils/validators";
 import { Stack, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { TextInput, View } from "react-native";
+import { Check, KeyRound, X } from "lucide-react-native";
+import { useCallback, useRef, useState } from "react";
+import { ActivityIndicator, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+
+type UpdateStatus = 'idle' | 'saving' | 'success' | 'error';
 
 export default function AlbumSettingsScreen() {
     const { theme } = useTheme();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
-    const { getAlbumById } = useAlbums();
+    const { getAlbumById, updateAlbum } = useAlbums();
 
     const album = getAlbumById(albumId);
     if (!album) return null;
@@ -20,19 +24,14 @@ export default function AlbumSettingsScreen() {
     const descriptionInputRef = useRef<TextInput>(null);
 
     const [isLoading, setIsLoading] = useState(false);
-    const [openInvites, setOpenInvites] = useState(true);
+    const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
 
     const [formData, setFormData] = useState<AlbumFormData>({
         title: album.title,
         description: album.description,
     });
 
-    const [validationState, setValidationState] = useState({
-        title: { isValid: false, error: null as string | null },
-        description: { isValid: false, error: null as string | null },
-    });
-
-    const validateForm = useCallback(() => {
+    const validateForm = useCallback((): AlbumFormState => {
         const titleError = validateTitle(formData.title ?? '');
         const descriptionError = validateDescription(formData.description ?? '');
 
@@ -42,20 +41,58 @@ export default function AlbumSettingsScreen() {
         const isFormValid = !titleError && !descriptionError && hasChanges;
 
         return {
+            hasChanges: hasChanges,
+            isFormValid: isFormValid,
             title: { isValid: !titleError, error: titleError },
             description: { isValid: !descriptionError, error: descriptionError },
-            isFormValid,
         }
     }, [formData.title, formData.description, album.title, album.description]);
 
-    useEffect(() => {
-        const validation = validateForm();
+    const formState = validateForm();
 
-        setValidationState({
-            title: validation.title,
-            description: validation.description,
-        });
-    }, [validateForm]);
+    const handleFieldChange = (field: keyof AlbumFormData, value: string) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    const handleSubmit = useCallback(async () => {
+        if (!formState.isFormValid) return;
+
+        setUpdateStatus('saving');
+        try {
+            await updateAlbum(albumId, formData);
+            setUpdateStatus('success');
+
+        } catch (e) {
+            console.error("Updating Album (FAIL)", e);
+            setUpdateStatus('error');
+        } finally {
+            setUpdateStatus('idle');
+        }
+    }, [formState.isFormValid, updateAlbum, albumId, formData]);
+
+    const renderUpdateStatus = useCallback(() => {
+        switch (updateStatus) {
+            case 'success':
+                return (
+                    <View style={styles.changesSavedContainer}>
+                        <Check size={24} color={theme.colors.primary} />
+                        <Text style={styles.changesSavedText}>Changes Saved</Text>
+                    </View>
+                );
+            case 'error':
+                return (
+                    <View style={styles.changesSavedContainer}>
+                        <X size={24} color='#FF3B30' />
+                        <Text style={styles.changesSavedText}>Error Saving Changes</Text>
+                    </View>
+                );
+            default:
+                return null;
+        }
+    }, [updateStatus]);
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -66,7 +103,148 @@ export default function AlbumSettingsScreen() {
 
 
 
-            <View></View>
+            <KeyboardAwareScrollView style={styles.keyboardScrollView}>
+
+                {/* Album Thumbnail */}
+                <View style={{ width: '100%', padding: 16 }}>
+                    <View style={{ width: '100%', height: 100, backgroundColor: theme.colors.secondary, borderRadius: 16, borderWidth: 2, borderColor: '#E5E5E5' }} />
+                </View>
+
+                {/* Album Title */}
+                <TextInput
+                    ref={titleInputRef}
+                    value={formData.title}
+                    placeholder="Album Title"
+                    placeholderTextColor="#999999"
+                    maxLength={50}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    spellCheck={false}
+                    textAlign="left"
+                    keyboardType="default"
+                    returnKeyType="next"
+                    selectionColor={theme.colors.primary}
+                    onChangeText={text => handleFieldChange('title', text)}
+                    onSubmitEditing={() => descriptionInputRef.current?.focus()}
+                    style={[theme.styles.textInput, { marginBottom: 8 }]} />
+
+                <TextInput
+                    ref={descriptionInputRef}
+                    value={formData.description}
+                    placeholder="Feel free to share a little more about this album"
+                    placeholderTextColor="#999999"
+                    maxLength={300}
+                    autoCapitalize="sentences"
+                    autoCorrect
+                    spellCheck
+                    textAlign="left"
+                    keyboardType="default"
+                    returnKeyType="next"
+                    selectionColor={theme.colors.primary}
+                    onChangeText={text => handleFieldChange('description', text)}
+                    onSubmitEditing={() => descriptionInputRef.current?.blur()}
+                    style={[theme.styles.textInput, { marginBottom: 32 }]} />
+
+
+                {/* Open Invites */}
+                <View style={styles.openInvitesContainer}>
+                    <View style={styles.openInvitesContent}>
+                        <View style={styles.openInvitesTitle}>
+                            <KeyRound size={16} color={theme.colors.text} />
+                            <Text style={{
+                                fontSize: 16,
+                                fontWeight: '600',
+                            }}>Open Invites</Text>
+                        </View>
+
+                        {formData.openInvites ? (
+                            <Text style={{ flexShrink: 1 }}>
+                                All members can invite new members
+                            </Text>
+                        ) : (
+                            <Text style={{ flexShrink: 1 }}>
+                                Only you or moderators can invite new members
+                            </Text>
+                        )}
+
+                    </View>
+
+                    <Switch
+                        value={formData.openInvites}
+                        onValueChange={value => setFormData({ ...formData, openInvites: value })}
+                        trackColor={{ true: theme.colors.primary }}
+                    />
+                </View>
+
+                <TouchableOpacity onPress={handleSubmit} style={[styles.submitButton,
+                { backgroundColor: !formState.isFormValid ? 'grey' : theme.colors.primary },
+                ]} >
+                    {updateStatus === 'saving' ? <ActivityIndicator size='small' color={theme.colors.secondary} /> : (
+                        <Text style={styles.submitButtonText}>Save Changes</Text>
+                    )}
+                </TouchableOpacity>
+
+                {renderUpdateStatus()}
+
+            </KeyboardAwareScrollView>
         </View>
     );
+
+
 }
+
+const styles = StyleSheet.create({
+    keyboardScrollView: {
+        flex: 1, padding: 16
+    },
+
+    // Open Invites Styles
+    openInvitesContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        gap: 16,
+        backgroundColor: '#e9ecef',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+    },
+    openInvitesContent: {
+        flex: 1,
+        flexDirection: 'column',
+        gap: 4,
+    },
+    openInvitesTitle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+
+    submitButton: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 16,
+    },
+    submitButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#ffffff',
+    },
+
+    changesSavedContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+    },
+    changesSavedText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#ffffff',
+    },
+})
