@@ -1,22 +1,25 @@
 import Thumbnail from "@/components/Thumbnail";
 import { useProfile } from "@/context/ProfileContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
 import { getGridConfig } from "@/utils/getGridConfig";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { Image, Info } from "lucide-react-native";
+import { CircleEllipsis, Images, Plus } from "lucide-react-native";
 import { useCallback } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function AlbumScreen() {
-    const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
-    const { profile } = useProfile();
-    const { columns, gap, width, height } = getGridConfig({});
-
     const { getAlbumById } = useAlbums();
+    const { profile } = useProfile();
+    const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
+    const { theme } = useTheme();
+    const { columns, gap, width } = getGridConfig({});
+
     const album = getAlbumById(albumId);
+
     const { media, loadMore, canLoadMore, handleMediaSelection } = useMedia(albumId);
 
     function handleMediaPress(media: Media) {
@@ -29,7 +32,7 @@ export default function AlbumScreen() {
         <Pressable onPress={() => handleMediaPress(item)}>
             <Thumbnail media={item} size={width} />
         </Pressable>
-    ), [width, height, handleMediaPress]);
+    ), [width, handleMediaPress]);
 
     const canLoadMoreFooter = useCallback(() => {
         if (!canLoadMore) return null;
@@ -41,43 +44,44 @@ export default function AlbumScreen() {
         );
     }, [canLoadMore, loadMore]);
 
+    if (!album) return null;
+
     return (
-        <View>
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <Stack.Screen options={{
-                headerTitle: 'Album Details',
+                headerTitle: album.title,
                 headerRight: () => (
                     <Pressable onPress={() => router.push(`/album/${albumId}/settings`)}>
-                        <Info size={24} color="black" />
+                        <CircleEllipsis size={24} color="black" />
                     </Pressable>
                 )
             }} />
 
-            {media.length === 0 && (
+            {media.length === 0 ? (
                 <View style={styles.emptyContainer}>
-                    <View style={styles.emptyCard}>
-                        <View style={styles.emptyIconContainer}>
-                            <Image size={48} color="black" />
-                        </View>
-                        <View style={styles.emptyTextContainer}>
-                            <Text style={styles.emptyTitle}>Ready to capture memories?</Text>
-                            <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
-                        </View>
-                    </View>
+
+                    <Images size={48} color="#ccc" style={{ margin: 16 }} />
+
+                    <Text style={styles.emptyTitle}>Ready to share memories?</Text>
+                    <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
                 </View>
+
+            ) : (
+                <FlatList
+                    data={media}
+                    keyExtractor={(item) => item.filename}
+                    numColumns={columns}
+                    columnWrapperStyle={{ gap: gap }}
+                    contentContainerStyle={{ gap: gap }}
+                    onEndReached={loadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={canLoadMoreFooter}
+                    renderItem={renderTile} />
             )}
 
-            <FlatList
-                data={media}
-                keyExtractor={(item) => item.filename}
-                numColumns={columns}
-                columnWrapperStyle={{ gap: gap }}
-                contentContainerStyle={{ gap: gap }}
-                onEndReached={loadMore}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={canLoadMoreFooter}
-                renderItem={renderTile} />
-
-            {/* <FloatingButton onPress={handleMediaSelection} /> */}
+            <Pressable onPress={() => { }} style={theme.styles.fab} >
+                <Plus size={24} color={theme.colors.secondary} />
+            </Pressable>
 
         </View>
     );
@@ -87,50 +91,38 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    footer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
 
+    // Empty Container Styles
     emptyContainer: {
-        flex: 1,
+        flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 24,
-    },
-    emptyCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        gap: 8,
+        margin: 16,
         backgroundColor: '#FFFFFF',
         borderRadius: 16,
-        padding: 20,
+        paddingVertical: 20,
+        paddingHorizontal: 48,
         borderWidth: 2,
         borderColor: '#E5E5E5',
-        maxWidth: 320,
-        width: '100%',
-    },
-    emptyIconContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 12,
-        backgroundColor: '#F0FDFD',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
-    },
-    emptyTextContainer: {
-        flex: 1,
     },
     emptyTitle: {
         fontSize: 18,
         fontWeight: '600',
         color: '#000000',
         marginBottom: 4,
+        textAlign: 'center',
     },
     emptySubtitle: {
         fontSize: 14,
         color: '#666666',
         lineHeight: 20,
+        textAlign: 'center',
+    },
+
+    footer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

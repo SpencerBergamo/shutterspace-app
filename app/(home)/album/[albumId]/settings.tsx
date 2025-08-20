@@ -1,11 +1,12 @@
 
+import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { Stack, useLocalSearchParams } from "expo-router";
-import { Text, View } from "react-native";
-
+import { View } from "react-native";
 
 export default function AlbumSettingsScreen() {
+    const { theme } = useTheme();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbumById } = useAlbums();
     const album = getAlbumById(albumId);
@@ -13,13 +14,13 @@ export default function AlbumSettingsScreen() {
     if (!album) return null;
 
     return (
-        <View>
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <Stack.Screen options={{
                 headerBackButtonDisplayMode: 'minimal',
-                headerTitle: album.title,
+                headerTitle: "Settings",
             }} />
 
-            <Text>Album Settings</Text>
+            <View></View>
         </View>
     );
 }

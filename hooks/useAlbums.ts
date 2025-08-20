@@ -8,7 +8,7 @@ import { useCallback, useState } from "react";
 interface UseAlbumsResult {
     albums: Album[];
     isLoading: boolean;
-    getAlbumById: (id: Id<'albums'>) => Album | undefined;
+    getAlbumById: (id: Id<'albums'>) => Album | null;
     createAlbum: (data: AlbumFormData) => Promise<Id<'albums'>>;
     updateAlbum: (albumId: Id<'albums'>, data: AlbumFormData) => Promise<Id<'albums'> | null>;
     deleteAlbum: (albumId: Id<'albums'>) => Promise<void>;
@@ -24,7 +24,8 @@ export const useAlbums = (): UseAlbumsResult => {
     const deleteMutation = useMutation(api.albums.deleteAlbum);
 
     const getAlbumById = useCallback((albumId: Id<'albums'>) => {
-        return albums?.find(album => album._id === albumId);
+        const result = albums?.find(album => album._id === albumId);
+        return result ?? null;
     }, [albums]);
 
     const getMemberRole = useCallback(async (albumId: Id<'albums'>): Promise<MemberRole> => {

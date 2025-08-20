@@ -1,6 +1,5 @@
 import { Id } from "@/convex/_generated/dataModel";
 import { OptimisticMedia } from "@/types/Media";
-import { processImage, processVideo } from "@/utils/mediaFactory";
 import { getStorage } from "@react-native-firebase/storage";
 import { useCallback, useState } from "react";
 
@@ -14,7 +13,7 @@ export const useUploadQueue = (
 ): useUploadQueueResult => {
     const [queue, setQueue] = useState<OptimisticMedia[]>([]);
     const storage = getStorage();
-    const storageRef = storage.ref(`albums/${albumId}`);
+    // const storageRef = storage.ref(`albums/${albumId}`);
 
     const updateState = useCallback((mediaId: string, update: Partial<OptimisticMedia>) => {
         setQueue(prev => prev.map(
@@ -39,9 +38,9 @@ export const useUploadQueue = (
                 updateState(item.filename, { status: 'uploading', progress: 0 });
 
                 if (item.type === 'video') {
-                    await processVideo(item, storageRef, onProgress, onError, onSuccess);
+                    // await processVideo(item, storageRef, onProgress, onError, onSuccess);
                 } else {
-                    await processImage(item, storageRef, onProgress, onError, onSuccess);
+                    // await processImage(item, storageRef, onProgress, onError, onSuccess);
                 }
             } catch (e) {
                 console.error("useUploadQueue (FAIL)", e);
