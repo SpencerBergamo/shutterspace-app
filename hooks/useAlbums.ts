@@ -35,20 +35,43 @@ export const useAlbums = (): UseAlbumsResult => {
     }, [profile._id]);
 
     const createAlbum = useCallback(async (data: AlbumFormData): Promise<Id<'albums'>> => {
+
+        const isDynamicThumbnail: boolean = data.thumbnailFileId ? true : false;
+
+        const openInvites: boolean = data.openInvites ?? true;
+
+        const dateRange: {
+            start: string;
+            end?: string;
+        } | undefined = data.dateRange ? {
+            start: data.dateRange.start.toISOString(),
+            end: data.dateRange.end?.toISOString(),
+        } : undefined;
+
+        const location: {
+            lat: number;
+            lng: number;
+            name?: string;
+            address?: string;
+        } | undefined = data.location ? {
+            lat: data.location.lat,
+            lng: data.location.lng,
+            name: data.location?.name,
+            address: data.location?.address,
+        } : undefined;
+
+        const expiresAt: number | undefined = data.expiresAt ? data.expiresAt.getTime() : undefined;
+
         return await createMutation({
             hostId: profile._id,
             title: data.title,
             description: data.description,
             thumbnailFileId: data.thumbnailFileId,
-            isDynamicThumbnail: data.isDynamicThumbnail ?? false,
-            openInvites: data.openInvites ?? true,
-            dateRange: data.dateRange ? {
-                start: data.dateRange.start.toISOString(),
-                end: data.dateRange.end?.toISOString(),
-            } : undefined,
-            location: data.location,
-            updatedAt: Date.now(),
-            expiresAt: data.expiresAt ? data.expiresAt.getTime() : undefined,
+            isDynamicThumbnail,
+            openInvites,
+            dateRange,
+            location,
+            expiresAt,
         });
     }, [createMutation, profile._id]);
 

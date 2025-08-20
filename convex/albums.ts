@@ -58,7 +58,6 @@ export const createAlbum = mutation({
             name: v.optional(v.string()),
             address: v.optional(v.string()),
         })),
-        updatedAt: v.number(),
         expiresAt: v.optional(v.number()),
     }, handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
