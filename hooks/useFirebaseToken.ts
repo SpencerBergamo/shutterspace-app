@@ -1,4 +1,4 @@
-import { FirebaseAuthTypes, getAuth, onAuthStateChanged } from "@react-native-firebase/auth";
+import { FirebaseAuthTypes, getAuth, getIdToken, onAuthStateChanged } from "@react-native-firebase/auth";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export default function useFirebaseAuth() {
@@ -15,7 +15,7 @@ export default function useFirebaseAuth() {
     const fetchAccessToken = useCallback(async ({ forceRefreshToken }: { forceRefreshToken: boolean }) => {
         if (!user) return null;
 
-        return await user.getIdToken(forceRefreshToken);
+        return await getIdToken(user, forceRefreshToken);
     }, [user]);
 
     useEffect(() => {
