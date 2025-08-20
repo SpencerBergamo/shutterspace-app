@@ -18,7 +18,7 @@ export const useAlbums = (): UseAlbumsResult => {
     const { profile } = useProfile();
 
     const [isLoading, setIsLoading] = useState(false);
-    const albums = useQuery(api.albums.getUserAlbums, { profileId: profile?._id });
+    const albums = useQuery(api.albums.getUserAlbums, { profileId: profile._id });
     const createMutation = useMutation(api.albums.createAlbum);
     const updateMutation = useMutation(api.albums.updateAlbum);
     const deleteMutation = useMutation(api.albums.deleteAlbum);

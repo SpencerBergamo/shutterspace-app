@@ -7,7 +7,7 @@ import { getGridConfig } from "@/utils/getGridConfig";
 import { router, useNavigation } from "expo-router";
 import { Plus } from "lucide-react-native";
 import { useMemo } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
@@ -24,6 +24,14 @@ export default function HomeScreen() {
             return (
                 <View style={{ flex: 1 }}>
                     <ActivityIndicator size="large" />
+                </View>
+            );
+        }
+
+        if (albums.length === 0) {
+            return (
+                <View style={{ flex: 1, justifyContent: 'center', alignContent: 'center' }}>
+                    <Text>No albums found</Text>
                 </View>
             );
         }

@@ -53,7 +53,7 @@ export default function NewAlbum() {
     // Clean Up
     useEffect(() => {
         return () => resetForm();
-    }, [resetForm]);
+    }, []);
 
     // -- State Updates --
     const updateField = (field: keyof AlbumFormData, value: string) => {

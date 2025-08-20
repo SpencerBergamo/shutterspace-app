@@ -24,6 +24,10 @@ export const getUserAlbums = query({
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) throw new Error("Not Authenticated");
 
+        if (identity) {
+            console.log("identity", identity.subject);
+        }
+
         const memberships = await ctx.db
             .query('albumMembers')
             .withIndex('by_profileId', q => q.eq('profileId', profileId))
@@ -61,10 +65,7 @@ export const createAlbum = mutation({
         expiresAt: v.optional(v.number()),
     }, handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
-
-        if (!identity || identity.tokenIdentifier !== args.hostId) {
-            throw new Error("Not authorized to create album");
-        }
+        if (!identity) throw new Error("Not authenticated");
 
         const albumId = await ctx.db.insert('albums', {
             hostId: args.hostId,
