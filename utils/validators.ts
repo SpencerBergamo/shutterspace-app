@@ -25,6 +25,12 @@ export function validateTitle(title: string) {
     return null;
 }
 
+export function validateDescription(value: string) {
+    if (value.length > 300) return 'Description must be less than 300 characters';
+
+    return null;
+}
+
 export function validateNickname(nickname: string) {
     if (!nickname) return 'Nickname is required';
 
