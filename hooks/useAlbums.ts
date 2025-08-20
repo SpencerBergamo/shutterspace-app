@@ -36,19 +36,19 @@ export const useAlbums = (): UseAlbumsResult => {
 
     const createAlbum = useCallback(async (data: AlbumFormData): Promise<Id<'albums'>> => {
         return await createMutation({
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
             hostId: profile._id,
             title: data.title,
             description: data.description,
+            thumbnailFileId: data.thumbnailFileId,
+            isDynamicThumbnail: data.isDynamicThumbnail ?? false,
             openInvites: data.openInvites ?? true,
-            // coverImageUrl: data.coverImageUrl,
-            staticCover: data.staticCover ?? false,
             dateRange: data.dateRange ? {
                 start: data.dateRange.start.toISOString(),
                 end: data.dateRange.end?.toISOString(),
             } : undefined,
             location: data.location,
+            updatedAt: Date.now(),
+            expiresAt: data.expiresAt ? data.expiresAt.getTime() : undefined,
         });
     }, [createMutation, profile._id]);
 
@@ -59,20 +59,24 @@ export const useAlbums = (): UseAlbumsResult => {
             throw new Error("Not authorized to update this album");
         }
 
+        const updates = {
+            title: data.title,
+            description: data.description,
+            thumbnailFileId: data.thumbnailFileId,
+            isDynamicThumbnail: data.isDynamicThumbnail ?? false,
+            openInvites: data.openInvites ?? true,
+            dateRange: data.dateRange ? {
+                start: data.dateRange.start.toISOString(),
+                end: data.dateRange.end?.toISOString(),
+            } : undefined,
+            location: data.location,
+            expiresAt: data.expiresAt ? data.expiresAt.getTime() : undefined,
+            isDeleted: false,
+        }
+
         return await updateMutation({
             albumId,
-            ...{
-                title: data.title,
-                description: data.description,
-                coverImageUrl: data.coverImageUrl,
-                staticCover: data.staticCover ?? false,
-                dateRange: data.dateRange ? {
-                    start: data.dateRange.start.toISOString(),
-                    end: data.dateRange.end?.toISOString(),
-                } : undefined,
-                location: data.location,
-                openInvites: data.openInvites ?? true,
-            },
+            ...updates,
         });
     }, [updateMutation]);
 

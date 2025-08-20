@@ -5,11 +5,15 @@ export default defineSchema({
     profiles: defineTable({
         firebaseUID: v.string(),
         joined: v.number(),
-        authProvider: v.union(v.literal("email"), v.literal("google"), v.literal("apple")),
+        authProvider: v.union(
+            v.literal("email"),
+            v.literal("google"),
+            v.literal("apple"),
+        ),
         email: v.string(),
-        avatarKey: v.optional(v.string()),
-        ssoAvatarUrl: v.optional(v.string()),
         nickname: v.string(),
+        avatarKey: v.optional(v.string()), // R2 key for public avatars: 'avatars/{profile._id}.jpg'
+        ssoAvatarUrl: v.optional(v.string()), // URL for SSO avatars
     }).index('by_firebase_uid', ['firebaseUID']),
 
     friendships: defineTable({
@@ -29,44 +33,68 @@ export default defineSchema({
         .index('by_pair_reverse', ['friendId', 'userId']),
 
     albums: defineTable({
-        createdAt: v.number(),
-        updatedAt: v.number(),
         hostId: v.id("profiles"),
         title: v.string(),
         description: v.optional(v.string()),
-        coverImageUrl: v.optional(v.string()),
-        staticCover: v.boolean(),
+        thumbnailFileId: v.optional(v.id('media')),
+        isDynamicThumbnail: v.boolean(),
+        openInvites: v.boolean(),
         dateRange: v.optional(v.object({
             start: v.string(),
             end: v.optional(v.string()),
         })),
-        location: v.optional(v.string()),
-        openInvites: v.boolean(),
+        location: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number(),
+            name: v.optional(v.string()),
+            address: v.optional(v.string()),
+        })),
+        updatedAt: v.number(),
         expiresAt: v.optional(v.number()),
+        isDeleted: v.boolean(),
     }),
 
     albumMembers: defineTable({
         albumId: v.id("albums"),
         profileId: v.id("profiles"),
-        role: v.union(v.literal('member'), v.literal('moderator'), v.literal('host')),
+        role: v.union(
+            v.literal('member'),
+            v.literal('moderator'),
+            v.literal('host'),
+        ),
         joinedAt: v.number(),
     }).index("by_albumId", ["albumId"])
         .index("by_profileId", ["profileId"])
         .index("by_album_profileId", ["albumId", "profileId"]),
 
+    joinCodes: defineTable({
+        albumId: v.id('albums'),
+        expiresAt: v.optional(v.number()),
+    }),
+
     media: defineTable({
-        filename: v.string(),
-        createdAt: v.number(),
         albumId: v.id("albums"),
-        uploadedById: v.id("profiles"),
-        downloadUrl: v.string(),
-        thumbnailUrl: v.string(),
-        type: v.union(v.literal("image"), v.literal("video")),
-        width: v.number(),
-        height: v.number(),
+        uploaderId: v.id('profiles'),
+        fileType: v.union(v.literal('image'), v.literal('video')), // image/jpg, video/mp4, etc.
+        originalFilename: v.string(),
+        uploadedAt: v.number(),
+
+        size: v.optional(v.number()),
+        width: v.optional(v.number()),
+        height: v.optional(v.number()),
         duration: v.optional(v.number()),
+        dateTaken: v.optional(v.string()),
+
+        location: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number(),
+            name: v.optional(v.string()),
+            address: v.optional(v.string()),
+        })),
+
+        isDeleted: v.boolean(),
     }).index("by_albumId", ["albumId"])
-        .index("by_profileId", ["uploadedById"]),
+        .index("by_profileId", ["uploaderId"]),
 
     comments: defineTable({
         mediaId: v.id("media"),

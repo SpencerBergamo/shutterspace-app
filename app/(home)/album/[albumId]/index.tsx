@@ -8,19 +8,16 @@ import { getGridConfig } from "@/utils/getGridConfig";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Image, Info } from "lucide-react-native";
 import { useCallback } from "react";
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function AlbumScreen() {
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { profile } = useProfile();
+    const { columns, gap, width, height } = getGridConfig({});
 
-    // Album and Media data
     const { getAlbumById } = useAlbums();
     const album = getAlbumById(albumId);
     const { media, loadMore, canLoadMore, handleMediaSelection } = useMedia(albumId);
-
-    // Grid config
-    const { columns, gap, width, height } = getGridConfig({});
 
     function handleMediaPress(media: Media) {
         if ('status' in media) return;
@@ -81,8 +78,6 @@ export default function AlbumScreen() {
                 renderItem={renderTile} />
 
             {/* <FloatingButton onPress={handleMediaSelection} /> */}
-
-            <Modal visible={false} animationType="fade" />
 
         </View>
     );

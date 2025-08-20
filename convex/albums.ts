@@ -42,43 +42,48 @@ export const getUserAlbums = query({
 
 export const createAlbum = mutation({
     args: {
-        createdAt: v.number(),
-        updatedAt: v.number(),
-        hostId: v.id("profiles"),
+        hostId: v.id('profiles'),
         title: v.string(),
         description: v.optional(v.string()),
-        coverImageUrl: v.optional(v.string()),
-        staticCover: v.boolean(),
+        thumbnailFileId: v.optional(v.id('media')),
+        isDynamicThumbnail: v.boolean(),
+        openInvites: v.boolean(),
         dateRange: v.optional(v.object({
             start: v.string(),
             end: v.optional(v.string()),
         })),
-        location: v.optional(v.string()),
-        openInvites: v.boolean(),
+        location: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number(),
+            name: v.optional(v.string()),
+            address: v.optional(v.string()),
+        })),
+        updatedAt: v.number(),
         expiresAt: v.optional(v.number()),
     }, handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error("Not Authorized to Create Albums");
 
-        const userId = identity.subject as Id<'profiles'>;
+        if (!identity || identity.tokenIdentifier !== args.hostId) {
+            throw new Error("Not authorized to create album");
+        }
 
         const albumId = await ctx.db.insert('albums', {
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            hostId: userId,
+            hostId: args.hostId,
             title: args.title,
             description: args.description,
-            coverImageUrl: args.coverImageUrl,
-            staticCover: args.staticCover,
+            thumbnailFileId: args.thumbnailFileId,
+            isDynamicThumbnail: args.isDynamicThumbnail,
+            openInvites: args.openInvites,
             dateRange: args.dateRange,
             location: args.location,
-            openInvites: args.openInvites ?? true,
+            updatedAt: Date.now(),
             expiresAt: args.expiresAt,
+            isDeleted: false,
         });
 
         await ctx.db.insert('albumMembers', {
             albumId,
-            profileId: userId,
+            profileId: args.hostId,
             role: 'host',
             joinedAt: Date.now(),
         });
@@ -92,40 +97,48 @@ export const updateAlbum = mutation({
         albumId: v.id('albums'),
         title: v.optional(v.string()),
         description: v.optional(v.string()),
-        coverImageUrl: v.optional(v.string()),
-        staticCover: v.boolean(),
+        thumbnailFileId: v.optional(v.id('media')),
+        isDynamicThumbnail: v.boolean(),
+        openInvites: v.boolean(),
         dateRange: v.optional(v.object({
             start: v.string(),
             end: v.optional(v.string()),
         })),
-        location: v.optional(v.string()),
-        openInvites: v.boolean(),
+        location: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number(),
+            name: v.optional(v.string()),
+            address: v.optional(v.string()),
+        })),
         expiresAt: v.optional(v.number()),
-    }, handler: async (ctx, { albumId, ...updates }) => {
-        // const identity = await ctx.auth.getUserIdentity();
-        // if (!identity) throw new Error("Not authenticated");
+        isDeleted: v.boolean(),
+    }, handler: async (ctx, { albumId, ...args }) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Not Authorized to Update Albums");
 
-        // // check if any updates were passed
-        // if (Object.keys(updates).length === 0) return null;
+        const membership = await ctx.db
+            .query('albumMembers')
+            .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
+                .eq('profileId', identity.subject as Id<'profiles'>))
+            .first();
 
-        // // verify user can update album
-        // const album = await ctx.db.get(albumId);
-        // if (!album) throw new Error("Album was not found.");
+        if (!membership || !['host', 'moderator'].includes(membership.role)) {
+            throw new Error('Not authorized to update this album');
+        }
 
-        // const membership = await ctx.db
-        //     .query('albumMembers')
-        //     .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
-        //         .eq('profileId', identity.subject as Id<'profiles'>))
-        //     .first();
-
-        // if (!membership || !['host', 'moderator'].includes(membership.role)) {
-        //     throw new Error('Not authorized to update this album');
-        // }
-
-        await ctx.db.patch(albumId, {
-            ...updates,
+        const updates = {
+            title: args.title,
+            description: args.description,
+            thumbnailFileId: args.thumbnailFileId,
+            isDynamicThumbnail: args.isDynamicThumbnail,
+            openInvites: args.openInvites,
+            dateRange: args.dateRange,
+            location: args.location,
             updatedAt: Date.now(),
-        });
+            expiresAt: args.expiresAt,
+        }
+
+        await ctx.db.patch(albumId, updates);
 
         return albumId;
     },

@@ -166,6 +166,17 @@ The database is designed around a **social photo-sharing model** with the follow
 - Three-state system handles all social scenarios
 - Timestamps enable friendship analytics and notifications
 
+### ConvexProviderWithAuth UserIdentity Object
+```typescript
+interface UserIdentity {
+    tokenIdentifier: string;  //  Firebase UID (e.g., "abc123...")
+    name?: string;            // From Firebase user.displayName
+    email?: string;           // From Firebase user.email
+    pictureUrl?: string;      // From Firebase user.photoURL
+    emailVerified: boolean;   // From Firebase user.emailVerified
+}
+```
+
 ## Schema Evolution Strategy
 
 Following Convex best practices for production deployments:

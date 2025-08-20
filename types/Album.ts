@@ -5,28 +5,44 @@ export type MemberRole = 'host' | 'moderator' | 'member' | 'not-a-member';
 
 export interface Album {
     _id: Id<'albums'>;
-    createdAt: number;
-    updatedAt: number;
+    _creationTime: number;
+
     hostId: Id<'profiles'>;
     title: string;
     description?: string;
-    coverImageUrl?: string;
-    staticCover: boolean;
-    dateRange?: { start: string, end?: string };
-    location?: string;
+
+    thumbnailFileId?: Id<'media'>;
+    isDynamicThumbnail: boolean;
+
     openInvites: boolean;
+    dateRange?: { start: string, end?: string };
+    location?: {
+        lat: number;
+        lng: number;
+        name?: string;
+        address?: string;
+    };
+
+    updatedAt: number;
     expiresAt?: number;
+    isDeleted: boolean;
 }
 
 export interface AlbumFormData {
     title: string;
     description?: string;
-    coverImageUrl?: string;
-    coverImage?: ImagePicker.ImagePickerAsset;
-    staticCover?: boolean;
+    thumbnailFileId?: Id<'media'>;
+    file?: ImagePicker.ImagePickerAsset;
+    isDynamicThumbnail?: boolean;
     dateRange?: { start: Date, end?: Date };
-    location?: string;
+    location?: {
+        lat: number;
+        lng: number;
+        name?: string;
+        address?: string;
+    };
     openInvites?: boolean;
+    expiresAt?: Date;
 }
 
 export type CreateAlbumData = Omit<Album, '_id'>;
