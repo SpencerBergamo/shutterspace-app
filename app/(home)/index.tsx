@@ -39,14 +39,14 @@ export default function HomeScreen() {
         return <FlatList
             data={albums}
             keyExtractor={(item) => item._id}
-            numColumns={gridConfig.columns}
-            columnWrapperStyle={{ gap: gridConfig.gap }}
-            contentContainerStyle={{ padding: 16, gap: gridConfig.gap }}
+            numColumns={gridConfig.numColumns}
+            columnWrapperStyle={gridConfig.columnWrapperStyle}
+            contentContainerStyle={gridConfig.contentContainerStyle}
             renderItem={({ item }) => (
                 <AlbumCard
                     album={item}
-                    width={gridConfig.width}
-                    height={gridConfig.height} />
+                    width={gridConfig.tileWidth}
+                    height={gridConfig.tileHeight} />
             )} />
 
     }, [profile, isLoading, albums]);
