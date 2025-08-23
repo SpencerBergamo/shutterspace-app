@@ -1,5 +1,4 @@
 import Thumbnail from "@/components/Thumbnail";
-import { useProfile } from "@/context/ProfileContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
@@ -8,16 +7,15 @@ import { Media } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { CircleEllipsis, Images, Plus } from "lucide-react-native";
-import { useCallback } from "react";
+import { useMemo } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function AlbumScreen() {
-    const { getAlbumById } = useAlbums();
-    const { profile } = useProfile();
-    const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { theme } = useTheme();
-    const gridConfig = getGridLayout();
+    const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
+    const { getAlbumById } = useAlbums();
 
+    const gridConfig = getGridLayout();
     const album = getAlbumById(albumId);
 
     const { media, loadMore, canLoadMore, handleMediaSelection } = useMedia(albumId);
@@ -26,25 +24,37 @@ export default function AlbumScreen() {
         if ('status' in media) return;
 
         // Open Modal instead of screen
+        console.log('media', media);
     }
 
-    const renderTile = useCallback(({ item, index }: { item: Media, index: number }) => (
-        <Pressable onPress={() => handleMediaPress(item)}>
-            <Thumbnail media={item} size={gridConfig.tileWidth} />
-        </Pressable>
-    ), [gridConfig.tileWidth, handleMediaPress]);
+    if (!album) return null;
 
-    const canLoadMoreFooter = useCallback(() => {
+    const renderMediaList = useMemo(() => (
+        <FlatList
+            data={media}
+            keyExtractor={(item) => item.originalFilename}
+            numColumns={gridConfig.numColumns}
+            columnWrapperStyle={gridConfig.columnWrapperStyle}
+            contentContainerStyle={gridConfig.contentContainerStyle}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={canLoadMoreFooter}
+            renderItem={({ item }) => (
+                <Pressable onPress={() => handleMediaPress(item)}>
+                    <Thumbnail media={item} size={gridConfig.tileWidth} />
+                </Pressable>
+            )} />
+    ), [media, gridConfig]);
+
+    const canLoadMoreFooter = () => {
         if (!canLoadMore) return null;
 
         return (
-            <View style={{}}>
+            <View style={{ marginVertical: 16, width: '100%', height: 150, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color="black" />
             </View>
         );
-    }, [canLoadMore, loadMore]);
-
-    if (!album) return null;
+    };
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -57,7 +67,7 @@ export default function AlbumScreen() {
                 )
             }} />
 
-            {media.length === 0 ? (
+            {media.length > 0 ? renderMediaList : (
                 <View style={styles.emptyContainer}>
 
                     <Images size={48} color="#ccc" style={{ margin: 16 }} />
@@ -65,21 +75,9 @@ export default function AlbumScreen() {
                     <Text style={styles.emptyTitle}>Ready to share memories?</Text>
                     <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
                 </View>
-
-            ) : (
-                <FlatList
-                    data={media}
-                    keyExtractor={(item) => item.filename}
-                    numColumns={gridConfig.numColumns}
-                    columnWrapperStyle={gridConfig.columnWrapperStyle}
-                    contentContainerStyle={gridConfig.contentContainerStyle}
-                    onEndReached={loadMore}
-                    onEndReachedThreshold={0.5}
-                    ListFooterComponent={canLoadMoreFooter}
-                    renderItem={renderTile} />
             )}
 
-            <Pressable onPress={() => { }} style={theme.styles.fab} >
+            <Pressable onPress={handleMediaSelection} style={theme.styles.fab} >
                 <Plus size={24} color={theme.colors.secondary} />
             </Pressable>
 

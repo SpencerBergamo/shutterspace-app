@@ -3,19 +3,25 @@ import { ImagePickerAsset } from "expo-image-picker";
 
 export type DbMedia = {
     _id: Id<'media'>; // the filename of the asset
-    filename: string;
-    createdAt: number;
-    albumId: Id<'albums'>;
-    uploadedById: Id<'profiles'>;
-    downloadUrl: string;
-    thumbnailUrl: string;
-    type: 'image' | 'video';
-    width: number;
-    height: number;
+    uploaderId: Id<'profiles'>;
+    fileType: 'image' | 'video';
+    originalFilename: string;
+    uploadedAt: number;
+    size?: number;
+    width?: number;
+    height?: number;
     duration?: number;
+    dateTaken?: string;
+    location?: {
+        lat: number;
+        lng: number;
+        name?: string;
+        address?: string;
+    },
+    isDeleted: boolean;
 }
 
-export type OptimisticMedia = Omit<DbMedia, '_id' | 'downloadUrl' | 'thumbnailUrl'> &
+export type OptimisticMedia = Omit<DbMedia, '_id' | 'uploadedAt' | 'isDeleted'> &
 {
     asset: ImagePickerAsset;
     status: 'pending' | 'uploading' | 'success' | 'error' | 'paused';
