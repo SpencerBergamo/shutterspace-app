@@ -52,7 +52,8 @@ export default defineSchema({
         updatedAt: v.number(),
         expiresAt: v.optional(v.number()),
         isDeleted: v.boolean(),
-    }),
+    }).index('by_hostId', ['hostId'])
+        .index('by_updatedAt', ['updatedAt']),
 
     albumMembers: defineTable({
         albumId: v.id("albums"),

@@ -24,6 +24,8 @@ export const getUserAlbums = query({
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) throw new Error("Not Authenticated");
 
+        // 1. Get album memberships for the user 
+        // Notation: O(log n)
         const memberships = await ctx.db
             .query('albumMembers')
             .withIndex('by_profileId', q => q.eq('profileId', profileId))
@@ -31,12 +33,21 @@ export const getUserAlbums = query({
 
         if (memberships.length === 0) return [];
 
-        const albums = await Promise.all(
+        // 2. Retrieve all album docs related to the memberships
+        // Notation: O(m) where m is the number of memberships
+        const docs = await Promise.all(
             memberships.map((m) => ctx.db.get(m.albumId))
         );
 
-        return albums.filter((album): album is Doc<'albums'> => album !== null)
-            .sort((a, b) => b.updatedAt - a.updatedAt);
+        // 3. Filter out isDeleted albums
+        // Notation: O(m) linear scan
+        const albums = docs.filter((album): album is Doc<'albums'> => album !== null);
+
+        // 4. Sort albums by updatedAt in descending order
+        // Notation: O(m log m)
+        return albums.sort((a, b) => b.updatedAt - a.updatedAt);
+
+        // Total Complexity: O(m log m)
     },
 });
 

@@ -3,7 +3,7 @@ import HomeScreenHeader from "@/components/HomeScreenHeader";
 import { useProfile } from "@/context/ProfileContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlbums } from "@/hooks/useAlbums";
-import { getGridConfig } from "@/utils/getGridConfig";
+import getGridLayout from "@/utils/getGridLyout";
 import { router, useNavigation } from "expo-router";
 import { Plus } from "lucide-react-native";
 import { useMemo } from "react";
@@ -17,7 +17,7 @@ export default function HomeScreen() {
     const { profile } = useProfile();
     const { albums, isLoading } = useAlbums();
 
-    const gridConfig = getGridConfig({ columns: 2, gap: 16 });
+    const gridConfig = getGridLayout({ columns: 2, gap: 16, aspectRatio: 1 });
 
     const renderContent = useMemo(() => {
         if (isLoading) {
@@ -42,6 +42,7 @@ export default function HomeScreen() {
             numColumns={gridConfig.numColumns}
             columnWrapperStyle={gridConfig.columnWrapperStyle}
             contentContainerStyle={gridConfig.contentContainerStyle}
+
             renderItem={({ item }) => (
                 <AlbumCard
                     album={item}
@@ -49,13 +50,33 @@ export default function HomeScreen() {
                     height={gridConfig.tileHeight} />
             )} />
 
-    }, [profile, isLoading, albums]);
+    }, [gridConfig]);
+
+    const renderAlbumList = useMemo(() => {
+        if (albums.length === 0) {
+            return <Text>No albums found</Text>
+        }
+
+        return <FlatList
+            data={albums}
+            keyExtractor={(item) => item._id}
+            numColumns={gridConfig.numColumns}
+            columnWrapperStyle={gridConfig.columnWrapperStyle}
+            contentContainerStyle={gridConfig.contentContainerStyle}
+            renderItem={({ item }) => (
+                <AlbumCard album={item} width={gridConfig.tileWidth} height={gridConfig.tileHeight} />
+            )} />
+    }, [albums, gridConfig]);
 
     return (
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <HomeScreenHeader />
 
-            {renderContent}
+            {isLoading ? (
+                <ActivityIndicator size="large" color="black" />
+            ) : (
+                renderAlbumList
+            )}
 
             {/* Floating Action Button */}
             <Pressable onPress={() => router.push('/new-album')} style={theme.styles.fab}>

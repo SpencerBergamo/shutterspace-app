@@ -1,5 +1,8 @@
 /**
  * Get the grid config for a given number of tiles and columns
+ * @interface GridConfig - Optional parameters to adjust the grid config
+ * @interface GridLayout - All values that define the grid layout
+ * 
  * @function getGridConfig - Get the grid config for a given number of tiles and columns
  * @param numberOfTiles - The number of tiles to display
  * @param columns - The number of columns to display
@@ -22,7 +25,11 @@ interface GridLayout {
     tileHeight: number;
 }
 
-export const getGridConfig = ({ columns = 3, gap = 2, aspectRatio = 1 }: Partial<GridConfig>): GridLayout => {
+export default function getGridLayout({ columns, gap, aspectRatio }: GridConfig = {
+    columns: 3,
+    gap: 2,
+    aspectRatio: 1,
+}): GridLayout {
     const { width } = useWindowDimensions();
 
     const tileWidth = (width - (gap * (columns + 1))) / columns;

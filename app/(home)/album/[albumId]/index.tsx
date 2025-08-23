@@ -5,7 +5,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
-import { getGridConfig } from "@/utils/getGridConfig";
+import getGridLayout from "@/utils/getGridLyout";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { CircleEllipsis, Images, Plus } from "lucide-react-native";
 import { useCallback } from "react";
@@ -16,7 +16,7 @@ export default function AlbumScreen() {
     const { profile } = useProfile();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { theme } = useTheme();
-    const { columns, gap, width } = getGridConfig({});
+    const gridConfig = getGridLayout();
 
     const album = getAlbumById(albumId);
 
@@ -30,9 +30,9 @@ export default function AlbumScreen() {
 
     const renderTile = useCallback(({ item, index }: { item: Media, index: number }) => (
         <Pressable onPress={() => handleMediaPress(item)}>
-            <Thumbnail media={item} size={width} />
+            <Thumbnail media={item} size={gridConfig.tileWidth} />
         </Pressable>
-    ), [width, handleMediaPress]);
+    ), [gridConfig.tileWidth, handleMediaPress]);
 
     const canLoadMoreFooter = useCallback(() => {
         if (!canLoadMore) return null;
@@ -70,9 +70,9 @@ export default function AlbumScreen() {
                 <FlatList
                     data={media}
                     keyExtractor={(item) => item.filename}
-                    numColumns={columns}
-                    columnWrapperStyle={{ gap: gap }}
-                    contentContainerStyle={{ gap: gap }}
+                    numColumns={gridConfig.numColumns}
+                    columnWrapperStyle={gridConfig.columnWrapperStyle}
+                    contentContainerStyle={gridConfig.contentContainerStyle}
                     onEndReached={loadMore}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={canLoadMoreFooter}
