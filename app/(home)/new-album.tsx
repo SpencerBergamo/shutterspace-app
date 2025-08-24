@@ -1,12 +1,12 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
+import FloatingActionButton from "@/components/FloatingActionButton";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlbums } from "@/hooks/useAlbums";
 import { AlbumFormData } from "@/types/Album";
 import { validateTitle } from "@/utils/validators";
 import { router } from "expo-router";
-import { Check } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 
 export default function NewAlbum() {
@@ -129,11 +129,7 @@ export default function NewAlbum() {
             </KeyboardAwareScrollView>
 
             <KeyboardStickyView offset={{ closed: 0, opened: 30 }}>
-                <Pressable onPress={handleSubmit} style={[theme.styles.fab, {
-                    backgroundColor: !isFormValid ? 'grey' : theme.colors.primary,
-                }]}>
-                    {isLoading ? <ActivityIndicator /> : <Check size={24} color={theme.colors.secondary} />}
-                </Pressable>
+                <FloatingActionButton icon="check" onPress={handleSubmit} disabled={!isFormValid} />
             </KeyboardStickyView>
         </View >
     );

@@ -1,3 +1,4 @@
+import FloatingActionButton from "@/components/FloatingActionButton";
 import Thumbnail from "@/components/Thumbnail";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
@@ -6,7 +7,7 @@ import { useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { CircleEllipsis, Images, Plus } from "lucide-react-native";
+import { CircleEllipsis, Images } from "lucide-react-native";
 import { useMemo } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
@@ -78,9 +79,7 @@ export default function AlbumScreen() {
                 </View>
             )}
 
-            <Pressable onPress={handleMediaSelection} style={theme.styles.fab} >
-                <Plus size={24} color={theme.colors.secondary} />
-            </Pressable>
+            <FloatingActionButton icon="plus" onPress={handleMediaSelection} />
 
         </View>
     );

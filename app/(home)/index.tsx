@@ -1,12 +1,12 @@
 import AlbumCard from "@/components/albums/AlbumCard";
+import FloatingActionButton from "@/components/FloatingActionButton";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlbums } from "@/hooks/useAlbums";
 import getGridLayout from "@/utils/getGridLyout";
 import { router } from "expo-router";
-import { Plus } from "lucide-react-native";
 import { useMemo } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
     const { width } = useWindowDimensions();
@@ -75,10 +75,7 @@ export default function HomeScreen() {
                 renderAlbumList
             )}
 
-            {/* Floating Action Button */}
-            <Pressable onPress={() => router.push('/new-album')} style={theme.styles.fab}>
-                <Plus size={24} color={theme.colors.secondary} />
-            </Pressable>
+            <FloatingActionButton icon='plus' onPress={() => router.push('/new-album')} />
         </View>
     );
 }

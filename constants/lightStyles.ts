@@ -55,23 +55,4 @@ export const LightStyles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#D9DDE0',
     },
-
-    // Floating Action Button
-    fab: {
-        backgroundColor: '#09ADA9',
-        width: 56,
-        height: 56,
-        borderRadius: 999,
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'absolute' as const,
-        right: 20,
-        bottom: 50,
-    },
-    fabIcon: {
-        color: 'white',
-    },
-    fabDisabled: {
-        opacity: 0.5,
-    },
 })
