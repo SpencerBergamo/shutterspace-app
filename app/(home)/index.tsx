@@ -1,23 +1,20 @@
 import AlbumCard from "@/components/albums/AlbumCard";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
-import { useProfile } from "@/context/ProfileContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlbums } from "@/hooks/useAlbums";
 import getGridLayout from "@/utils/getGridLyout";
-import { router, useNavigation } from "expo-router";
+import { router } from "expo-router";
 import { Plus } from "lucide-react-native";
 import { useMemo } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
-    const { top } = useSafeAreaInsets();
+    const { width } = useWindowDimensions();
     const { theme } = useTheme();
-    const navigation = useNavigation();
-    const { profile } = useProfile();
     const { albums, isLoading } = useAlbums();
 
-    const gridConfig = getGridLayout({ columns: 2, gap: 16, aspectRatio: 1 });
+    // const gridConfig = getGridLayout({ columns: 2, gap: 16, aspectRatio: 1 });
+    const gridConfig = useMemo(() => getGridLayout({ width, columns: 2, gap: 16, aspectRatio: 1 }), [width]);
 
     const renderContent = useMemo(() => {
         if (isLoading) {

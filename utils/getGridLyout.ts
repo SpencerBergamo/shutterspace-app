@@ -9,9 +9,10 @@
  * @returns The grid config
  */
 
-import { StyleProp, useWindowDimensions, ViewStyle } from "react-native";
+import { StyleProp, ViewStyle } from "react-native";
 
 interface GridConfig {
+    width: number;
     columns: number;
     gap: number;
     aspectRatio: number;
@@ -25,19 +26,22 @@ interface GridLayout {
     tileHeight: number;
 }
 
-export default function getGridLayout({ columns, gap, aspectRatio }: GridConfig = {
+export default function getGridLayout({ width, columns, gap, aspectRatio }: GridConfig = {
+    width: 0,
     columns: 3,
     gap: 2,
     aspectRatio: 1,
 }): GridLayout {
-    const { width } = useWindowDimensions();
 
     const tileWidth = (width - (gap * (columns + 1))) / columns;
-    const tileHeight = width / aspectRatio;
+    const tileHeight = tileWidth / aspectRatio;
+
+    console.log('getGridLayout called from:', new Error().stack?.split('\n')[2]);
+    console.log('aspectRatio', tileWidth, tileHeight);
 
     const columnWrapperStyle: StyleProp<ViewStyle> = {
         gap: gap,
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
     };
 
     const contentContainerStyle: StyleProp<ViewStyle> = {

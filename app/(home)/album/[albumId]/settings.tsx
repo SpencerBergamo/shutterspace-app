@@ -6,7 +6,6 @@ import { useAlbums } from "@/hooks/useAlbums";
 import { AlbumFormData, AlbumFormState } from "@/types/Album";
 import { validateDescription, validateTitle } from "@/utils/validators";
 import { Stack, useLocalSearchParams } from "expo-router";
-import { Check, X } from "lucide-react-native";
 import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -24,7 +23,6 @@ export default function AlbumSettingsScreen() {
     const titleInputRef = useRef<TextInput>(null);
     const descriptionInputRef = useRef<TextInput>(null);
 
-    const [isLoading, setIsLoading] = useState(false);
     const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
 
     const [formData, setFormData] = useState<AlbumFormData>({
@@ -73,27 +71,6 @@ export default function AlbumSettingsScreen() {
             setUpdateStatus('idle');
         }
     }, [formState.isFormValid, updateAlbum, albumId, formData]);
-
-    const renderUpdateStatus = useCallback(() => {
-        switch (updateStatus) {
-            case 'success':
-                return (
-                    <View style={styles.changesSavedContainer}>
-                        <Check size={24} color={theme.colors.primary} />
-                        <Text style={styles.changesSavedText}>Changes Saved</Text>
-                    </View>
-                );
-            case 'error':
-                return (
-                    <View style={styles.changesSavedContainer}>
-                        <X size={24} color='#FF3B30' />
-                        <Text style={styles.changesSavedText}>Error Saving Changes</Text>
-                    </View>
-                );
-            default:
-                return null;
-        }
-    }, [updateStatus]);
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -158,7 +135,11 @@ export default function AlbumSettingsScreen() {
                     )}
                 </TouchableOpacity>
 
-                {renderUpdateStatus()}
+                {updateStatus === 'error' && (
+                    <Text style={{ width: '100%', color: theme.colors.danger, textAlign: 'center', marginBottom: 16 }}>
+                        Something went wrong, please try again.
+                    </Text>
+                )}
 
             </KeyboardAwareScrollView>
         </View>
@@ -169,7 +150,8 @@ export default function AlbumSettingsScreen() {
 
 const styles = StyleSheet.create({
     keyboardScrollView: {
-        flex: 1, padding: 16
+        flex: 1,
+        padding: 16,
     },
 
     submitButton: {
