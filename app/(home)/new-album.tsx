@@ -1,16 +1,15 @@
-import { useProfile } from "@/context/ProfileContext";
+import OpenInvitesField from "@/components/albums/OpenInvitesField";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlbums } from "@/hooks/useAlbums";
 import { AlbumFormData } from "@/types/Album";
 import { validateTitle } from "@/utils/validators";
 import { router } from "expo-router";
-import { Check, KeyRound } from "lucide-react-native";
+import { Check } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 
 export default function NewAlbum() {
-    const { profile } = useProfile();
     const { theme } = useTheme();
     const { createAlbum, isLoading: isAlbumLoading } = useAlbums();
 
@@ -123,50 +122,10 @@ export default function NewAlbum() {
                     onSubmitEditing={() => descriptionInputRef.current?.blur()}
                     style={[theme.styles.textInput, { marginBottom: 32 }]} />
 
-                {/* Open Invites Toggle */}
-                <View style={{
-                    flex: 1,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    gap: 16,
-                    backgroundColor: '#e9ecef',
-                    borderRadius: 16,
-                    padding: 16,
-                }}>
+                <OpenInvitesField
+                    openInvites={isOpenInvites}
+                    onToggle={setIsOpenInvites} />
 
-
-                    <View style={{
-                        flex: 1,
-                        flexDirection: 'column',
-                        gap: 4,
-                    }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <KeyRound size={16} color={theme.colors.text} />
-                            <Text style={{
-                                fontSize: 16,
-                                fontWeight: '600',
-                            }}>Open Invites</Text>
-                        </View>
-
-                        {isOpenInvites ? (
-                            <Text style={{ flexShrink: 1 }}>
-                                All members can invite new members
-                            </Text>
-                        ) : (
-                            <Text style={{ flexShrink: 1 }}>
-                                Only you or moderators can invite new members
-                            </Text>
-                        )}
-
-                    </View>
-
-                    <Switch
-                        value={isOpenInvites}
-                        onValueChange={value => setIsOpenInvites(value)}
-                        trackColor={{ true: theme.colors.primary }}
-                    />
-                </View>
             </KeyboardAwareScrollView>
 
             <KeyboardStickyView offset={{ closed: 0, opened: 30 }}>

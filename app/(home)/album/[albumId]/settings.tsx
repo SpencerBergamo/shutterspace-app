@@ -1,13 +1,14 @@
 
+import OpenInvitesField from "@/components/albums/OpenInvitesField";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { AlbumFormData, AlbumFormState } from "@/types/Album";
 import { validateDescription, validateTitle } from "@/utils/validators";
 import { Stack, useLocalSearchParams } from "expo-router";
-import { Check, KeyRound, X } from "lucide-react-native";
+import { Check, X } from "lucide-react-native";
 import { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 type UpdateStatus = 'idle' | 'saving' | 'success' | 'error';
@@ -101,8 +102,6 @@ export default function AlbumSettingsScreen() {
                 headerTitle: "Settings",
             }} />
 
-
-
             <KeyboardAwareScrollView style={styles.keyboardScrollView}>
 
                 {/* Album Thumbnail */}
@@ -128,6 +127,7 @@ export default function AlbumSettingsScreen() {
                     onSubmitEditing={() => descriptionInputRef.current?.focus()}
                     style={[theme.styles.textInput, { marginBottom: 8 }]} />
 
+                {/* Album Description */}
                 <TextInput
                     ref={descriptionInputRef}
                     value={formData.description}
@@ -145,36 +145,10 @@ export default function AlbumSettingsScreen() {
                     onSubmitEditing={() => descriptionInputRef.current?.blur()}
                     style={[theme.styles.textInput, { marginBottom: 32 }]} />
 
-
                 {/* Open Invites */}
-                <View style={styles.openInvitesContainer}>
-                    <View style={styles.openInvitesContent}>
-                        <View style={styles.openInvitesTitle}>
-                            <KeyRound size={16} color={theme.colors.text} />
-                            <Text style={{
-                                fontSize: 16,
-                                fontWeight: '600',
-                            }}>Open Invites</Text>
-                        </View>
-
-                        {formData.openInvites ? (
-                            <Text style={{ flexShrink: 1 }}>
-                                All members can invite new members
-                            </Text>
-                        ) : (
-                            <Text style={{ flexShrink: 1 }}>
-                                Only you or moderators can invite new members
-                            </Text>
-                        )}
-
-                    </View>
-
-                    <Switch
-                        value={formData.openInvites}
-                        onValueChange={value => setFormData({ ...formData, openInvites: value })}
-                        trackColor={{ true: theme.colors.primary }}
-                    />
-                </View>
+                <OpenInvitesField
+                    openInvites={formData.openInvites}
+                    onToggle={value => setFormData({ ...formData, openInvites: value })} />
 
                 <TouchableOpacity onPress={handleSubmit} style={[styles.submitButton,
                 { backgroundColor: !formState.isFormValid ? 'grey' : theme.colors.primary },
@@ -196,29 +170,6 @@ export default function AlbumSettingsScreen() {
 const styles = StyleSheet.create({
     keyboardScrollView: {
         flex: 1, padding: 16
-    },
-
-    // Open Invites Styles
-    openInvitesContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        gap: 16,
-        backgroundColor: '#e9ecef',
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 16,
-    },
-    openInvitesContent: {
-        flex: 1,
-        flexDirection: 'column',
-        gap: 4,
-    },
-    openInvitesTitle: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
     },
 
     submitButton: {
