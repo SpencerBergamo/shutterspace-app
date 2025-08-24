@@ -8,14 +8,15 @@ import getGridLayout from "@/utils/getGridLyout";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { CircleEllipsis, Images, Plus } from "lucide-react-native";
 import { useMemo } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export default function AlbumScreen() {
+    const { width } = useWindowDimensions();
     const { theme } = useTheme();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbumById } = useAlbums();
 
-    const gridConfig = getGridLayout();
+    const gridConfig = useMemo(() => getGridLayout({ width, columns: 3, gap: 2, aspectRatio: 1 }), [width]);
     const album = getAlbumById(albumId);
 
     const { media, loadMore, canLoadMore, handleMediaSelection } = useMedia(albumId);

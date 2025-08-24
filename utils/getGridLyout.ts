@@ -26,22 +26,15 @@ interface GridLayout {
     tileHeight: number;
 }
 
-export default function getGridLayout({ width, columns, gap, aspectRatio }: GridConfig = {
-    width: 0,
-    columns: 3,
-    gap: 2,
-    aspectRatio: 1,
-}): GridLayout {
+export default function getGridLayout({ width, columns, gap, aspectRatio }: GridConfig): GridLayout {
 
     const tileWidth = (width - (gap * (columns + 1))) / columns;
     const tileHeight = tileWidth / aspectRatio;
 
-    console.log('getGridLayout called from:', new Error().stack?.split('\n')[2]);
-    console.log('aspectRatio', tileWidth, tileHeight);
-
     const columnWrapperStyle: StyleProp<ViewStyle> = {
         gap: gap,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
     };
 
     const contentContainerStyle: StyleProp<ViewStyle> = {
