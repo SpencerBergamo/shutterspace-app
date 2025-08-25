@@ -2,7 +2,7 @@ import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { DbMedia, Media, OptimisticMedia } from "@/types/Media";
-import { createOptimisticMedia } from "@/utils/mediaFactory";
+import { processMedia } from "@/utils/mediaFactory";
 import { usePaginatedQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useMemo } from "react";
@@ -56,8 +56,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         });
 
         if (assets && assets.length > 0) {
-            const newOptimisticMedia = createOptimisticMedia(assets, albumId, profileId);
-            uploadMedia(newOptimisticMedia);
+            const processedMedia = await processMedia(assets);
         }
     }, [albumId]);
 
