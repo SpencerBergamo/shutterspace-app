@@ -77,8 +77,9 @@ export default defineSchema({
         albumId: v.id("albums"),
         uploaderId: v.id('profiles'),
         fileType: v.union(v.literal('image'), v.literal('video')), // image/jpg, video/mp4, etc.
-        originalFilename: v.string(),
+        filename: v.string(),
         uploadedAt: v.number(),
+        imageId: v.string(),
 
         size: v.optional(v.number()),
         width: v.optional(v.number()),

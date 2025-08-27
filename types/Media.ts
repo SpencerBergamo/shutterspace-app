@@ -1,12 +1,13 @@
 import { Id } from "@/convex/_generated/dataModel";
-import { ImagePickerAsset } from "expo-image-picker";
 
+// Base media document that represents the data stored in Convex
 export type DbMedia = {
     _id: Id<'media'>; // the filename of the asset
     uploaderId: Id<'profiles'>;
     fileType: 'image' | 'video';
-    originalFilename: string;
+    filename: string;
     uploadedAt: number;
+    imageId: string;
     size?: number;
     width?: number;
     height?: number;
@@ -21,12 +22,23 @@ export type DbMedia = {
     isDeleted: boolean;
 }
 
-export type OptimisticMedia = Omit<DbMedia, '_id' | 'uploadedAt' | 'isDeleted'> &
-{
-    asset: ImagePickerAsset;
-    status: 'pending' | 'uploading' | 'success' | 'error' | 'paused';
-    progress?: number;
-    error?: string;
+export type Media = DbMedia & {
+    signedUrl: string;
 }
 
-export type Media = DbMedia | OptimisticMedia;
+// Media with signed URLs for client-side rendering
+// export type MediaWithSignedUrls = DbMedia & {
+//     signedUrl: string;
+//     thumbnailUrl: string;
+//     expiresAt: number;
+// }
+
+// export type OptimisticMedia = Omit<DbMedia, '_id' | 'uploadedAt' | 'isDeleted'> &
+// {
+//     asset: ImagePickerAsset;
+//     status: 'pending' | 'uploading' | 'success' | 'error' | 'paused';
+//     progress?: number;
+//     error?: string;
+// }
+
+// export type Media = MediaWithSignedUrls | OptimisticMedia;

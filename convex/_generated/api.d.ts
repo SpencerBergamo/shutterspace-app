@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as albumMembers from "../albumMembers.js";
 import type * as albums from "../albums.js";
+import type * as cloudflare from "../cloudflare.js";
 import type * as cloudinary from "../cloudinary.js";
 import type * as comment from "../comment.js";
 import type * as media from "../media.js";
@@ -32,6 +33,7 @@ import type * as r2 from "../r2.js";
 declare const fullApi: ApiFromModules<{
   albumMembers: typeof albumMembers;
   albums: typeof albums;
+  cloudflare: typeof cloudflare;
   cloudinary: typeof cloudinary;
   comment: typeof comment;
   media: typeof media;
