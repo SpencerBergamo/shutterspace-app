@@ -29,13 +29,13 @@ import crypto from 'crypto';
 import { action } from "./_generated/server";
 
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
-const BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/images`;
+const BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}`;
 
 export const generateImageUploadURL = action({
     args: {
         filename: v.string(),
     }, handler: async (ctx, { filename }) => {
-        const url = `${BASE_URL}/v2/direct_upload`;
+        const url = `${BASE_URL}/images/v2/direct_upload`;
 
         const form = new FormData();
         // form.append('expiry', new Date(Date.now() + 1000 * 60 * 2).toISOString());
@@ -84,6 +84,44 @@ export const generateSignedURL = action({
         return `https://imagedelivery.net${path}&sig=${sig}`;
     }
 });
+
+
+/**
+ * @function generateVideoUploadURL
+ * @description This function is used to generate a upload URL for a single video.
+ * @returns uid: string; uploadURL: string;
+ */
+export const generateVideoUploadURL = action({
+    args: {
+        filename: v.string(),
+    }, handler: async (ctx, { filename }) => {
+        const url = `${BASE_URL}/stream/direct_upload`;
+
+        const form = new FormData();
+        form.append('maxDurationSeconds', '60');
+        form.append('requireSignedURLs', 'true');
+        form.append('metadata', JSON.stringify({ filename }));
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${API_TOKEN}`,
+            },
+            body: form,
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            console.error("Response Text: ", text);
+            throw new Error("UploadURL Gen Failed: " + response.status + response.statusText);
+        }
+
+        const data = await response.json();
+        console.log("Response: ", data);
+
+        return data;
+    }
+})
 
 // export const generateSignedURL = action({
 //     args: {

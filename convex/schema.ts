@@ -76,26 +76,37 @@ export default defineSchema({
     media: defineTable({
         albumId: v.id("albums"),
         uploaderId: v.id('profiles'),
-        fileType: v.union(v.literal('image'), v.literal('video')), // image/jpg, video/mp4, etc.
-        filename: v.string(),
         uploadedAt: v.number(),
-        imageId: v.string(),
-        uploadURL: v.optional(v.string()),
-
+        filename: v.string(),
+        asset: v.union(
+            v.object({
+                type: v.literal('image'),
+                imageId: v.string(),
+                width: v.number(),
+                height: v.number(),
+            }),
+            v.object({
+                type: v.literal('video'),
+                videoUid: v.string(),
+                duration: v.number(),
+                width: v.optional(v.number()),
+                height: v.optional(v.number()),
+            }),
+        ),
         size: v.optional(v.number()),
-        width: v.optional(v.number()),
-        height: v.optional(v.number()),
-        duration: v.optional(v.number()),
         dateTaken: v.optional(v.string()),
-
         location: v.optional(v.object({
             lat: v.number(),
             lng: v.number(),
             name: v.optional(v.string()),
             address: v.optional(v.string()),
         })),
-
         isDeleted: v.boolean(),
+
+        // Removing from schema
+        fileType: v.optional(v.union(v.literal('image'), v.literal('video'))), // image/jpg, video/mp4, etc.
+        imageId: v.optional(v.string()),
+        uploadURL: v.optional(v.string()),
     }).index("by_albumId", ["albumId"])
         .index("by_profileId", ["uploaderId"]),
 

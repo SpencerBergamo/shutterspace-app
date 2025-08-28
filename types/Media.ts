@@ -3,15 +3,23 @@ import { Id } from "@/convex/_generated/dataModel";
 // Base media document that represents the data stored in Convex
 export type DbMedia = {
     _id: Id<'media'>; // the filename of the asset
+    albumId: Id<'albums'>;
     uploaderId: Id<'profiles'>;
-    fileType: 'image' | 'video';
-    filename: string;
     uploadedAt: number;
-    imageId: string;
+    filename: string;
+    asset: {
+        type: 'image';
+        imageId: string;
+        width: number;
+        height: number;
+    } | {
+        type: 'video';
+        videoUid: string;
+        duration: number;
+        width?: number;
+        height?: number;
+    };
     size?: number;
-    width?: number;
-    height?: number;
-    duration?: number;
     dateTaken?: string;
     location?: {
         lat: number;

@@ -19,7 +19,7 @@ import { useImagePicker } from "./useImagePicker";
 
 interface UseAlbumMediaResult {
     media: DbMedia[];
-    getSignedURL: (imageId: string) => Promise<string | undefined>;
+    getSignedURL: (dbMedia: DbMedia) => Promise<string | undefined>;
     uploadMedia: () => Promise<void>;
 }
 
@@ -46,6 +46,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
     const selectAssets = useImagePicker({ multiple: true, maxVideoDuration: 60 });
     const generateImageUploadURL = useAction(api.cloudflare.generateImageUploadURL);
+    const generateVideoUploadURL = useAction(api.cloudflare.generateVideoUploadURL);
     const generateSignedURL = useAction(api.cloudflare.generateSignedURL);
     const createMedia = useMutation(api.media.createMedia);
     const dbMedia: DbMedia[] | undefined = useQuery(api.media.getMediaForAlbum, { albumId, profileId });
@@ -65,54 +66,69 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         } catch { return 0; }
     }
 
+    const getTypeAndId = (dbMedia: DbMedia) => {
+        const type = dbMedia.asset.type;
+        const id = type === 'image' ? dbMedia.asset.imageId : dbMedia.asset.videoUid;
+        return { type, id };
+    }
+
     const isExpired = (entry?: SignedEntry) => {
         if (!entry) return true;
         return entry.expiresAt < Date.now();
     };
 
-    const ensureSigned = useCallback(async (imageId: string) => {
-        const existing = signedRef.current.get(imageId);
+    const ensureSigned = useCallback(async (id: string, type: 'image' | 'video') => {
+        const existing = signedRef.current.get(id);
         if (existing && !isExpired(existing)) return existing.url;
 
-        if (inFlight.current.has(imageId)) return;
-        inFlight.current.add(imageId);
+        if (inFlight.current.has(id)) return;
+        inFlight.current.add(id);
 
         try {
-            const url = await generateSignedURL({ identifier: imageId });
-            const expiresAt = parseExpiresAt(url);
-            signedRef.current.set(imageId, { url, expiresAt });
-            bump();
+            if (type === 'image') {
+                const url = await generateSignedURL({ identifier: id });
+                const expiresAt = parseExpiresAt(url);
+                signedRef.current.set(id, { url, expiresAt });
+                bump();
+            } else if (type === 'video') {
+                throw new Error("Not implemented");
+            }
         } catch (e) {
-            // swallow: UI can retry on demand
+            // Swallow: UI can retry on demand
         } finally {
-            inFlight.current.delete(imageId);
+            inFlight.current.delete(id);
         }
     }, [generateSignedURL]);
 
-    const prefetchSigned = useCallback(async (imageIds: string[]) => {
-        const todo = imageIds.filter(id => {
+    const prefetchSigned = useCallback(async (media: DbMedia[]) => {
+        const todo = media.filter(m => {
+            const { id } = getTypeAndId(m);
             const e = signedRef.current.get(id);
             return !e || isExpired(e);
         });
+
         if (todo.length === 0) return;
-        await Promise.all(todo.map(id => ensureSigned(id)));
+        await Promise.all(todo.map(m => {
+            const { type, id } = getTypeAndId(m);
+            return ensureSigned(id, type);
+        }));
     }, [ensureSigned]);
 
     useEffect(() => {
         if (!dbMedia || dbMedia.length === 0) return;
-        prefetchSigned(dbMedia.map(m => m.imageId));
+        prefetchSigned(dbMedia);
     }, [dbMedia, prefetchSigned]);
 
-    const getSignedURL = useCallback(async (imageId: string) => {
-        const e = signedRef.current.get(imageId);
+    const getSignedURL = useCallback(async (dbMedia: DbMedia) => {
+        const { type, id } = getTypeAndId(dbMedia);
+
+        const e = signedRef.current.get(id);
         if (!e || isExpired(e)) {
-            ensureSigned(imageId);
+            ensureSigned(id, type);
             return undefined;
         }
         return e.url;
     }, [ensureSigned]);
-
-
 
     // Media Upload Processes
     const uploadMedia = useCallback(async () => {
@@ -161,19 +177,20 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
                 // const jsonImgResponse = await imgResponse.json();
                 // console.log("Image Response: ", jsonImgResponse);
 
-                await createMedia({
+                const media = await createMedia({
                     albumId,
                     uploaderId: profileId,
-                    fileType: 'image',
                     filename,
-                    uploadedAt: Date.now(),
-                    imageId: id,
+                    asset: {
+                        type: 'image',
+                        imageId: id,
+                        width: asset.width,
+                        height: asset.height,
+                    },
                     size: asset.fileSize,
-                    width: asset.width,
-                    height: asset.height,
                 });
 
-                ensureSigned(id);
+                ensureSigned(id, 'image');
             } catch (e) {
                 console.error(e);
             }
@@ -181,6 +198,55 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     }, [albumId, profileId]);
 
     const uploadVideos = useCallback(async (videos: ImagePicker.ImagePickerAsset[]) => {
+        return await Promise.all(videos.map(async (asset) => {
+            if (asset.type !== 'video') return;
+
+            try {
+                const filename = asset.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
+                const uploadUrlResponse = await generateVideoUploadURL({ filename: filename });
+
+                if (!uploadUrlResponse.success) {
+                    throw new Error(`Video Upload URL Generation Failed: ${uploadUrlResponse.errors.join(", ")} ${uploadUrlResponse.messages.join(", ")}`);
+                }
+
+                const { uid, uploadURL } = uploadUrlResponse.result;
+                const form = new FormData();
+                form.append('file', {
+                    uri: asset.uri,
+                    name: filename,
+                    type: asset.mimeType || 'video/mp4',
+                } as unknown as Blob);
+
+                const videoResponse = await fetch(uploadURL, {
+                    method: 'POST',
+                    body: form,
+                });
+
+                if (!videoResponse.ok) {
+                    throw new Error(`Failed to upload video ${videoResponse.status} - ${videoResponse.statusText}`);
+                }
+
+                // Debugging
+                const jsonVideoResponse = await videoResponse.json();
+                console.log("Video Response: ", jsonVideoResponse);
+
+                await createMedia({
+                    albumId,
+                    uploaderId: profileId,
+                    filename,
+                    asset: {
+                        type: 'video',
+                        videoUid: uid,
+                        duration: asset.duration ?? 0,
+                        width: asset.width,
+                        height: asset.height,
+                    },
+                    size: asset.fileSize,
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }));
 
     }, []);
 
