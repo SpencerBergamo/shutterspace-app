@@ -36,7 +36,6 @@ export const createMedia = mutation({
             filename: args.filename,
             asset: args.asset,
             size: args.size,
-            uploadedAt: Date.now(),
             dateTaken: args.dateTaken,
             location: args.location,
             isDeleted: false,

@@ -5,7 +5,6 @@ export type DbMedia = {
     _id: Id<'media'>; // the filename of the asset
     albumId: Id<'albums'>;
     uploaderId: Id<'profiles'>;
-    uploadedAt: number;
     filename: string;
     asset: {
         type: 'image';

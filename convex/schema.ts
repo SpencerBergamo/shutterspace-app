@@ -76,7 +76,6 @@ export default defineSchema({
     media: defineTable({
         albumId: v.id("albums"),
         uploaderId: v.id('profiles'),
-        uploadedAt: v.number(),
         filename: v.string(),
         asset: v.union(
             v.object({
@@ -102,11 +101,6 @@ export default defineSchema({
             address: v.optional(v.string()),
         })),
         isDeleted: v.boolean(),
-
-        // Removing from schema
-        fileType: v.optional(v.union(v.literal('image'), v.literal('video'))), // image/jpg, video/mp4, etc.
-        imageId: v.optional(v.string()),
-        uploadURL: v.optional(v.string()),
     }).index("by_albumId", ["albumId"])
         .index("by_profileId", ["uploaderId"]),
 
