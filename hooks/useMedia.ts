@@ -13,13 +13,13 @@ import { Id } from "@/convex/_generated/dataModel";
 import { DbMedia } from "@/types/Media";
 import { useAction, useMutation, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useImagePicker } from "./useImagePicker";
 
 
-type UseAlbumMediaResult = {
+interface UseAlbumMediaResult {
     media: DbMedia[];
-    signedUrls: Record<string, string>;
+    getSignedURL: (imageId: string) => Promise<string | undefined>;
     uploadMedia: () => Promise<void>;
 }
 
@@ -39,6 +39,8 @@ interface UploadURLResponse {
     messages: string[];
 }
 
+type SignedEntry = { url: string; expiresAt: number; }
+
 export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     const { profileId } = useProfile();
 
@@ -48,25 +50,71 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     const createMedia = useMutation(api.media.createMedia);
     const dbMedia: DbMedia[] | undefined = useQuery(api.media.getMediaForAlbum, { albumId, profileId });
 
-    const [galleryPermission, setGalleryPermission] = useState<ImagePicker.PermissionStatus | null>(null);
-    const [signedUrls, setSignedUrls] = useState<Record<string, string>>({}); // imageId -> signedURL
+    const signedRef = useRef<Map<string, SignedEntry>>(new Map());
+    const inFlight = useRef<Set<string>>(new Set());
+    const [, forceTick] = useState(0);
+    const bump = () => forceTick(tick => (tick + 1) % 1000000);
+
+    const parseExpiresAt = (url: string) => {
+        try {
+            const u = new URL(url);
+            const exp = u.searchParams.get('exp');
+            if (!exp) return 0;
+            const ts = Number.isNaN(+exp) ? new Date(exp).getTime() : parseInt(exp, 10);
+            return Number.isFinite(ts) ? ts : 0;
+        } catch { return 0; }
+    }
+
+    const isExpired = (entry?: SignedEntry) => {
+        if (!entry) return true;
+        return entry.expiresAt < Date.now();
+    };
+
+    const ensureSigned = useCallback(async (imageId: string) => {
+        const existing = signedRef.current.get(imageId);
+        if (existing && !isExpired(existing)) return existing.url;
+
+        if (inFlight.current.has(imageId)) return;
+        inFlight.current.add(imageId);
+
+        try {
+            const url = await generateSignedURL({ identifier: imageId });
+            const expiresAt = parseExpiresAt(url);
+            signedRef.current.set(imageId, { url, expiresAt });
+            bump();
+        } catch (e) {
+            // swallow: UI can retry on demand
+        } finally {
+            inFlight.current.delete(imageId);
+        }
+    }, [generateSignedURL]);
+
+    const prefetchSigned = useCallback(async (imageIds: string[]) => {
+        const todo = imageIds.filter(id => {
+            const e = signedRef.current.get(id);
+            return !e || isExpired(e);
+        });
+        if (todo.length === 0) return;
+        await Promise.all(todo.map(id => ensureSigned(id)));
+    }, [ensureSigned]);
 
     useEffect(() => {
-        (async () => {
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            setGalleryPermission(status);
-        })();
-    }, []);
+        if (!dbMedia || dbMedia.length === 0) return;
+        prefetchSigned(dbMedia.map(m => m.imageId));
+    }, [dbMedia, prefetchSigned]);
 
-    useMemo(() => {
-        if (dbMedia && dbMedia.length > 0) {
-            presignUrls(dbMedia.map(m => m.imageId));
+    const getSignedURL = useCallback(async (imageId: string) => {
+        const e = signedRef.current.get(imageId);
+        if (!e || isExpired(e)) {
+            ensureSigned(imageId);
+            return undefined;
         }
-    }, []);
+        return e.url;
+    }, [ensureSigned]);
 
-    /* 
-        Public Functions
-     */
+
+
+    // Media Upload Processes
     const uploadMedia = useCallback(async () => {
         const assets = await selectAssets();
         if (!assets) return;
@@ -78,9 +126,6 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
     }, [albumId]);
 
-    /* 
-        Private Functions 
-    */
     const uploadImages = useCallback(async (images: ImagePicker.ImagePickerAsset[]) => {
         return await Promise.all(images.map(async (asset) => {
             if (asset.type !== 'image') return; // double check this
@@ -127,6 +172,8 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
                     width: asset.width,
                     height: asset.height,
                 });
+
+                ensureSigned(id);
             } catch (e) {
                 console.error(e);
             }
@@ -135,16 +182,6 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
     const uploadVideos = useCallback(async (videos: ImagePicker.ImagePickerAsset[]) => {
 
-    }, []);
-
-    const presignUrls = useCallback(async (imageIds: string[]) => {
-        const signedUrls = await Promise.all(imageIds.map(async (image) => {
-            const signedUrl = await generateSignedURL({ identifier: image });
-            return [image, signedUrl];
-        }));
-
-        const signedUrlsMap = Object.fromEntries(signedUrls);
-        setSignedUrls(prev => ({ ...prev, ...signedUrlsMap }));
     }, []);
 
     function splitAssets(assets: ImagePicker.ImagePickerAsset[]): SplitAssets {
@@ -157,7 +194,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
     return {
         media: dbMedia ?? [],
-        signedUrls,
+        getSignedURL,
         uploadMedia,
     }
 }

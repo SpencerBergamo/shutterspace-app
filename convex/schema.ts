@@ -80,6 +80,7 @@ export default defineSchema({
         filename: v.string(),
         uploadedAt: v.number(),
         imageId: v.string(),
+        uploadURL: v.optional(v.string()),
 
         size: v.optional(v.number()),
         width: v.optional(v.number()),

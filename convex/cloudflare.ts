@@ -1,3 +1,5 @@
+"use node";
+
 /**
  * @created 2025-08-25
  * 
@@ -21,7 +23,6 @@
  * Serving
  * 1. Use the Image ID to construct a delivery URL: `{uploadURL}/mobile`
  */
-
 
 import { v } from "convex/values";
 import crypto from 'crypto';
