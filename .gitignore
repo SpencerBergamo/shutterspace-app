@@ -5,6 +5,8 @@ node_modules/
 
 android/
 ios/
+credentials/
+credentials.json
 
 # Expo
 .expo/
