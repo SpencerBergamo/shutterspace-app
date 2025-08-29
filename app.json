@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Shutterspace",
-    "slug": "Shutterspace",
+    "slug": "shutterspace",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -106,11 +106,10 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-web-browser"
     ],
-    "experiments": {
-      "turbomodule": true
-    },
     "extra": {
       "eas": {
         "projectId": "6b2ea930-bc68-4cea-9720-6f4df870d758"
