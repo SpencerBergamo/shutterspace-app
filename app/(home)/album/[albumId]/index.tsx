@@ -13,11 +13,12 @@ import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
+import { DbMedia } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { CircleEllipsis, Images } from "lucide-react-native";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export default function AlbumScreen() {
@@ -29,53 +30,7 @@ export default function AlbumScreen() {
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 3, gap: 2, aspectRatio: 1 }), [width]);
     const album = getAlbumById(albumId);
 
-    const { media, uploadMedia, getSignedURL, ensureSignedURL } = useMedia(albumId);
-
-    if (!album) return null;
-
-    const renderMediaList = useMemo(() => (
-        <FlatList
-            data={media}
-            keyExtractor={(item) => item._id}
-            numColumns={gridConfig.numColumns}
-            columnWrapperStyle={gridConfig.columnWrapperStyle}
-            contentContainerStyle={gridConfig.contentContainerStyle}
-            renderItem={({ item }) => {
-                const uri = getSignedURL(item);
-                console.log(uri);
-
-                if (!uri) ensureSignedURL(item);
-
-                return (
-                    <View style={{
-                        width: gridConfig.tileWidth, height: gridConfig.tileHeight,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        backgroundColor: '#9C9C9CFF',
-                    }}>
-                        {uri ? (
-                            <Image
-                                source={{ uri }}
-                                style={{ width: '100%', height: '100%' }}
-                                contentFit="cover"
-                            />
-                        ) : (
-                            <ActivityIndicator size="large" color="black" />
-                        )}
-                    </View>
-                );
-            }} />
-    ), [media, gridConfig, getSignedURL, ensureSignedURL]);
-
-    const canLoadMoreFooter = () => {
-        if (!false) return null;
-
-        return (
-            <View style={{ marginVertical: 16, width: '100%', height: 150, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="black" />
-            </View>
-        );
-    };
+    const { media, uploadMedia, signedUrls, getType, renderSignature } = useMedia(albumId);
 
     if (!album) return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -102,7 +57,17 @@ export default function AlbumScreen() {
                 )
             }} />
 
-            {media.length > 0 ? renderMediaList : (
+            {media.length > 0 ? (
+                <FlatList
+                    data={media}
+                    keyExtractor={(item) => item._id}
+                    numColumns={gridConfig.numColumns}
+                    columnWrapperStyle={gridConfig.columnWrapperStyle}
+                    contentContainerStyle={gridConfig.contentContainerStyle}
+                    renderItem={({ item }) => (
+                        <MediaTile media={item} renderSignature={renderSignature} />
+                    )} />
+            ) : (
                 <View style={styles.emptyContainer}>
 
                     <Images size={48} color="#ccc" style={{ margin: 16 }} />
@@ -157,3 +122,30 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
 });
+
+function MediaTile({ media, renderSignature }: { media: DbMedia, renderSignature: (media: DbMedia) => Promise<string | undefined> }) {
+    const [uri, setUri] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        (async () => {
+            const signed = await renderSignature(media);
+            setUri(signed);
+        })();
+    }, []);
+
+    return (
+        <View>
+            {uri ? (
+                <Image
+                    source={{ uri }}
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="cover"
+                />
+            ) : (
+                <ActivityIndicator size="small" color="black" />
+            )}
+        </View>
+    );
+
+
+}

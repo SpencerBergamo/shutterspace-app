@@ -30,6 +30,7 @@ import { action } from "./_generated/server";
 
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}`;
+const STREAM_BASE_URL = ``
 
 export const generateImageUploadURL = action({
     args: {
@@ -65,7 +66,7 @@ export const generateImageUploadURL = action({
     },
 });
 
-export const generateSignedURL = action({
+export const generateSignedImageURL = action({
     args: {
         identifier: v.string(), // image_id
         variant: v.optional(v.string()), // variant name
@@ -90,6 +91,20 @@ export const generateSignedURL = action({
  * @function generateVideoUploadURL
  * @description This function is used to generate a upload URL for a single video.
  * @returns uid: string; uploadURL: string;
+ * 
+ * @function generateVideoToken
+ * @description This funciton is used to generate a signed token to stream a video.
+ * @notes
+ * 
+ * We generated a signing key and stored the jwk and pem. I decoded the pem to get the private key and stored
+ * in Convex env variables. I am using the pem over the jwk because the jwk is not supported by the node.js crypto library.
+ * 
+ * @returns {string} - The function returns the signed token so we can construct the full playback url client side. The reason
+ * for this is because we'll want to specify the endpoint depending on the usecase (thumbnails, full video, etc).
+ * 
+ * For full playback, the format is https://customer-<customer_id>.cloudflarestream.com/<signed_token>/manifest/video.m3u8
+ * For thumbnail, the format is https://customer-<customer_id>.cloudflarestream.com/<signed_token>/thumbnails/thumbnail.jpg
+ * 
  */
 export const generateVideoUploadURL = action({
     args: {
@@ -121,100 +136,50 @@ export const generateVideoUploadURL = action({
 
         return data;
     }
-})
+});
 
-// export const generateSignedURL = action({
-//     args: {
-//         identifier: v.string(),
-//         variant: v.string(),
-//     }, handler: async (ctx, { identifier, variant }) => {
-//         const baseUrl = `https://imagedelivery.net/dfEBx1P7mYwRwFqkE9QiQA/${identifier}/${variant}`;
-//         const url = new URL(baseUrl);
+export const generateVideoToken = action({
+    args: {
+        videoUID: v.string(),
+    }, handler: async (ctx, { videoUID }) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error('Unauthorized');
 
-//         const encoder = new TextEncoder();
-//         const secretKeyData = encoder.encode(process.env.CLOUDFLARE_IMAGE_SIG_TOKEN);
-//         const key = await crypto.subtle.importKey(
-//             "raw",
-//             secretKeyData,
-//             { name: 'HMAC', hash: 'SHA-256' },
-//             false,
-//             ['sign'],
-//         );
+        const pem = process.env.CLOUDFLARE_STREAM_PEM;
+        const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;
+        const expiresIn = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 3; // 3 days
 
-//         const expiry = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 24 hours
-//         url.searchParams.set('exp', expiry.toString());
-//         // url now looks like: https://imagedelivery.net/cheeW4oKsx5ljh8e8BoL2A/bc27a117-9509-446b-8c69-c81bfeac0a01/public?exp=1631289275
+        const header = {
+            alg: 'RS256',
+            kid: keyID,
+        };
 
-//         const stringToSign = url.pathname + '?' + url.searchParams.toString();
-//         // we need to sign the pathname and search params together.
-//         // for example, /cheeW4oKsx5ljh8e8BoL2A/bc27a117-9509-446b-8c69-c81bfeac0a01/mobile?exp=1631289275
+        const payload = {
+            sub: videoUID,
+            kid: keyID,
+            exp: expiresIn,
+        };
 
-//         // generate the signature
-//         const mac = await crypto.subtle.sign('HMAC', key, encoder.encode(stringToSign));
-//         const sig = bufferToHex(new Uint8Array(mac).buffer);
+        const encode = (obj: any) => {
+            return Buffer.from(JSON.stringify(obj))
+                .toString('base64')
+                .replace(/=/g, "")
+                .replace(/\+/g, "-")
+                .replace(/\//g, "_");
+        };
 
-//         // attatch it to the `url`
-//         url.searchParams.set('sig', sig);
-//         return new Response(url.toString());
-//     }
-// });
+        const token = `${encode(header)}.${encode(payload)}`;
 
+        const signer = crypto.createSign('RSA-SHA256');
+        signer.update(token);
+        signer.end();
 
+        const signature = signer.sign(pem);
+        const signatureB64 = signature.toString('base64')
+            .replace(/=/g, "")
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_");
 
-// interface VideoUploadURLResponse {
-//     uid: string;
-//     uploadURL: string;
-//     success: boolean;
-//     errors: string[];
-//     messages: string[];
-// }
-
-// export const getVideoUploadURL = mutation({
-//     args: {
-//         filename: v.string(),
-//     }, handler: async (ctx, { filename }): Promise<VideoUploadURLResponse> => {
-//         const identity = await ctx.auth.getUserIdentity();
-//         if (!identity) throw new Error("Unauthorized");
-
-//         const url = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/stream/direct_upload`;
-
-//         const payload = {
-//             maxDurationSeconds: 60,
-//             requireSignedURLs: true,
-//             expiry: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-//             meta: {
-//                 name: filename
-//             }
-//         }
-
-//         const response = await fetch(url, {
-//             method: 'POST',
-//             headers: {
-//                 'Authorization': `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-//             },
-//             body: JSON.stringify(payload),
-//         });
-
-//         if (!response.ok) throw new Error("Failed to generate upload URL");
-
-//         const { result: { uid, uploadURL }, success, errors, messages } = await response.json();
-
-//         return { uid, uploadURL, success, errors, messages };
-//     }
-// });
-
-// export const uploadVideo = mutation({
-//     args: {
-//         uploadURL: v.string(),
-//     }, handler: async (ctx, { uploadURL }) => {
-//         const identity = await ctx.auth.getUserIdentity();
-//         if (!identity) throw new Error("Unauthorized");
-
-//         const response = await fetch(uploadURL, {
-//             method: 'POST',
-//             headers: {
-
-//             }
-//         });
-//     }
-// })
+        return `${token}.${signatureB64}`;
+    }
+});
