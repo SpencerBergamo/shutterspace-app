@@ -1,9 +1,9 @@
+import { ASSETS } from "@/constants/assets";
 import { useProfile } from "@/context/ProfileContext";
 import { useTheme } from "@/context/ThemeContext";
 import * as Haptics from 'expo-haptics';
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { Hexagon } from "lucide-react-native";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -25,7 +25,8 @@ export default function HomeScreenHeader() {
 
     return (
         <View style={[styles.container, { paddingTop: top }]}>
-            <Hexagon size={32} color={theme.colors.text} />
+            {/* <Hexagon size={32} color={theme.colors.text} /> */}
+            <Image source={ASSETS.logo} style={{ height: 32, width: 32 }} contentFit="contain" />
 
             <View style={styles.rightContainer}>
                 <Text style={[styles.greeting, { color: theme.colors.text }]}>
