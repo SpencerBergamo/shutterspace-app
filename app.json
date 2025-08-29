@@ -1,13 +1,12 @@
 {
   "expo": {
     "name": "Shutterspace",
-    "slug": "shutterspace",
-    "version": "1.0.0",
+    "slug": "Shutterspace",
+    "version": "1.0.6",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/brand/ios/ios-light.png",
     "scheme": "shutterspace",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "usesAppleSignIn": true,
       "supportsTablet": false,
@@ -22,7 +21,13 @@
         "tinted": "./assets/brand/ios/ios-tinted.png"
       }
     },
+    "splash": {
+      "backgroundColor": "#00ADB5",
+      "resizeMode": "contain",
+      "image": "./assets/brand/splash/splash-icon.png"
+    },
     "android": {
+      "versionCode": 10,
       "package": "org.bbtechnologies.shutterspace",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
@@ -97,12 +102,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/brand/splash/splash-dark.png",
+          "image": "./assets/brand/splash/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#00ADB5",
           "dark": {
-            "image": "./assets/brand/splash/splash-light.png",
+            "image": "./assets/brand/splash/splash-icon.png",
             "backgroundColor": "#000000"
           }
         }

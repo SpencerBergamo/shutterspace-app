@@ -13,7 +13,7 @@ interface DateTimeFieldProps {
 }
 
 export default function DateTimeField({ dateRange, isPickerOpen, setDateRange, closePicker }: DateTimeFieldProps) {
-    const { themeStyles } = useTheme();
+    const { theme } = useTheme();
 
     const handleConfirm = (range: RangeOutput) => {
         setDateRange({
@@ -40,7 +40,7 @@ export default function DateTimeField({ dateRange, isPickerOpen, setDateRange, c
         <View style={styles.container}>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                <Calendar size={24} color={themeStyles.colors.text} />
+                <Calendar size={24} color={theme.colors.text} />
 
                 {dateRange && dateRange.start ? (
                     <View>
@@ -80,12 +80,12 @@ export default function DateTimeField({ dateRange, isPickerOpen, setDateRange, c
                         cancel: 'Cancel',
                     }}
                     colorOptions={{
-                        headerColor: themeStyles.colors.primary,
-                        backgroundColor: themeStyles.colors.background,
-                        selectedDateBackgroundColor: themeStyles.colors.primary,
+                        headerColor: theme.colors.primary,
+                        backgroundColor: theme.colors.background,
+                        selectedDateBackgroundColor: theme.colors.primary,
                         selectedDateTextColor: 'white',
-                        confirmButtonColor: themeStyles.colors.primary,
-                        weekDaysColor: themeStyles.colors.primary,
+                        confirmButtonColor: theme.colors.primary,
+                        weekDaysColor: theme.colors.primary,
                     }} />
             </Modal>
         </View>

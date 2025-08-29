@@ -15,14 +15,14 @@ export default function AlbumCard({ album, width, height }: AlbumCardProps) {
         <Pressable style={[styles.container, { width: width, height: height }]}
             onPress={() => router.push(`album/${album._id}`)} >
             <Image
-                source={{ uri: album.coverImageUrl || ASSETS.defaultAlbumCover }}
+                source={{ uri: ASSETS.defaultAlbumCover }}
                 style={styles.coverImage}
                 contentFit="cover" />
             <View style={styles.overlay}>
                 <View style={styles.textContainer}>
                     <Text style={styles.title}>{album.title}</Text>
                     <Text style={styles.date}>
-                        {new Date(album.createdAt).toLocaleDateString()}
+                        {new Date(album._creationTime).toLocaleDateString()}
                     </Text>
                 </View>
             </View>
