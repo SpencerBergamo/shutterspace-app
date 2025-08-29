@@ -19,7 +19,9 @@ import { useImagePicker } from "./useImagePicker";
 
 interface UseAlbumMediaResult {
     media: DbMedia[];
-    getSignedURL: (dbMedia: DbMedia) => Promise<string | undefined>;
+    getSignedURL: (dbMedia: DbMedia) => string | undefined;
+    ensureSignedURL: (dbMedia: DbMedia) => Promise<string | undefined>;
+    prefetchSigned: (media: DbMedia[]) => Promise<void>;
     uploadMedia: () => Promise<void>;
 }
 
@@ -61,8 +63,8 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             const u = new URL(url);
             const exp = u.searchParams.get('exp');
             if (!exp) return 0;
-            const ts = Number.isNaN(+exp) ? new Date(exp).getTime() : parseInt(exp, 10);
-            return Number.isFinite(ts) ? ts : 0;
+            const seconds = Number.isNaN(+exp) ? new Date(exp).getTime() : parseInt(exp, 10);
+            return seconds * 1000;
         } catch { return 0; }
     }
 
@@ -95,6 +97,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             }
         } catch (e) {
             // Swallow: UI can retry on demand
+            console.error(e);
         } finally {
             inFlight.current.delete(id);
         }
@@ -119,15 +122,20 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         prefetchSigned(dbMedia);
     }, [dbMedia, prefetchSigned]);
 
-    const getSignedURL = useCallback(async (dbMedia: DbMedia) => {
+    const getSignedURL = useCallback((dbMedia: DbMedia) => {
         const { type, id } = getTypeAndId(dbMedia);
-
         const e = signedRef.current.get(id);
-        if (!e || isExpired(e)) {
-            ensureSigned(id, type);
-            return undefined;
-        }
-        return e.url;
+        return e && !isExpired(e) ? e.url : undefined;
+    }, [ensureSigned]);
+
+    const ensureSignedURL = useCallback(async (dbMedia: DbMedia) => {
+        const { type, id } = getTypeAndId(dbMedia);
+        const e = signedRef.current.get(id);
+
+        if (e && !isExpired(e)) return e.url;
+
+        await ensureSigned(id, type);
+        return signedRef.current.get(id)?.url;
     }, [ensureSigned]);
 
     // Media Upload Processes
@@ -261,6 +269,8 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     return {
         media: dbMedia ?? [],
         getSignedURL,
+        ensureSignedURL,
+        prefetchSigned,
         uploadMedia,
     }
 }

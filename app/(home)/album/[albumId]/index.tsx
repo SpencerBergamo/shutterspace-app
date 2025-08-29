@@ -13,12 +13,11 @@ import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
-import { DbMedia } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { CircleEllipsis, Images } from "lucide-react-native";
-import { useCallback, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export default function AlbumScreen() {
@@ -30,52 +29,7 @@ export default function AlbumScreen() {
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 3, gap: 2, aspectRatio: 1 }), [width]);
     const album = getAlbumById(albumId);
 
-    const signatureCache = useRef(new Map<string, { uri: string; expiresAt: number }>());
-    const { media, uploadImage, getSignedURL } = useMedia(albumId);
-
-    const preSignURLs = useCallback(async (mediaItems: DbMedia[]) => {
-        const currentTime = Date.now();
-        const ttl = 1000 * 60 * 60 * 24; // Time to live for24 hours
-
-        const itemsToSign = mediaItems.filter(item => {
-            const cached = signatureCache.current.get(item._id);
-            return !cached || cached.expiresAt < currentTime;
-        });
-
-        if (itemsToSign.length === 0) return;
-
-        const signingPromises = itemsToSign.map(async (item) => {
-            try {
-                const signedURL = await getSignedURL(item);
-                signatureCache.current.set(item._id, {
-                    uri: signedURL,
-                    expiresAt: currentTime + ttl,
-                });
-            } catch (e) {
-                console.error('Failed to sign URL for ', item._id, e);
-            }
-        });
-
-        await Promise.all(signingPromises);
-    }, [getSignedURL]);
-
-
-    useMemo(() => {
-        if (media.length > 0) {
-            preSignURLs(media.slice(0, 100));
-        }
-    }, [media, preSignURLs]);
-
-    const getSignedUrlForItem = useCallback((item: DbMedia) => {
-        const cached = signatureCache.current.get(item._id);
-        if (cached && cached.expiresAt > Date.now()) {
-            return cached.uri;
-        }
-
-        preSignURLs([item]);
-        return null;
-    }, [preSignURLs]);
-
+    const { media, uploadMedia, getSignedURL, ensureSignedURL } = useMedia(albumId);
 
     if (!album) return null;
 
@@ -86,20 +40,32 @@ export default function AlbumScreen() {
             numColumns={gridConfig.numColumns}
             columnWrapperStyle={gridConfig.columnWrapperStyle}
             contentContainerStyle={gridConfig.contentContainerStyle}
-            onEndReached={() => {
-                const currentLength = media.length;
-                const newItems = media.slice(currentLength, currentLength + 30);
-                preSignURLs(newItems);
-            }}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={canLoadMoreFooter}
-            renderItem={({ item }) => (
-                <View style={{ flex: 1, backgroundColor: '#9C9C9CFF' }}>
-                    <Image
-                        source={{ uri: getSignedUrlForItem(item) }} />
-                </View>
-            )} />
-    ), [{}, gridConfig]);
+            renderItem={({ item }) => {
+                const uri = getSignedURL(item);
+                console.log(uri);
+
+                if (!uri) ensureSignedURL(item);
+
+                return (
+                    <View style={{
+                        width: gridConfig.tileWidth, height: gridConfig.tileHeight,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: '#9C9C9CFF',
+                    }}>
+                        {uri ? (
+                            <Image
+                                source={{ uri }}
+                                style={{ width: '100%', height: '100%' }}
+                                contentFit="cover"
+                            />
+                        ) : (
+                            <ActivityIndicator size="large" color="black" />
+                        )}
+                    </View>
+                );
+            }} />
+    ), [media, gridConfig, getSignedURL, ensureSignedURL]);
 
     const canLoadMoreFooter = () => {
         if (!false) return null;
@@ -146,7 +112,7 @@ export default function AlbumScreen() {
                 </View>
             )}
 
-            <FloatingActionButton icon="plus" onPress={uploadImage} />
+            <FloatingActionButton icon="plus" onPress={uploadMedia} />
 
         </View>
     );

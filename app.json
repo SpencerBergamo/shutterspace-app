@@ -15,14 +15,20 @@
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "icon": {
+        "dark": "./assets/brand/ios/ios-dark.png",
+        "light": "./assets/brand/ios/ios-light.png",
+        "tinted": "./assets/brand/ios/ios-tinted.png"
       }
     },
     "android": {
       "package": "org.bbtechnologies.shutterspace",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/brand/android/adaptive-icon.png",
+        "monochromeImage": "./assets/brand/android/adaptive-icon.png",
+        "backgroundColor": "#00ADB5"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
@@ -87,7 +93,20 @@
           "cameraPermission": "Shutterspace needs access to your camera to let you take photos and videos."
         }
       ],
-      "react-native-compressor"
+      "react-native-compressor",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand/splash/splash-dark.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#00ADB5",
+          "dark": {
+            "image": "./assets/brand/splash/splash-light.png",
+            "backgroundColor": "#000000"
+          }
+        }
+      ]
     ],
     "experiments": {
       "turbomodule": true
