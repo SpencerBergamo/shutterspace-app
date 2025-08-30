@@ -1,19 +1,10 @@
-/**
- * @title useMedia
- * @description A hook for managing media upload and display for an album
- * 
- * @function uploadMedia 
- * @description References the selectAssets hook, splits the assets into images and videos, then processes the upload 
- * of each group sequentially.
- */
-
 import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { DbMedia } from "@/types/Media";
 import { useAction, useMutation, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useImagePicker } from "./useImagePicker";
 
 /**
@@ -27,6 +18,12 @@ import { useImagePicker } from "./useImagePicker";
  * 
  * @constant {ensureSigned} - double check the signature doesnt exist or is expired before continueing
  * the request for a new signature. 
+ * 
+ * @constant {signedUrls} - manage signed urls of both media types in a map keyed by the id. Uses [SignedEntry]
+ * to manage the url and expiry of the signed url.
+ * @type {SignedEntry} - a type to manage image (signed urls) and video (signed tokens)
+ * @type {TypeAndID} - a type and id for the media to make it easy to identify the type of media. The
+ * type of media ('image' or 'video') specifies which id to use (id or uid, respectively).
  */
 
 
@@ -34,14 +31,9 @@ interface UseAlbumMediaResult {
     media: DbMedia[];
     signedUrls: Map<string, SignedEntry>;
     getType: (dbMedia: DbMedia) => TypeAndID;
-    renderSignature: (dbMedia: DbMedia) => Promise<string | undefined>;
+    renderImageURL: (dbMedia: DbMedia) => Promise<string | undefined>;
+    renderVideoURL: (dbMedia: DbMedia) => Promise<string | undefined>;
     uploadMedia: () => Promise<void>;
-}
-
-interface SplitAssets {
-    images: ImagePicker.ImagePickerAsset[];
-    videos: ImagePicker.ImagePickerAsset[];
-    other: ImagePicker.ImagePickerAsset[];
 }
 
 interface UploadURLResponse {
@@ -54,7 +46,7 @@ interface UploadURLResponse {
     messages: string[];
 }
 
-type SignedEntry = { url: string; expiresAt: number; }
+export type SignedEntry = { url: string; expiresAt: number; }
 type TypeAndID = { type: 'image' | 'video'; id: string; }
 
 // Video Stream -> https://customer-<customer_id>.cloudflarestream.com/<signed_token>/
@@ -72,8 +64,10 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     const generateVideoUploadURL = useAction(api.cloudflare.generateVideoUploadURL);
     const generateVideoToken = useAction(api.cloudflare.generateVideoToken);
     const [signedUrls, setSignedUrls] = useState<Map<string, SignedEntry>>(new Map());
+    const inFlight = useRef<Set<string>>(new Set());
 
-    const parseExpiry = (url: string) => {
+    const parseExpiry = (url: string): number => {
+        if (!url || url.trim() === '') return 0;
         try {
             const u = new URL(url);
             const exp = u.searchParams.get('exp');
@@ -93,17 +87,16 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     }
 
     const isExpired = (entry?: SignedEntry) => {
-        if (!entry) return null;
-        return entry.expiresAt < Date.now();
+        if (!entry) return true;
+        return entry.expiresAt < Date.now() + 30_000; // expire 30 seconds early
     }
 
     const ensureSigned = useCallback(async (id: string, type: 'image' | 'video') => {
         const existing = signedUrls.get(id);
         if (existing && !isExpired(existing)) return existing.url;
 
-        // in flight?
-        // if (inFlight.current.has(id)) return;
-        // inFlight.current.add(id);
+        if (inFlight.current.has(id)) return;
+        inFlight.current.add(id);
 
         try {
             if (type === 'image') {
@@ -115,17 +108,21 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
                     return newMap;
                 });
             } else if (type === 'video') {
-                // 
-
+                const token = await generateVideoToken({ videoUID: id });
+                console.log("Video Token: ", token);
+                const expiresAt = (Date.now() / 1000) + 60 * 60 * 24;
+                setSignedUrls(prev => {
+                    const newMap = new Map(prev);
+                    newMap.set(id, { url: token, expiresAt });
+                    return newMap;
+                });
             } else {
                 throw new Error("Invalid type: " + type);
             }
-
-
         } catch (e) {
             console.error(e);
         } finally {
-            // inFlight.current.delete(id);
+            inFlight.current.delete(id);
         }
     }, [generateSignedImageURL, generateVideoToken, signedUrls]);
 
@@ -147,22 +144,55 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
     }, [ensureSigned]);
 
-    const renderSignature = useCallback(async (dbMedia: DbMedia) => {
+    const renderImageURL = useCallback(async (dbMedia: DbMedia) => {
         const { type, id } = getType(dbMedia);
-        const e = signedUrls.get(id);
+        let e = signedUrls.get(id);
 
         if (!e || isExpired(e)) {
-            return await ensureSigned(id, type);
+            const ensured = await ensureSigned(id, type);
+            if (!ensured) return undefined;
+
+            e = { url: ensured, expiresAt: parseExpiry(ensured) };
+            setSignedUrls(prev => {
+                const newMap = new Map(prev);
+                newMap.set(id, e ?? { url: '', expiresAt: 0 });
+                return newMap;
+            });
         }
 
-        return e.url;
+        if (type === 'video') {
+            return `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${e.url}/thumbnails/thumbnail.jpg`;
+        } else {
+            return e.url;
+        }
+    }, [ensureSigned]);
+
+    const renderVideoURL = useCallback(async (dbMedia: DbMedia) => {
+        const { type, id } = getType(dbMedia);
+        if (type !== 'video') return renderImageURL(dbMedia);
+
+        const base = `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com`;
+        let e = signedUrls.get(id);
+
+        if (!e || isExpired(e)) {
+            const ensured = await ensureSigned(id, type) ?? '';
+            e = { url: ensured, expiresAt: parseExpiry(ensured) };
+            setSignedUrls(prev => {
+                const newMap = new Map(prev);
+                newMap.set(id, e ?? { url: '', expiresAt: 0 });
+                return newMap;
+            });
+
+            return `${base}/${e.url}/manifest/video.m3u8`;
+        }
+
+        return `${base}/${e.url}/manifest/video.m3u8`;
     }, [ensureSigned]);
 
     useEffect(() => {
         if (!dbMedia || dbMedia.length === 0) return;
         prefetch(dbMedia);
     }, [dbMedia, prefetch]);
-
 
     /* Media Upload */
     const uploadMedia = useCallback(async () => {
@@ -284,7 +314,11 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
     }, []);
 
-    function splitAssets(assets: ImagePicker.ImagePickerAsset[]): SplitAssets {
+    function splitAssets(assets: ImagePicker.ImagePickerAsset[]): {
+        images: ImagePicker.ImagePickerAsset[];
+        videos: ImagePicker.ImagePickerAsset[];
+        other: ImagePicker.ImagePickerAsset[];
+    } {
         const images = assets.filter(asset => asset.type === 'image');
         const videos = assets.filter(asset => asset.type === 'video');
         const other = assets.filter(asset => asset.type !== 'image' && asset.type !== 'video');
@@ -296,7 +330,8 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         media: dbMedia ?? [],
         signedUrls,
         getType,
-        renderSignature,
+        renderImageURL,
+        renderVideoURL,
         uploadMedia,
     }
 }

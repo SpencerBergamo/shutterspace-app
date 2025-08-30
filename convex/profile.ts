@@ -1,7 +1,6 @@
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import s3Client from "./r2";
+
 
 export const createProfile = mutation({
     args: {
@@ -44,13 +43,13 @@ export const updateProfile = mutation({
             const avatarKey = `avatar/${profile._id}.jpg`;
 
             try {
-                await s3Client.send(new PutObjectCommand({
-                    Bucket: process.env.R2_AVATAR_BUCKET,
-                    Key: avatarKey,
-                    Body: buffer,
-                    ContentType: 'image/jpeg',
-                    ACL: 'public-read',
-                }));
+                // await s3Client.send(new PutObjectCommand({
+                //     Bucket: process.env.R2_AVATAR_BUCKET,
+                //     Key: avatarKey,
+                //     Body: buffer,
+                //     ContentType: 'image/jpeg',
+                //     ACL: 'public-read',
+                // }));
 
                 updates = { nickname, avatarKey }
 

@@ -12,14 +12,75 @@ import FloatingActionButton from "@/components/FloatingActionButton";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
-import { useMedia } from "@/hooks/useMedia";
+import { SignedEntry, useMedia } from "@/hooks/useMedia";
 import { DbMedia } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { CircleEllipsis, Images } from "lucide-react-native";
+import { CircleEllipsis, CloudAlert, Images } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+
+interface MediaTileProps {
+    media: DbMedia;
+    renderImageURL: (media: DbMedia) => Promise<string | undefined>;
+    signedUrls: Map<string, SignedEntry>;
+    width: number;
+    height: number;
+}
+
+function MediaTile({ media, signedUrls, renderImageURL, width, height }: MediaTileProps) {
+    const type = media.asset.type;
+    const mediaId = type === 'image' ? media.asset.imageId : media.asset.videoUid;
+    const cached = signedUrls.get(mediaId);
+    const [uri, setUri] = useState<string | undefined>(cached?.url);
+    console.log("Cached: ", cached);
+
+    useEffect(() => {
+        if (cached?.url && !uri) {
+            setUri(cached.url);
+            return;
+        }
+
+        const loadImage = async () => {
+            if (!cached || cached.expiresAt < Date.now() + 30_000) {
+                try {
+                    const signed = await renderImageURL(media);
+                    if (signed) {
+                        setUri(signed);
+                    }
+                } catch (e) {
+                    console.error("Error loading image: ", e);
+                }
+            }
+        };
+
+        loadImage();
+    }, [media._id, cached, renderImageURL]);
+
+    if (uri?.length === 0) return (
+        <View style={[styles.mediaTile, { width, height }]}>
+            <CloudAlert size={24} color="red" />
+        </View>
+    );
+
+    return (
+        <View style={[styles.mediaTile, { width, height }]}>
+            {uri ? (
+                <Image
+                    source={{ uri }}
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="cover"
+                    onError={() => {
+                        console.error("Error loading image: ", uri);
+                    }}
+                />
+            ) : (
+                <ActivityIndicator size="small" color="black" />
+            )}
+        </View>
+    );
+}
 
 export default function AlbumScreen() {
     const { width } = useWindowDimensions();
@@ -30,7 +91,7 @@ export default function AlbumScreen() {
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 3, gap: 2, aspectRatio: 1 }), [width]);
     const album = getAlbumById(albumId);
 
-    const { media, uploadMedia, signedUrls, getType, renderSignature } = useMedia(albumId);
+    const { media, uploadMedia, signedUrls, renderImageURL } = useMedia(albumId);
 
     if (!album) return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -65,7 +126,12 @@ export default function AlbumScreen() {
                     columnWrapperStyle={gridConfig.columnWrapperStyle}
                     contentContainerStyle={gridConfig.contentContainerStyle}
                     renderItem={({ item }) => (
-                        <MediaTile media={item} renderSignature={renderSignature} />
+                        <MediaTile
+                            media={item}
+                            signedUrls={signedUrls}
+                            renderImageURL={renderImageURL}
+                            width={gridConfig.tileWidth}
+                            height={gridConfig.tileHeight} />
                     )} />
             ) : (
                 <View style={styles.emptyContainer}>
@@ -121,31 +187,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+
+    // Media Tile Styles
+    mediaTile: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    }
 });
-
-function MediaTile({ media, renderSignature }: { media: DbMedia, renderSignature: (media: DbMedia) => Promise<string | undefined> }) {
-    const [uri, setUri] = useState<string | undefined>(undefined);
-
-    useEffect(() => {
-        (async () => {
-            const signed = await renderSignature(media);
-            setUri(signed);
-        })();
-    }, []);
-
-    return (
-        <View>
-            {uri ? (
-                <Image
-                    source={{ uri }}
-                    style={{ width: '100%', height: '100%' }}
-                    contentFit="cover"
-                />
-            ) : (
-                <ActivityIndicator size="small" color="black" />
-            )}
-        </View>
-    );
-
-
-}

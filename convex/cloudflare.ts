@@ -32,6 +32,15 @@ const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}`;
 const STREAM_BASE_URL = ``
 
+/**
+ * 
+ * @function generateImageUploadURL
+ * @description This function is used to generate a upload URL for a single image.
+ * 
+ * @funciton generateSignedImageURL
+ * 
+ */
+
 export const generateImageUploadURL = action({
     args: {
         filename: v.string(),
@@ -76,9 +85,7 @@ export const generateSignedImageURL = action({
 
         const expiry = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
 
-        const path = variant
-            ? `/${accountHash}/${identifier}/${variant}?exp=${expiry}`
-            : `/${accountHash}/${identifier}?exp=${expiry}`;
+        const path = `/${accountHash}/${identifier}/public?exp=${expiry}`;
 
         const sig = crypto.createHmac('sha256', sigKey).update(path).digest('hex');
 
@@ -147,7 +154,7 @@ export const generateVideoToken = action({
 
         const pem = process.env.CLOUDFLARE_STREAM_PEM;
         const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;
-        const expiresIn = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 3; // 3 days
+        const expiresIn = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 1 day
 
         const header = {
             alg: 'RS256',
