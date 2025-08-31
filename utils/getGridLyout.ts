@@ -28,7 +28,7 @@ interface GridLayout {
 
 export default function getGridLayout({ width, columns, gap, aspectRatio }: GridConfig): GridLayout {
 
-    const tileWidth = (width - (gap * (columns + 1))) / columns;
+    const tileWidth = width / columns;
     const tileHeight = tileWidth / aspectRatio;
 
     const columnWrapperStyle: StyleProp<ViewStyle> = {
@@ -38,7 +38,7 @@ export default function getGridLayout({ width, columns, gap, aspectRatio }: Grid
     };
 
     const contentContainerStyle: StyleProp<ViewStyle> = {
-        padding: 2,
+        padding: gap,
     };
 
     return {
