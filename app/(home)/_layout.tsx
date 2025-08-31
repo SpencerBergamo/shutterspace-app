@@ -1,4 +1,5 @@
 import { ProfileProvider } from "@/context/ProfileContext";
+import { SignedUrlsProvider } from "@/context/SignedUrlsContext";
 
 import { useTheme } from "@/context/ThemeContext";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
@@ -74,10 +75,12 @@ function HomeLayout() {
 
 export default function Layout() {
     return (
-        <ProfileProvider>
-            <ActionSheetProvider>
-                <HomeLayout />
-            </ActionSheetProvider>
-        </ProfileProvider>
+        <SignedUrlsProvider>
+            <ProfileProvider>
+                <ActionSheetProvider>
+                    <HomeLayout />
+                </ActionSheetProvider>
+            </ProfileProvider>
+        </SignedUrlsProvider>
     );
 }

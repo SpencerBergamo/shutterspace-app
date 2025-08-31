@@ -9,56 +9,58 @@
  */
 
 import FloatingActionButton from "@/components/FloatingActionButton";
+import { useSignedUrls } from "@/context/SignedUrlsContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
-import { SignedEntry, useMedia } from "@/hooks/useMedia";
+import { useMedia } from "@/hooks/useMedia";
 import { DbMedia } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { CircleEllipsis, CloudAlert, Images } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 interface MediaTileProps {
     media: DbMedia;
     renderImageURL: (media: DbMedia) => Promise<string | undefined>;
-    signedUrls: Map<string, SignedEntry>;
     width: number;
     height: number;
 }
 
-function MediaTile({ media, signedUrls, renderImageURL, width, height }: MediaTileProps) {
+function MediaTile({ media, renderImageURL, width, height }: MediaTileProps) {
+    const { getSignedUrl } = useSignedUrls();
+
     const type = media.asset.type;
     const mediaId = type === 'image' ? media.asset.imageId : media.asset.videoUid;
-    const cached = signedUrls.get(mediaId);
-    const [uri, setUri] = useState<string | undefined>(cached?.url);
-    console.log("Cached: ", cached);
+
+    const [uri, setUri] = useState<string | undefined>(undefined);
+    const [imageError, setImageError] = useState<boolean>(false);
 
     useEffect(() => {
-        if (cached?.url && !uri) {
-            setUri(cached.url);
-            return;
+        const signed = getSignedUrl(mediaId);
+        if (signed) {
+            setUri(signed);
+            setImageError(false);
         }
+    }, [media._id, renderImageURL, uri]);
 
-        const loadImage = async () => {
-            if (!cached || cached.expiresAt < Date.now() + 30_000) {
-                try {
-                    const signed = await renderImageURL(media);
-                    if (signed) {
-                        setUri(signed);
-                    }
-                } catch (e) {
-                    console.error("Error loading image: ", e);
-                }
+    const loadImage = useCallback(async () => {
+        console.log("Loading Image: ", media._id);
+        try {
+            const signed = await renderImageURL(media);
+            if (signed) {
+                setUri(signed);
+                setImageError(false);
             }
-        };
+        } catch (e) {
+            console.error("Error loading image: ", e);
+            setImageError(true);
+        }
+    }, []);
 
-        loadImage();
-    }, [media._id, cached, renderImageURL]);
-
-    if (uri?.length === 0) return (
+    if (imageError) return (
         <View style={[styles.mediaTile, { width, height }]}>
             <CloudAlert size={24} color="red" />
         </View>
@@ -66,18 +68,15 @@ function MediaTile({ media, signedUrls, renderImageURL, width, height }: MediaTi
 
     return (
         <View style={[styles.mediaTile, { width, height }]}>
-            {uri ? (
-                <Image
-                    source={{ uri }}
-                    style={{ width: '100%', height: '100%' }}
-                    contentFit="cover"
-                    onError={() => {
-                        console.error("Error loading image: ", uri);
-                    }}
-                />
-            ) : (
-                <ActivityIndicator size="small" color="black" />
-            )}
+            <Image
+                source={{ uri }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                onError={loadImage}
+            />
+
+            {!uri && <ActivityIndicator size="small" color="white" />}
         </View>
     );
 }
@@ -91,7 +90,8 @@ export default function AlbumScreen() {
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 3, gap: 2, aspectRatio: 1 }), [width]);
     const album = getAlbumById(albumId);
 
-    const { media, uploadMedia, signedUrls, renderImageURL } = useMedia(albumId);
+    const { getSignedUrl } = useSignedUrls();
+    const { media, uploadMedia, renderImageURL } = useMedia(albumId);
 
     if (!album) return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -128,11 +128,12 @@ export default function AlbumScreen() {
                     renderItem={({ item }) => (
                         <MediaTile
                             media={item}
-                            signedUrls={signedUrls}
                             renderImageURL={renderImageURL}
                             width={gridConfig.tileWidth}
                             height={gridConfig.tileHeight} />
-                    )} />
+                    )}
+
+                />
             ) : (
                 <View style={styles.emptyContainer}>
 
