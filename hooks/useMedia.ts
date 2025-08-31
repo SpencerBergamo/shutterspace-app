@@ -2,10 +2,10 @@ import { useProfile } from "@/context/ProfileContext";
 import { useSignedUrls } from "@/context/SignedUrlsContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { DbMedia } from "@/types/Media";
+import { DbMedia, Media, OptimisticMedia, ProcessAssetResponse, UploadURLResponse } from "@/types/Media";
 import { useAction, useMutation, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useImagePicker } from "./useImagePicker";
 
 /**
@@ -29,22 +29,13 @@ import { useImagePicker } from "./useImagePicker";
 
 
 interface UseAlbumMediaResult {
-    media: DbMedia[];
+    media: Media[];
     getType: (dbMedia: DbMedia) => TypeAndID;
     renderImageURL: (dbMedia: DbMedia) => Promise<string | undefined>;
     renderVideoURL: (dbMedia: DbMedia) => Promise<string | undefined>;
     uploadMedia: () => Promise<void>;
 }
 
-interface UploadURLResponse {
-    result: {
-        id: string;
-        uploadURL: string;
-    };
-    success: boolean;
-    errors: string[];
-    messages: string[];
-}
 
 // export type SignedEntry = { url: string; expiresAt: number; }
 type TypeAndID = { type: 'image' | 'video'; id: string; }
@@ -58,14 +49,20 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     const selectAssets = useImagePicker({ multiple: true, maxVideoDuration: 60 });
     const createMedia = useMutation(api.media.createMedia);
     const dbMedia: DbMedia[] | undefined = useQuery(api.media.getMediaForAlbum, { albumId, profileId });
+    const [optimisticMedia, setOptimisticMedia] = useState<OptimisticMedia[]>([]);
 
     // Signatures
     const generateImageUploadURL = useAction(api.cloudflare.generateImageUploadURL);
     const generateSignedImageURL = useAction(api.cloudflare.generateSignedImageURL);
     const generateVideoUploadURL = useAction(api.cloudflare.generateVideoUploadURL);
     const generateVideoToken = useAction(api.cloudflare.generateVideoToken);
-    // const [signedUrls, setSignedUrls] = useState<Map<string, SignedEntry>>(new Map());
-    // const inFlight = useRef<Set<string>>(new Set());
+
+    const media = useCallback(() => {
+        return [
+            ...(optimisticMedia as OptimisticMedia[] || []),
+            ...(dbMedia as DbMedia[] || []),
+        ] as Media[];
+    }, [dbMedia, optimisticMedia]);
 
     const parseExpiry = (url: string): number => {
         if (!url || url.trim() === '') return 0;
@@ -178,122 +175,164 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     /* Media Upload */
     const uploadMedia = useCallback(async () => {
         const assets = await selectAssets();
-        if (!assets) return;
+        if (!assets || assets.length === 0) return;
 
-        const { images, videos, other } = splitAssets(assets);
+        for (const asset of assets) {
+            const filename = asset.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
 
-        await uploadImages(images);
-        // await uploadVideos(videos);
+            setOptimisticMedia(prev => [...prev, {
+                _id: filename,
+                albumId,
+                uploaderId: profileId,
+                filename: filename,
+                size: asset.fileSize,
+                isDeleted: false,
+                file: asset,
+                type: asset.type === 'video' ? 'video' : 'image',
+                status: 'pending',
+            }]);
+        }
 
-    }, [albumId]);
-
-    const uploadImages = useCallback(async (images: ImagePicker.ImagePickerAsset[]) => {
-        return await Promise.all(images.map(async (asset) => {
-            if (asset.type !== 'image') return; // double check this
-
-            try {
-                const filename = asset.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
-                const uploadUrlResponse: UploadURLResponse = await generateImageUploadURL({ filename: filename });
-
-                if (!uploadUrlResponse.success) {
-                    console.error(uploadUrlResponse.errors.join(", "), '\n', uploadUrlResponse.messages.join(", "));
-                    return;
+        const batch_size = 10;
+        for (let i = 0; i < optimisticMedia.length; i += batch_size) {
+            const batch = optimisticMedia.slice(i, i + batch_size);
+            await Promise.all(batch.map(async (optMedia) => {
+                if (optMedia.type === 'image') {
+                    const response = await processImage(optMedia.file);
+                    if (response.status === 'success' && response.result) {
+                        await createMedia({
+                            albumId,
+                            uploaderId: profileId,
+                            filename: response.result.filename,
+                            asset: {
+                                type: 'image',
+                                imageId: response.result.assetId,
+                                width: response.result.width,
+                                height: response.result.height,
+                            },
+                            size: response.result.size,
+                        });
+                    }
+                } else if (optMedia.type === 'video') {
+                    const response = await processVideo(optMedia.file);
+                    if (response.status === 'success' && response.result) {
+                        await createMedia({
+                            albumId,
+                            uploaderId: profileId,
+                            filename: response.result.filename,
+                            asset: {
+                                type: 'video',
+                                videoUid: response.result.assetId,
+                                duration: response.result.duration ?? 0,
+                            },
+                            size: response.result.size,
+                        });
+                    }
                 }
-
-                const { id, uploadURL } = uploadUrlResponse.result;
-                const form = new FormData();
-                form.append('file', {
-                    uri: asset.uri,
-                    name: filename,
-                    type: asset.mimeType || 'image/jpeg',
-                } as unknown as Blob);
-
-                const imgResponse = await fetch(uploadURL, {
-                    method: 'POST',
-                    body: form,
-                });
-
-                if (!imgResponse.ok) {
-                    console.error(`Failed to upload image ${imgResponse.status} - ${imgResponse.statusText}`);
-                    return;
-                }
-
-                // Debugging
-                // const jsonImgResponse = await imgResponse.json();
-                // console.log("Image Response: ", jsonImgResponse);
-
-                const media = await createMedia({
-                    albumId,
-                    uploaderId: profileId,
-                    filename,
-                    asset: {
-                        type: 'image',
-                        imageId: id,
-                        width: asset.width,
-                        height: asset.height,
-                    },
-                    size: asset.fileSize,
-                });
-
-                ensureSigned(id, 'image');
-            } catch (e) {
-                console.error(e);
-            }
-        }));
+            }));
+        }
     }, [albumId, profileId]);
 
-    const uploadVideos = useCallback(async (videos: ImagePicker.ImagePickerAsset[]) => {
-        return await Promise.all(videos.map(async (asset) => {
-            if (asset.type !== 'video') return;
+    const processImage = useCallback(async (image: ImagePicker.ImagePickerAsset): Promise<ProcessAssetResponse> => {
+        if (image.type !== 'image') return { status: 'error', error: 'Invalid image type', result: null };
 
-            try {
-                const filename = asset.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
-                const uploadUrlResponse = await generateVideoUploadURL({ filename: filename });
+        try {
+            const filename = image.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
+            const uploadUrlResponse: UploadURLResponse = await generateImageUploadURL({ filename: filename });
 
-                if (!uploadUrlResponse.success) {
-                    throw new Error(`Video Upload URL Generation Failed: ${uploadUrlResponse.errors.join(", ")} ${uploadUrlResponse.messages.join(", ")}`);
-                }
-
-                const { uid, uploadURL } = uploadUrlResponse.result;
-                const form = new FormData();
-                form.append('file', {
-                    uri: asset.uri,
-                    name: filename,
-                    type: asset.mimeType || 'video/mp4',
-                } as unknown as Blob);
-
-                const videoResponse = await fetch(uploadURL, {
-                    method: 'POST',
-                    body: form,
-                });
-
-                if (!videoResponse.ok) {
-                    throw new Error(`Failed to upload video ${videoResponse.status} - ${videoResponse.statusText}`);
-                }
-
-                // Debugging
-                const jsonVideoResponse = await videoResponse.json();
-                console.log("Video Response: ", jsonVideoResponse);
-
-                await createMedia({
-                    albumId,
-                    uploaderId: profileId,
-                    filename,
-                    asset: {
-                        type: 'video',
-                        videoUid: uid,
-                        duration: asset.duration ?? 0,
-                        width: asset.width,
-                        height: asset.height,
-                    },
-                    size: asset.fileSize,
-                });
-            } catch (e) {
-                console.error(e);
+            if (!uploadUrlResponse.success) {
+                console.error(uploadUrlResponse.errors.join(", "), '\n', uploadUrlResponse.messages.join(", "));
+                return { status: 'error', error: 'Upload URL Generation Failed', result: null };
             }
-        }));
 
-    }, []);
+            const { id, uploadURL } = uploadUrlResponse.result;
+            const form = new FormData();
+            form.append('file', {
+                uri: image.uri,
+                name: filename,
+                type: image.mimeType || 'image/jpeg',
+            } as unknown as Blob);
+
+            const imgResponse = await fetch(uploadURL, {
+                method: 'POST',
+                body: form,
+            });
+
+            if (!imgResponse.ok) {
+                console.error(`Failed to upload image ${imgResponse.status} - ${imgResponse.statusText}`);
+                return { status: 'error', error: 'Failed to upload image', result: null };
+            }
+
+            ensureSigned(id, 'image');
+            return {
+                status: 'success',
+                result: {
+                    filename,
+                    size: image.fileSize,
+                    type: 'image',
+                    assetId: id,
+                    width: image.width,
+                    height: image.height,
+                }
+            };
+        } catch (e) {
+            console.error(e);
+            return { status: 'error', error: 'Failed to upload image', result: null };
+        }
+    }, [albumId, generateImageUploadURL, ensureSigned, profileId]);
+
+    const processVideo = useCallback(async (video: ImagePicker.ImagePickerAsset): Promise<ProcessAssetResponse> => {
+        if (video.type !== 'video') return { status: 'error', error: 'Invalid video type', result: null };
+
+        try {
+            const filename = video.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
+            const uploadUrlResponse = await generateVideoUploadURL({ filename: filename });
+
+            if (!uploadUrlResponse.success) {
+                console.error(uploadUrlResponse.errors.join(", "), '\n', uploadUrlResponse.messages.join(", "));
+                return { status: 'error', error: 'Upload URL Generation Failed', result: null };
+            }
+
+            const { uid, uploadURL } = uploadUrlResponse.result;
+            const form = new FormData();
+            form.append('file', {
+                uri: video.uri,
+                name: filename,
+                type: video.mimeType || 'video/mp4',
+            } as unknown as Blob);
+
+            const videoResponse = await fetch(uploadURL, {
+                method: 'POST',
+                body: form,
+            });
+
+            if (!videoResponse.ok) {
+                console.error(`Failed to upload video ${videoResponse.status} - ${videoResponse.statusText}`);
+                return { status: 'error', error: 'Failed to upload video', result: null };
+            }
+
+            // Debugging
+            const jsonVideoResponse = await videoResponse.json();
+            console.log("Video Response: ", jsonVideoResponse);
+
+            ensureSigned(uid, 'video');
+            return {
+                status: 'success',
+                result: {
+                    filename,
+                    size: video.fileSize,
+                    type: 'video',
+                    assetId: uid,
+                    duration: video.duration ?? 0,
+                    width: video.width,
+                    height: video.height,
+                }
+            };
+        } catch (e) {
+            console.error(e);
+            return { status: 'error', error: 'Failed to upload video', result: null };
+        }
+    }, [albumId, generateVideoUploadURL, ensureSigned, profileId]);
 
     function splitAssets(assets: ImagePicker.ImagePickerAsset[]): {
         images: ImagePicker.ImagePickerAsset[];
@@ -308,7 +347,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     }
 
     return {
-        media: dbMedia ?? [],
+        media: media(),
         getType,
         renderImageURL,
         renderVideoURL,

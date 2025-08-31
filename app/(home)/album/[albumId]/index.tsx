@@ -14,7 +14,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
-import { DbMedia } from "@/types/Media";
+import { DbMedia, OptimisticMedia } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
@@ -49,6 +49,7 @@ function MediaTile({ media, renderImageURL, width, height }: MediaTileProps) {
     const loadImage = useCallback(async () => {
         console.log("Loading Image: ", media._id);
         try {
+
             const signed = await renderImageURL(media);
             if (signed) {
                 setUri(signed);
@@ -77,6 +78,21 @@ function MediaTile({ media, renderImageURL, width, height }: MediaTileProps) {
             />
 
             {!uri && <ActivityIndicator size="small" color="white" />}
+        </View>
+    );
+}
+
+function OptimisticMediaTile({ media, width, height }: { media: OptimisticMedia, width: number; height: number }) {
+
+    return (
+        <View style={[styles.mediaTile, { width, height }]}>
+            <Image
+                source={{ uri: media.file.uri }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+            />
+
+            {media.status === 'pending' && <ActivityIndicator size="small" color="white" />}
         </View>
     );
 }
@@ -123,13 +139,22 @@ export default function AlbumScreen() {
                     numColumns={gridConfig.numColumns}
                     columnWrapperStyle={gridConfig.columnWrapperStyle}
                     contentContainerStyle={gridConfig.contentContainerStyle}
-                    renderItem={({ item }) => (
-                        <MediaTile
+                    renderItem={({ item }) => {
+                        if ('file' in item) {
+                            return <OptimisticMediaTile
+                                media={item}
+                                width={gridConfig.tileWidth}
+                                height={gridConfig.tileHeight}
+                            />
+                        }
+
+                        return <MediaTile
                             media={item}
                             renderImageURL={renderImageURL}
                             width={gridConfig.tileWidth}
-                            height={gridConfig.tileHeight} />
-                    )}
+                            height={gridConfig.tileHeight}
+                        />
+                    }}
 
                 />
             ) : (
