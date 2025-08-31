@@ -138,7 +138,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         if (cached) {
             console.log("\nrenderImageURL cached: ", cached);
             return type === 'video'
-                ? `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${cached}/thumbnails/thumbnail.jpg`
+                ? `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${cached}/thumbnails/thumbnail.png`
                 : cached;
         }
 
@@ -149,7 +149,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         }
 
         return type === 'video'
-            ? `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${ensured}/thumbnails/thumbnail.jpg`
+            ? `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${ensured}/thumbnails/thumbnail.png`
             : ensured;
     }, [ensureSigned]);
 
@@ -174,8 +174,16 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
     /* Media Upload */
     const uploadMedia = useCallback(async () => {
-        const assets = await selectAssets();
+        // const assets = await selectAssets();
+        const { assets } = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images', 'videos'],
+            allowsMultipleSelection: true,
+            exif: true,
+            videoMaxDuration: 60,
+        });
+
         if (!assets || assets.length === 0) return;
+        console.log("Assets: ", assets.length);
 
         for (const asset of assets) {
             const filename = asset.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
@@ -193,44 +201,47 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             }]);
         }
 
-        const batch_size = 10;
-        for (let i = 0; i < optimisticMedia.length; i += batch_size) {
-            const batch = optimisticMedia.slice(i, i + batch_size);
-            await Promise.all(batch.map(async (optMedia) => {
-                if (optMedia.type === 'image') {
-                    const response = await processImage(optMedia.file);
-                    if (response.status === 'success' && response.result) {
-                        await createMedia({
-                            albumId,
-                            uploaderId: profileId,
-                            filename: response.result.filename,
-                            asset: {
-                                type: 'image',
-                                imageId: response.result.assetId,
-                                width: response.result.width,
-                                height: response.result.height,
-                            },
-                            size: response.result.size,
-                        });
-                    }
-                } else if (optMedia.type === 'video') {
-                    const response = await processVideo(optMedia.file);
-                    if (response.status === 'success' && response.result) {
-                        await createMedia({
-                            albumId,
-                            uploaderId: profileId,
-                            filename: response.result.filename,
-                            asset: {
-                                type: 'video',
-                                videoUid: response.result.assetId,
-                                duration: response.result.duration ?? 0,
-                            },
-                            size: response.result.size,
-                        });
-                    }
-                }
-            }));
-        }
+        return;
+
+        // const batch_size = 10;
+        // for (let i = 0; i < optimisticMedia.length; i += batch_size) {
+        //     const batch = optimisticMedia.slice(i, i + batch_size);
+        //     await Promise.all(batch.map(async (optMedia) => {
+        //         if (optMedia.type === 'image') {
+        //             const response = await processImage(optMedia.file);
+        //             if (response.status === 'success' && response.result) {
+        //                 await createMedia({
+        //                     albumId,
+        //                     uploaderId: profileId,
+        //                     filename: response.result.filename,
+        //                     asset: {
+        //                         type: 'image',
+        //                         imageId: response.result.assetId,
+        //                         width: response.result.width,
+        //                         height: response.result.height,
+        //                     },
+        //                     size: response.result.size,
+        //                 });
+        //             }
+        //         } else if (optMedia.type === 'video') {
+        //             console.log("Processing Video: ", optMedia.file.fileName);
+        //             const response = await processVideo(optMedia.file);
+        //             if (response.status === 'success' && response.result) {
+        //                 await createMedia({
+        //                     albumId,
+        //                     uploaderId: profileId,
+        //                     filename: response.result.filename,
+        //                     asset: {
+        //                         type: 'video',
+        //                         videoUid: response.result.assetId,
+        //                         duration: response.result.duration ?? 0,
+        //                     },
+        //                     size: response.result.size,
+        //                 });
+        //             }
+        //         }
+        //     }));
+        // }
     }, [albumId, profileId]);
 
     const processImage = useCallback(async (image: ImagePicker.ImagePickerAsset): Promise<ProcessAssetResponse> => {

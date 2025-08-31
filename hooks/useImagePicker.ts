@@ -1,5 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { Alert, Linking } from "react-native";
 
 export interface ImagePickerProps {
@@ -7,18 +7,10 @@ export interface ImagePickerProps {
     maxVideoDuration: number;
 }
 export const useImagePicker = (props: ImagePickerProps) => {
-    const [permission, setPermission] = useState<ImagePicker.PermissionStatus | null>(null);
-
-    useEffect(() => {
-        (async () => {
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            setPermission(status);
-        })();
-    }, []);
-
     const selectAssets = useCallback(async (): Promise<ImagePicker.ImagePickerAsset[] | null> => {
-        if (permission !== 'granted') {
-            Alert.prompt(
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert(
                 "Permission Required",
                 "Shutterspace needs permission to access your media library to upload images.", [
                 { text: 'Cancel', style: 'cancel' },
@@ -28,7 +20,6 @@ export const useImagePicker = (props: ImagePickerProps) => {
                     }
                 }
             ]);
-            return null;
         }
 
         const { assets } = await ImagePicker.launchImageLibraryAsync({
@@ -40,7 +31,7 @@ export const useImagePicker = (props: ImagePickerProps) => {
         });
 
         return assets;
-    }, [permission]);
+    }, []);
 
     return selectAssets;
 }

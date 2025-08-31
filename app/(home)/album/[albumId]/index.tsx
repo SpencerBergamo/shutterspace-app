@@ -18,6 +18,7 @@ import { DbMedia, OptimisticMedia } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
+import { getThumbnailAsync } from "expo-video-thumbnails";
 import { CircleEllipsis, CloudAlert, Images } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
@@ -44,7 +45,7 @@ function MediaTile({ media, renderImageURL, width, height }: MediaTileProps) {
             setUri(signed);
             setImageError(false);
         }
-    }, [media._id, renderImageURL, uri]);
+    }, [media._id, uri, getSignedUrl]);
 
     const loadImage = useCallback(async () => {
         console.log("Loading Image: ", media._id);
@@ -74,7 +75,10 @@ function MediaTile({ media, renderImageURL, width, height }: MediaTileProps) {
                 style={{ width: '100%', height: '100%' }}
                 contentFit="cover"
                 cachePolicy="memory-disk"
-                onError={loadImage}
+                onError={(e) => {
+                    console.error("Error loading image: ", e);
+                    loadImage();
+                }}
             />
 
             {!uri && <ActivityIndicator size="small" color="white" />}
@@ -84,12 +88,32 @@ function MediaTile({ media, renderImageURL, width, height }: MediaTileProps) {
 
 function OptimisticMediaTile({ media, width, height }: { media: OptimisticMedia, width: number; height: number }) {
 
+    const [uri, setUri] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        (async () => {
+            if (media.type === 'video') {
+
+                const thumb = await getThumbnailAsync(media.file.uri, {
+                    quality: 0.9,
+                });
+
+                setUri(thumb.uri);
+            } else {
+                setUri(media.file.uri);
+            }
+        })();
+    }, []);
+
     return (
         <View style={[styles.mediaTile, { width, height }]}>
             <Image
-                source={{ uri: media.file.uri }}
+                source={{ uri }}
                 style={{ width: '100%', height: '100%' }}
                 contentFit="cover"
+                onLoadEnd={() => {
+                    console.warn("Image Loaded: ", !uri, media.type);
+                }}
             />
 
             {media.status === 'pending' && <ActivityIndicator size="small" color="white" />}
