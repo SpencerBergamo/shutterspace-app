@@ -38,8 +38,7 @@ export default function getGridLayout({ width, columns, gap, aspectRatio }: Grid
     };
 
     const contentContainerStyle: StyleProp<ViewStyle> = {
-        padding: 16,
-        gap: gap,
+        padding: 2,
     };
 
     return {

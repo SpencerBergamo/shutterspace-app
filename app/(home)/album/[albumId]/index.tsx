@@ -86,12 +86,10 @@ export default function AlbumScreen() {
     const { theme } = useTheme();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbumById } = useAlbums();
+    const album = getAlbumById(albumId);
+    const { media, uploadMedia, renderImageURL } = useMedia(albumId);
 
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 3, gap: 2, aspectRatio: 1 }), [width]);
-    const album = getAlbumById(albumId);
-
-    const { getSignedUrl } = useSignedUrls();
-    const { media, uploadMedia, renderImageURL } = useMedia(albumId);
 
     if (!album) return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
