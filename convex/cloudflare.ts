@@ -33,14 +33,10 @@ export const requestImageUploadURL = action({
         if (!membership || !identity) throw new Error('Unauthorized');
 
         const url = `${BASE_URL}/images/v2/direct_upload`;
-
         const form = new FormData();
         // form.append('expiry', new Date(Date.now() + 1000 * 60 * 2).toISOString());
         form.append('requireSignedURLs', 'true');
         form.append('metadata', JSON.stringify({ filename }));
-
-        console.log("Form: ", form);
-
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -50,15 +46,10 @@ export const requestImageUploadURL = action({
         });
 
         if (!response.ok) {
-            const text = await response.text();
-            console.error("Response Text: ", text);
             throw new Error("UploadURL Gen Failed: " + response.status + response.statusText);
         }
 
-        const data = await response.json();
-        console.log("Response: ", data);
-
-        return data;
+        return await response.json();
     },
 });
 

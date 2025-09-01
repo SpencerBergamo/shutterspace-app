@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 // Base media document that represents the data stored in Convex
 export type DbMedia = {
     _id: Id<'media'>; // the filename of the asset
+    _creationTime: number;
     albumId: Id<'albums'>;
     uploaderId: Id<'profiles'>;
     filename: string;

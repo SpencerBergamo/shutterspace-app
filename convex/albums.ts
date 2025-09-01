@@ -125,6 +125,7 @@ export const createAlbum = mutation({
 export const updateAlbum = mutation({
     args: {
         albumId: v.id('albums'),
+        profileId: v.id('profiles'),
         title: v.optional(v.string()),
         description: v.optional(v.string()),
         thumbnailFileId: v.optional(v.object({
@@ -145,30 +146,34 @@ export const updateAlbum = mutation({
         })),
         expiresAt: v.optional(v.number()),
         isDeleted: v.optional(v.boolean()),
-    }, handler: async (ctx, { albumId, ...args }) => {
+    }, handler: async (ctx, { albumId, profileId, ...args }) => {
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) throw new Error("Not Authorized to Update Albums");
 
         const membership = await ctx.db
             .query('albumMembers')
             .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
-                .eq('profileId', identity.subject as Id<'profiles'>))
+                .eq('profileId', profileId as Id<'profiles'>))
             .first();
 
         if (!membership || !['host', 'moderator'].includes(membership.role)) {
             throw new Error('Not authorized to update this album');
         }
 
+        const album = await ctx.db.get(albumId);
+        if (!album) throw new Error('Album not found');
+
         const updates = {
-            title: args.title,
-            description: args.description,
-            thumbnailFileId: args.thumbnailFileId,
-            isDynamicThumbnail: args.isDynamicThumbnail,
-            openInvites: args.openInvites,
-            dateRange: args.dateRange,
-            location: args.location,
+            title: args.title ?? album.title,
+            description: args.description ?? album.description,
+            thumbnailFileId: args.thumbnailFileId ?? album.thumbnailFileId,
+            isDynamicThumbnail: args.isDynamicThumbnail ?? true,
+            openInvites: args.openInvites ?? true,
+            dateRange: args.dateRange ?? album.dateRange,
+            location: args.location ?? album.location,
             updatedAt: Date.now(),
-            expiresAt: args.expiresAt,
+            expiresAt: args.expiresAt ?? album.expiresAt,
+            isDeleted: args.isDeleted ?? false,
         }
 
         await ctx.db.patch(albumId, updates);

@@ -3,10 +3,10 @@ import { useSignedUrls } from "@/context/SignedUrlsContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { AlbumThumbnail } from "@/types/Album";
-import { DbMedia, Media, OptimisticMedia, ProcessAssetResponse, TypeAndID, UploadURLResponse } from "@/types/Media";
+import { DbMedia, Media, ProcessAssetResponse, TypeAndID, UploadURLResponse } from "@/types/Media";
 import { useAction, useMutation, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 
 /**
  * 
@@ -43,9 +43,28 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     const { profileId } = useProfile();
     const { ensureSigned } = useSignedUrls();
 
-    const createMedia = useMutation(api.media.createMedia);
+    const createMedia = useMutation(api.media.createMedia).withOptimisticUpdate(
+        (localStore, args) => {
+            const existingMedia = localStore.getQuery(api.media.getMediaForAlbum, { albumId, profileId });
+            const optimisticMedia: DbMedia = {
+                _id: args.filename as Id<'media'>,
+                _creationTime: Date.now(),
+                albumId,
+                uploaderId: profileId,
+                filename: args.filename,
+                asset: args.asset,
+                size: args.size,
+                dateTaken: args.dateTaken,
+                location: args.location,
+                isDeleted: false,
+            };
+
+            localStore.setQuery(api.media.getMediaForAlbum, { albumId, profileId }, [optimisticMedia, ...existingMedia || []]);
+        },
+    );
+
     const dbMedia: DbMedia[] | undefined = useQuery(api.media.getMediaForAlbum, { albumId, profileId });
-    const [optimisticMedia, setOptimisticMedia] = useState<OptimisticMedia[]>([]);
+    // const [optimisticMedia, setOptimisticMedia] = useState<OptimisticMedia[]>([]);
 
     // Signatures
     const requestImageUploadURL = useAction(api.cloudflare.requestImageUploadURL);
@@ -54,12 +73,12 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     const requestVideoPlaybackToken = useAction(api.cloudflare.requestVideoPlaybackToken);
     const updateAlbum = useMutation(api.albums.updateAlbum);
 
-    const media = useCallback(() => {
-        return [
-            ...(optimisticMedia as OptimisticMedia[] || []),
-            ...(dbMedia as DbMedia[] || []),
-        ] as Media[];
-    }, [dbMedia, optimisticMedia]);
+    // const media = useCallback(() => {
+    //     return [
+    //         ...(optimisticMedia as OptimisticMedia[] || []),
+    //         ...(dbMedia as DbMedia[] || []),
+    //     ] as Media[];
+    // }, [dbMedia, optimisticMedia]);
 
     /* Media Upload */
     const uploadMedia = useCallback(async () => {
@@ -73,31 +92,33 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
         if (!assets || assets.length === 0) return;
 
-        for (const asset of assets) {
-            const filename = asset.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
+        // const newOptimisticMedia: OptimisticMedia[] = [];
+        // for (const asset of assets) {
+        //     const filename = asset.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
 
-            setOptimisticMedia(prev => [...prev, {
-                _id: filename,
-                albumId,
-                uploaderId: profileId,
-                filename: filename,
-                size: asset.fileSize,
-                isDeleted: false,
-                file: asset,
-                type: asset.type === 'video' ? 'video' : 'image',
-                status: 'pending',
-            }]);
-        }
+        //     newOptimisticMedia.push({
+        //         _id: filename,
+        //         albumId,
+        //         uploaderId: profileId,
+        //         filename: filename,
+        //         size: asset.fileSize,
+        //         isDeleted: false,
+        //         file: asset,
+        //         type: asset.type === 'video' ? 'video' : 'image',
+        //         status: 'pending',
+        //     });
+        // }
+        // setOptimisticMedia(prev => [...prev, ...newOptimisticMedia]);
 
         const batch_size = 10;
         let newAlbumThumbnail: AlbumThumbnail | undefined;
-        for (let i = 0; i < optimisticMedia.length; i += batch_size) {
-            const batch = optimisticMedia.slice(i, i + batch_size);
-            await Promise.all(batch.map(async (optMedia) => {
-                const isLast = optimisticMedia.at(-1) === optMedia;
+        for (let i = 0; i < assets.length; i += batch_size) {
+            const batch = assets.slice(i, i + batch_size);
+            await Promise.all(batch.map(async (asset) => {
+                const isLast = assets.at(-1) === asset;
 
-                if (optMedia.type === 'image') {
-                    const { status, result } = await processImage(optMedia.file);
+                if (asset.type === 'image') {
+                    const { status, result, error } = await processImage(asset);
                     if (status === 'success' && result) {
                         await createMedia({
                             albumId,
@@ -119,9 +140,9 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
                             }
                         }
                     }
-                } else if (optMedia.type === 'video') {
-                    console.log("Processing Video: ", optMedia.file.fileName);
-                    const response = await processVideo(optMedia.file);
+                } else if (asset.type === 'video') {
+                    console.log("Processing Video: ", asset.fileName);
+                    const response = await processVideo(asset);
                     if (response.status === 'success' && response.result) {
                         await createMedia({
                             albumId,
@@ -141,16 +162,21 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
                                 fileId: response.result.assetId,
                             }
                         }
+                    } else {
+                        console.error("processVideo failed", response.error);
                     }
+                } else {
+                    console.error("Type is invalid", asset.type);
                 }
             }));
         }
 
         await updateAlbum({
             albumId,
+            profileId,
             thumbnailFileId: newAlbumThumbnail,
         });
-    }, [albumId, profileId]);
+    }, [albumId, profileId, createMedia, updateAlbum]);
 
     const processImage = useCallback(async (image: ImagePicker.ImagePickerAsset): Promise<ProcessAssetResponse> => {
         if (image.type !== 'image') return { status: 'error', error: 'Invalid image type', result: null };
@@ -174,6 +200,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
             const imgResponse = await fetch(uploadURL, {
                 method: 'POST',
+                headers: {},
                 body: form,
             });
 
@@ -201,9 +228,13 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     }, [albumId, requestImageUploadURL, ensureSigned, profileId]);
 
     const processVideo = useCallback(async (video: ImagePicker.ImagePickerAsset): Promise<ProcessAssetResponse> => {
-        if (video.type !== 'video') return { status: 'error', error: 'Invalid video type', result: null };
+        if (video.type !== 'video') {
+            console.error("Invalid video type", video.type);
+            return { status: 'error', error: 'Invalid video type', result: null };
+        };
 
         try {
+            console.log("Processing Video: ", video.fileName);
             const filename = video.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
             const uploadUrlResponse = await requestVideoUploadURL({ albumId, profileId, filename: filename });
 
@@ -222,6 +253,9 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
             const videoResponse = await fetch(uploadURL, {
                 method: 'POST',
+                headers: {
+                    // Don't set Content-Type - let fetch set it automatically with boundary
+                },
                 body: form,
             });
 
@@ -266,7 +300,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     }
 
     return {
-        media: media(),
+        media: dbMedia || [],
         uploadMedia,
     }
 }

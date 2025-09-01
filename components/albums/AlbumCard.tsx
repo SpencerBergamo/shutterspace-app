@@ -33,7 +33,7 @@ export default function AlbumCard({ album, width, height }: AlbumCardProps) {
         }
 
         signed();
-    }, [ensureSigned, album._id, profileId]);
+    }, [ensureSigned, album._id, profileId, album.thumbnailFileId]);
 
     return (
         <Pressable style={[styles.container, { width: width, height: height }]}

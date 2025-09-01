@@ -84,8 +84,8 @@ export const useAlbums = (): UseAlbumsResult => {
         const updates = {
             title: data.title,
             description: data.description,
-            isDynamicThumbnail: data.isDynamicThumbnail ?? false,
-            openInvites: data.openInvites ?? true,
+            isDynamicThumbnail: data.isDynamicThumbnail,
+            openInvites: data.openInvites,
             dateRange: data.dateRange ? {
                 start: data.dateRange.start.toISOString(),
                 end: data.dateRange.end?.toISOString(),
@@ -97,6 +97,7 @@ export const useAlbums = (): UseAlbumsResult => {
 
         return await updateMutation({
             albumId,
+            profileId: profile._id,
             ...updates,
         });
     }, [updateMutation]);
