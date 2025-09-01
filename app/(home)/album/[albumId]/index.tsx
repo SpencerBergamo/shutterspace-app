@@ -9,6 +9,7 @@
  */
 
 import FloatingActionButton from "@/components/FloatingActionButton";
+import { useProfile } from "@/context/ProfileContext";
 import { useSignedUrls } from "@/context/SignedUrlsContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
@@ -20,47 +21,37 @@ import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { getThumbnailAsync } from "expo-video-thumbnails";
 import { CircleEllipsis, CloudAlert, Images, Play } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 interface MediaTileProps {
+    albumId: Id<'albums'>;
+    profileId: Id<'profiles'>;
     media: DbMedia;
-    renderImageURL: (media: DbMedia) => Promise<string | undefined>;
     width: number;
     height: number;
 }
 
-function MediaTile({ media, renderImageURL, width, height }: MediaTileProps) {
-    const { getSignedUrl } = useSignedUrls();
+function MediaTile({ media, albumId, profileId, width, height }: MediaTileProps) {
+    const { ensureSigned, getThumbnailURLAsync } = useSignedUrls();
 
     const type = media.asset.type;
-    const mediaId = type === 'image' ? media.asset.imageId : media.asset.videoUid;
+    const fileId = type === 'image' ? media.asset.imageId : media.asset.videoUid;
 
     const [uri, setUri] = useState<string | undefined>(undefined);
     const [imageError, setImageError] = useState<boolean>(false);
 
     useEffect(() => {
-        const signed = getSignedUrl(mediaId);
-        if (signed) {
-            setUri(signed);
-            setImageError(false);
-        }
-    }, [media._id, uri, getSignedUrl]);
-
-    const loadImage = useCallback(async () => {
-        console.log("Loading Image: ", media._id);
-        try {
-
-            const signed = await renderImageURL(media);
-            if (signed) {
-                setUri(signed);
+        const signed = async () => {
+            const signature = await getThumbnailURLAsync({ type, fileId, albumId, profileId });
+            if (signature) {
+                setUri(signature);
                 setImageError(false);
             }
-        } catch (e) {
-            console.error("Error loading image: ", e);
-            setImageError(true);
         }
-    }, []);
+
+        signed();
+    }, [media._id, uri, ensureSigned]);
 
     if (imageError) return (
         <View style={[styles.mediaTile, { width, height }]}>
@@ -74,11 +65,6 @@ function MediaTile({ media, renderImageURL, width, height }: MediaTileProps) {
                 source={{ uri }}
                 style={{ width: '100%', height: '100%' }}
                 contentFit="cover"
-                cachePolicy="memory-disk"
-                onError={(e) => {
-                    console.error("Error loading image: ", e);
-                    loadImage();
-                }}
             />
 
             {!uri && <View style={[styles.stackContainer, styles.mediaLoadingIndicator]}>
@@ -128,12 +114,13 @@ function OptimisticMediaTile({ media, width, height }: { media: OptimisticMedia,
 }
 
 export default function AlbumScreen() {
+    const { profileId } = useProfile();
     const { width } = useWindowDimensions();
     const { theme } = useTheme();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbumById } = useAlbums();
     const album = getAlbumById(albumId);
-    const { media, uploadMedia, renderImageURL } = useMedia(albumId);
+    const { media, uploadMedia } = useMedia(albumId);
 
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 3, gap: 2, aspectRatio: 1 }), [width]);
 
@@ -180,8 +167,9 @@ export default function AlbumScreen() {
                         }
 
                         return <MediaTile
+                            albumId={albumId}
+                            profileId={profileId}
                             media={item}
-                            renderImageURL={renderImageURL}
                             width={gridConfig.tileWidth}
                             height={gridConfig.tileHeight}
                         />

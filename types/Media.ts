@@ -40,6 +40,8 @@ export type OptimisticMedia = Omit<DbMedia, "_id" | "asset"> & {
 
 export type Media = DbMedia | OptimisticMedia;
 
+export type TypeAndID = { type: 'image' | 'video'; id: string; }
+
 export interface ProcessAssetResponse {
     status: 'success' | 'error';
     error?: string;

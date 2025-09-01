@@ -13,7 +13,6 @@ export default function HomeScreen() {
     const { theme } = useTheme();
     const { albums, isLoading } = useAlbums();
 
-    // const gridConfig = getGridLayout({ columns: 2, gap: 16, aspectRatio: 1 });
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 2, gap: 16, aspectRatio: 1 }), [width]);
 
     return (

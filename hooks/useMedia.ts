@@ -3,11 +3,10 @@ import { useSignedUrls } from "@/context/SignedUrlsContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { AlbumThumbnail } from "@/types/Album";
-import { DbMedia, Media, OptimisticMedia, ProcessAssetResponse, UploadURLResponse } from "@/types/Media";
+import { DbMedia, Media, OptimisticMedia, ProcessAssetResponse, TypeAndID, UploadURLResponse } from "@/types/Media";
 import { useAction, useMutation, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useEffect, useState } from "react";
-import { useImagePicker } from "./useImagePicker";
+import { useCallback, useState } from "react";
 
 /**
  * 
@@ -31,23 +30,19 @@ import { useImagePicker } from "./useImagePicker";
 
 interface UseAlbumMediaResult {
     media: Media[];
-    getType: (dbMedia: DbMedia) => TypeAndID;
-    renderImageURL: (dbMedia: DbMedia) => Promise<string | undefined>;
-    renderVideoURL: (dbMedia: DbMedia) => Promise<string | undefined>;
     uploadMedia: () => Promise<void>;
 }
 
 
 // export type SignedEntry = { url: string; expiresAt: number; }
-type TypeAndID = { type: 'image' | 'video'; id: string; }
+
 
 // Video Stream -> https://customer-<customer_id>.cloudflarestream.com/<signed_token>/
 
 export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     const { profileId } = useProfile();
-    const { getSignedUrl, setSignedUrl } = useSignedUrls();
+    const { ensureSigned } = useSignedUrls();
 
-    const selectAssets = useImagePicker({ multiple: true, maxVideoDuration: 60 });
     const createMedia = useMutation(api.media.createMedia);
     const dbMedia: DbMedia[] | undefined = useQuery(api.media.getMediaForAlbum, { albumId, profileId });
     const [optimisticMedia, setOptimisticMedia] = useState<OptimisticMedia[]>([]);
@@ -65,114 +60,6 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             ...(dbMedia as DbMedia[] || []),
         ] as Media[];
     }, [dbMedia, optimisticMedia]);
-
-    const parseExpiry = (url: string): number => {
-        if (!url || url.trim() === '') return 0;
-        try {
-            const u = new URL(url);
-            const exp = u.searchParams.get('exp');
-            if (!exp) return 0;
-
-            const seconds = parseInt(exp, 10);
-            if (Number.isNaN(seconds)) return 0;
-            return seconds * 1000; // convert to milliseconds
-        } catch (e) {
-            console.error("Error parsing expiry: ", url, e);
-            return 0;
-        }
-    }
-
-    const getType = (dbMedia: DbMedia): TypeAndID => {
-        const type = dbMedia.asset.type;
-        const id = type === 'image' ? dbMedia.asset.imageId : dbMedia.asset.videoUid;
-        return { type, id };
-    }
-
-    const ensureSigned = useCallback(async (id: string, type: 'image' | 'video'): Promise<string | undefined> => {
-        const existing = getSignedUrl(id);
-        console.log("ensureSigned existing: ", existing);
-        if (existing) return existing;
-
-        try {
-            console.log("Calling API for Signed URL");
-            if (type === 'image') {
-                const url = await requestImageDeliveryURL({ albumId, profileId, identifier: id });
-                const expiresAt = parseExpiry(url);
-                const ttlMs = Math.max(expiresAt - Date.now(), 1000); // duration until expires at
-                setSignedUrl(id, url, ttlMs);
-                return url;
-            } else if (type === 'video') {
-                const token = await requestVideoPlaybackToken({ albumId, profileId, videoUID: id });
-                console.log("Video Token: ", token);
-                const ttlMs = 24 * 60 * 60 * 1000; // duration until expires at 24 hours
-                setSignedUrl(id, token, ttlMs);
-                return token;
-            }
-        } catch (e) {
-            console.error(e);
-        }
-
-        return undefined;
-    }, [requestImageDeliveryURL, requestVideoPlaybackToken, getSignedUrl, setSignedUrl]);
-
-    const prefetch = useCallback(async (media: DbMedia[]) => {
-        const withTypeAndID: TypeAndID[] = media.map(m => {
-            const { type, id } = getType(m);
-            return { type, id };
-        });
-
-        const todo = withTypeAndID.filter(m => {
-            const existing = getSignedUrl(m.id);
-            return !existing;
-        });
-
-        if (todo.length === 0) return;
-        await Promise.all(todo.map(m => {
-            return ensureSigned(m.id, m.type);
-        }))
-
-    }, [ensureSigned]);
-
-    const renderImageURL = useCallback(async (dbMedia: DbMedia) => {
-        const { type, id } = getType(dbMedia);
-
-        const cached = getSignedUrl(id);
-        if (cached) {
-            console.log("\nrenderImageURL cached: ", cached);
-            return type === 'video'
-                ? `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${cached}/thumbnails/thumbnail.png`
-                : cached;
-        }
-
-        const ensured = await ensureSigned(id, type);
-        if (!ensured) {
-            console.warn('renderImageURL returned undefined for', id);
-            return "https://placehold.co/600x400";
-        }
-
-        return type === 'video'
-            ? `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${ensured}/thumbnails/thumbnail.png`
-            : ensured;
-    }, [ensureSigned]);
-
-    const renderVideoURL = useCallback(async (dbMedia: DbMedia) => {
-        const { type, id } = getType(dbMedia);
-        if (type !== 'video') return renderImageURL(dbMedia);
-
-        const base = `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com`;
-        let url = getSignedUrl(id);
-
-        if (!url) { url = await ensureSigned(id, type); }
-
-        if (!url) return undefined;
-
-        return `${base}/${url}/manifest/video.m3u8`;
-    }, [ensureSigned]);
-
-    useEffect(() => {
-        if (!dbMedia || dbMedia.length === 0) return;
-        prefetch(dbMedia);
-    }, [dbMedia, prefetch]);
 
     /* Media Upload */
     const uploadMedia = useCallback(async () => {
@@ -295,7 +182,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
                 return { status: 'error', error: 'Failed to upload image', result: null };
             }
 
-            ensureSigned(id, 'image');
+            ensureSigned({ type: 'image', id, albumId, profileId });
             return {
                 status: 'success',
                 result: {
@@ -347,7 +234,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             const jsonVideoResponse = await videoResponse.json();
             console.log("Video Response: ", jsonVideoResponse);
 
-            ensureSigned(uid, 'video');
+            ensureSigned({ type: 'video', id: uid, albumId, profileId });
             return {
                 status: 'success',
                 result: {
@@ -380,9 +267,6 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
     return {
         media: media(),
-        getType,
-        renderImageURL,
-        renderVideoURL,
         uploadMedia,
     }
 }
