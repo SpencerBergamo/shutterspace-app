@@ -66,7 +66,6 @@ export const useAlbums = (): UseAlbumsResult => {
             hostId: profile._id,
             title: data.title,
             description: data.description,
-            thumbnailFileId: data.thumbnailFileId,
             isDynamicThumbnail,
             openInvites,
             dateRange,
@@ -85,7 +84,6 @@ export const useAlbums = (): UseAlbumsResult => {
         const updates = {
             title: data.title,
             description: data.description,
-            thumbnailFileId: data.thumbnailFileId,
             isDynamicThumbnail: data.isDynamicThumbnail ?? false,
             openInvites: data.openInvites ?? true,
             dateRange: data.dateRange ? {

@@ -81,8 +81,12 @@ function MediaTile({ media, renderImageURL, width, height }: MediaTileProps) {
                 }}
             />
 
-            {!uri && <View style={styles.mediaLoadingIndicator}>
+            {!uri && <View style={[styles.stackContainer, styles.mediaLoadingIndicator]}>
                 <ActivityIndicator size="small" color="white" />
+            </View>}
+
+            {type === 'video' && <View style={[styles.stackContainer, styles.videoOverlay]}>
+                <Play size={24} color="white" />
             </View>}
         </View>
     );
@@ -118,10 +122,6 @@ function OptimisticMediaTile({ media, width, height }: { media: OptimisticMedia,
 
             {media.status === 'pending' && <View style={[styles.stackContainer, styles.mediaLoadingIndicator]}>
                 <ActivityIndicator size="small" color="white" />
-            </View>}
-
-            {mediaType === 'video' && <View style={[styles.stackContainer, styles.videoOverlay]}>
-                <Play size={24} color="white" />
             </View>}
         </View>
     );

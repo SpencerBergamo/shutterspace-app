@@ -7,24 +7,6 @@ import { router, Stack } from "expo-router";
 import { ArrowLeft, X } from "lucide-react-native";
 import { Pressable } from "react-native";
 
-/* 
-
-headerLeft: () => (
-                    <View style={{ flex: 1, justifyContent: 'center' }}>
-                        <Text style={{ fontSize: 24, fontWeight: '600', color: themeStyles.colors.text, marginBottom: 2 }}>Hi, {profile.nickname}!</Text>
-                        <Text style={{
-                            fontSize: 14,
-                            color: '#6C757D',
-                            fontWeight: '400',
-                        }}>Welcome Back!</Text>
-
-                    </View>
-                ),
-                headerRight: () => (
-                    <ProfileAvatar onPress={() => { }} nickname={profile.nickname} size={48} />
-                ),
-*/
-
 function HomeLayout() {
     const { theme } = useTheme();
 

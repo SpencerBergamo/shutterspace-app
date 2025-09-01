@@ -2,6 +2,7 @@ import { useProfile } from "@/context/ProfileContext";
 import { useSignedUrls } from "@/context/SignedUrlsContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { AlbumThumbnail } from "@/types/Album";
 import { DbMedia, Media, OptimisticMedia, ProcessAssetResponse, UploadURLResponse } from "@/types/Media";
 import { useAction, useMutation, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
@@ -52,10 +53,11 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     const [optimisticMedia, setOptimisticMedia] = useState<OptimisticMedia[]>([]);
 
     // Signatures
-    const generateImageUploadURL = useAction(api.cloudflare.generateImageUploadURL);
-    const generateSignedImageURL = useAction(api.cloudflare.generateSignedImageURL);
-    const generateVideoUploadURL = useAction(api.cloudflare.generateVideoUploadURL);
-    const generateVideoToken = useAction(api.cloudflare.generateVideoToken);
+    const requestImageUploadURL = useAction(api.cloudflare.requestImageUploadURL);
+    const requestImageDeliveryURL = useAction(api.cloudflare.requestImageDeliveryURL);
+    const requestVideoUploadURL = useAction(api.cloudflare.requestVideoUploadURL);
+    const requestVideoPlaybackToken = useAction(api.cloudflare.requestVideoPlaybackToken);
+    const updateAlbum = useMutation(api.albums.updateAlbum);
 
     const media = useCallback(() => {
         return [
@@ -94,13 +96,13 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         try {
             console.log("Calling API for Signed URL");
             if (type === 'image') {
-                const url = await generateSignedImageURL({ albumId, profileId, identifier: id });
+                const url = await requestImageDeliveryURL({ albumId, profileId, identifier: id });
                 const expiresAt = parseExpiry(url);
                 const ttlMs = Math.max(expiresAt - Date.now(), 1000); // duration until expires at
                 setSignedUrl(id, url, ttlMs);
                 return url;
             } else if (type === 'video') {
-                const token = await generateVideoToken({ albumId, profileId, videoUID: id });
+                const token = await requestVideoPlaybackToken({ albumId, profileId, videoUID: id });
                 console.log("Video Token: ", token);
                 const ttlMs = 24 * 60 * 60 * 1000; // duration until expires at 24 hours
                 setSignedUrl(id, token, ttlMs);
@@ -111,7 +113,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         }
 
         return undefined;
-    }, [generateSignedImageURL, generateVideoToken, getSignedUrl, setSignedUrl]);
+    }, [requestImageDeliveryURL, requestVideoPlaybackToken, getSignedUrl, setSignedUrl]);
 
     const prefetch = useCallback(async (media: DbMedia[]) => {
         const withTypeAndID: TypeAndID[] = media.map(m => {
@@ -183,7 +185,6 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         });
 
         if (!assets || assets.length === 0) return;
-        console.log("Assets: ", assets.length);
 
         for (const asset of assets) {
             const filename = asset.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
@@ -201,47 +202,67 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             }]);
         }
 
-        return;
+        const batch_size = 10;
+        let newAlbumThumbnail: AlbumThumbnail | undefined;
+        for (let i = 0; i < optimisticMedia.length; i += batch_size) {
+            const batch = optimisticMedia.slice(i, i + batch_size);
+            await Promise.all(batch.map(async (optMedia) => {
+                const isLast = optimisticMedia.at(-1) === optMedia;
 
-        // const batch_size = 10;
-        // for (let i = 0; i < optimisticMedia.length; i += batch_size) {
-        //     const batch = optimisticMedia.slice(i, i + batch_size);
-        //     await Promise.all(batch.map(async (optMedia) => {
-        //         if (optMedia.type === 'image') {
-        //             const response = await processImage(optMedia.file);
-        //             if (response.status === 'success' && response.result) {
-        //                 await createMedia({
-        //                     albumId,
-        //                     uploaderId: profileId,
-        //                     filename: response.result.filename,
-        //                     asset: {
-        //                         type: 'image',
-        //                         imageId: response.result.assetId,
-        //                         width: response.result.width,
-        //                         height: response.result.height,
-        //                     },
-        //                     size: response.result.size,
-        //                 });
-        //             }
-        //         } else if (optMedia.type === 'video') {
-        //             console.log("Processing Video: ", optMedia.file.fileName);
-        //             const response = await processVideo(optMedia.file);
-        //             if (response.status === 'success' && response.result) {
-        //                 await createMedia({
-        //                     albumId,
-        //                     uploaderId: profileId,
-        //                     filename: response.result.filename,
-        //                     asset: {
-        //                         type: 'video',
-        //                         videoUid: response.result.assetId,
-        //                         duration: response.result.duration ?? 0,
-        //                     },
-        //                     size: response.result.size,
-        //                 });
-        //             }
-        //         }
-        //     }));
-        // }
+                if (optMedia.type === 'image') {
+                    const { status, result } = await processImage(optMedia.file);
+                    if (status === 'success' && result) {
+                        await createMedia({
+                            albumId,
+                            uploaderId: profileId,
+                            filename: result.filename,
+                            asset: {
+                                type: 'image',
+                                imageId: result.assetId,
+                                width: result.width,
+                                height: result.height,
+                            },
+                            size: result.size,
+                        });
+
+                        if (isLast) {
+                            newAlbumThumbnail = {
+                                type: 'image',
+                                fileId: result.assetId,
+                            }
+                        }
+                    }
+                } else if (optMedia.type === 'video') {
+                    console.log("Processing Video: ", optMedia.file.fileName);
+                    const response = await processVideo(optMedia.file);
+                    if (response.status === 'success' && response.result) {
+                        await createMedia({
+                            albumId,
+                            uploaderId: profileId,
+                            filename: response.result.filename,
+                            asset: {
+                                type: 'video',
+                                videoUid: response.result.assetId,
+                                duration: response.result.duration ?? 0,
+                            },
+                            size: response.result.size,
+                        });
+
+                        if (isLast) {
+                            newAlbumThumbnail = {
+                                type: 'video',
+                                fileId: response.result.assetId,
+                            }
+                        }
+                    }
+                }
+            }));
+        }
+
+        await updateAlbum({
+            albumId,
+            thumbnailFileId: newAlbumThumbnail,
+        });
     }, [albumId, profileId]);
 
     const processImage = useCallback(async (image: ImagePicker.ImagePickerAsset): Promise<ProcessAssetResponse> => {
@@ -249,7 +270,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
         try {
             const filename = image.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
-            const uploadUrlResponse: UploadURLResponse = await generateImageUploadURL({ albumId, profileId, filename: filename });
+            const uploadUrlResponse: UploadURLResponse = await requestImageUploadURL({ albumId, profileId, filename: filename });
 
             if (!uploadUrlResponse.success) {
                 console.error(uploadUrlResponse.errors.join(", "), '\n', uploadUrlResponse.messages.join(", "));
@@ -290,14 +311,14 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             console.error(e);
             return { status: 'error', error: 'Failed to upload image', result: null };
         }
-    }, [albumId, generateImageUploadURL, ensureSigned, profileId]);
+    }, [albumId, requestImageUploadURL, ensureSigned, profileId]);
 
     const processVideo = useCallback(async (video: ImagePicker.ImagePickerAsset): Promise<ProcessAssetResponse> => {
         if (video.type !== 'video') return { status: 'error', error: 'Invalid video type', result: null };
 
         try {
             const filename = video.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
-            const uploadUrlResponse = await generateVideoUploadURL({ albumId, profileId, filename: filename });
+            const uploadUrlResponse = await requestVideoUploadURL({ albumId, profileId, filename: filename });
 
             if (!uploadUrlResponse.success) {
                 console.error(uploadUrlResponse.errors.join(", "), '\n', uploadUrlResponse.messages.join(", "));
@@ -343,7 +364,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             console.error(e);
             return { status: 'error', error: 'Failed to upload video', result: null };
         }
-    }, [albumId, generateVideoUploadURL, ensureSigned, profileId]);
+    }, [albumId, requestVideoUploadURL, ensureSigned, profileId]);
 
     function splitAssets(assets: ImagePicker.ImagePickerAsset[]): {
         images: ImagePicker.ImagePickerAsset[];

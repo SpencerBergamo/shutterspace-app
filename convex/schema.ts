@@ -36,7 +36,10 @@ export default defineSchema({
         hostId: v.id("profiles"),
         title: v.string(),
         description: v.optional(v.string()),
-        thumbnailFileId: v.optional(v.id('media')),
+        thumbnailFileId: v.optional(v.object({
+            type: v.union(v.literal('image'), v.literal('video')),
+            fileId: v.string(),
+        })),
         isDynamicThumbnail: v.boolean(),
         openInvites: v.boolean(),
         dateRange: v.optional(v.object({

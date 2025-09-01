@@ -51,12 +51,35 @@ export const getUserAlbums = query({
     },
 });
 
+export const getPublicAlbumInfo = query({
+    args: {
+        albumId: v.id('albums'),
+    }, handler: async (ctx, args) => {
+        const album = await ctx.db.get(args.albumId);
+        if (!album || album.isDeleted) throw new Error('Album not found');
+
+        return {
+            _id: album._id,
+            hostId: album.hostId,
+            title: album.title,
+            description: album.description,
+            thumbnailFileId: album.thumbnailFileId,
+            dateRange: album.dateRange,
+            location: album.location,
+            expiresAt: album.expiresAt,
+        }
+    }
+})
+
 export const createAlbum = mutation({
     args: {
         hostId: v.id('profiles'),
         title: v.string(),
         description: v.optional(v.string()),
-        thumbnailFileId: v.optional(v.id('media')),
+        thumbnailFileId: v.optional(v.object({
+            type: v.union(v.literal('image'), v.literal('video')),
+            fileId: v.string(),
+        })),
         isDynamicThumbnail: v.boolean(),
         openInvites: v.boolean(),
         dateRange: v.optional(v.object({
@@ -104,9 +127,12 @@ export const updateAlbum = mutation({
         albumId: v.id('albums'),
         title: v.optional(v.string()),
         description: v.optional(v.string()),
-        thumbnailFileId: v.optional(v.id('media')),
-        isDynamicThumbnail: v.boolean(),
-        openInvites: v.boolean(),
+        thumbnailFileId: v.optional(v.object({
+            type: v.union(v.literal('image'), v.literal('video')),
+            fileId: v.string(),
+        })),
+        isDynamicThumbnail: v.optional(v.boolean()),
+        openInvites: v.optional(v.boolean()),
         dateRange: v.optional(v.object({
             start: v.string(),
             end: v.optional(v.string()),
@@ -118,7 +144,7 @@ export const updateAlbum = mutation({
             address: v.optional(v.string()),
         })),
         expiresAt: v.optional(v.number()),
-        isDeleted: v.boolean(),
+        isDeleted: v.optional(v.boolean()),
     }, handler: async (ctx, { albumId, ...args }) => {
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) throw new Error("Not Authorized to Update Albums");

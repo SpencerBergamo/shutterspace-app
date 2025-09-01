@@ -3,6 +3,11 @@ import * as ImagePicker from "expo-image-picker";
 
 export type MemberRole = 'host' | 'moderator' | 'member' | 'not-a-member';
 
+export type AlbumThumbnail = {
+    type: 'image' | 'video';
+    fileId: string;
+}
+
 export interface Album {
     _id: Id<'albums'>;
     _creationTime: number;
@@ -11,7 +16,7 @@ export interface Album {
     title: string;
     description?: string;
 
-    thumbnailFileId?: Id<'media'>;
+    thumbnailFileId?: AlbumThumbnail;
     isDynamicThumbnail: boolean;
 
     openInvites: boolean;
