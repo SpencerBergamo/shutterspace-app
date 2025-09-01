@@ -19,7 +19,7 @@ import getGridLayout from "@/utils/getGridLyout";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { getThumbnailAsync } from "expo-video-thumbnails";
-import { CircleEllipsis, CloudAlert, Images } from "lucide-react-native";
+import { CircleEllipsis, CloudAlert, Images, Play } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
@@ -81,18 +81,21 @@ function MediaTile({ media, renderImageURL, width, height }: MediaTileProps) {
                 }}
             />
 
-            {!uri && <ActivityIndicator size="small" color="white" />}
+            {!uri && <View style={styles.mediaLoadingIndicator}>
+                <ActivityIndicator size="small" color="white" />
+            </View>}
         </View>
     );
 }
 
 function OptimisticMediaTile({ media, width, height }: { media: OptimisticMedia, width: number; height: number }) {
 
+    const mediaType = media.type;
     const [uri, setUri] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         (async () => {
-            if (media.type === 'video') {
+            if (mediaType === 'video') {
 
                 const thumb = await getThumbnailAsync(media.file.uri, {
                     quality: 0.9,
@@ -111,12 +114,15 @@ function OptimisticMediaTile({ media, width, height }: { media: OptimisticMedia,
                 source={{ uri }}
                 style={{ width: '100%', height: '100%' }}
                 contentFit="cover"
-                onLoadEnd={() => {
-                    console.warn("Image Loaded: ", !uri, media.type);
-                }}
             />
 
-            {media.status === 'pending' && <ActivityIndicator size="small" color="white" />}
+            {media.status === 'pending' && <View style={[styles.stackContainer, styles.mediaLoadingIndicator]}>
+                <ActivityIndicator size="small" color="white" />
+            </View>}
+
+            {mediaType === 'video' && <View style={[styles.stackContainer, styles.videoOverlay]}>
+                <Play size={24} color="white" />
+            </View>}
         </View>
     );
 }
@@ -163,6 +169,7 @@ export default function AlbumScreen() {
                     numColumns={gridConfig.numColumns}
                     columnWrapperStyle={gridConfig.columnWrapperStyle}
                     contentContainerStyle={gridConfig.contentContainerStyle}
+                    style={{ padding: 2 }}
                     renderItem={({ item }) => {
                         if ('file' in item) {
                             return <OptimisticMediaTile
@@ -238,7 +245,28 @@ const styles = StyleSheet.create({
 
     // Media Tile Styles
     mediaTile: {
+        overflow: 'hidden',
+        position: 'relative',
+        borderRadius: 4,
+    },
+
+    stackContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+
+    mediaLoadingIndicator: {
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-    }
+    },
+
+    videoOverlay: {
+        justifyContent: 'flex-end',
+        alignItems: 'flex-end',
+        padding: 12,
+    },
 });

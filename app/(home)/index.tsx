@@ -39,7 +39,7 @@ export default function HomeScreen() {
             numColumns={gridConfig.numColumns}
             columnWrapperStyle={gridConfig.columnWrapperStyle}
             contentContainerStyle={gridConfig.contentContainerStyle}
-
+            style={{ padding: 16 }}
             renderItem={({ item }) => (
                 <AlbumCard
                     album={item}
