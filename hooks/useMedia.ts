@@ -94,13 +94,13 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         try {
             console.log("Calling API for Signed URL");
             if (type === 'image') {
-                const url = await generateSignedImageURL({ identifier: id });
+                const url = await generateSignedImageURL({ albumId, profileId, identifier: id });
                 const expiresAt = parseExpiry(url);
                 const ttlMs = Math.max(expiresAt - Date.now(), 1000); // duration until expires at
                 setSignedUrl(id, url, ttlMs);
                 return url;
             } else if (type === 'video') {
-                const token = await generateVideoToken({ videoUID: id });
+                const token = await generateVideoToken({ albumId, profileId, videoUID: id });
                 console.log("Video Token: ", token);
                 const ttlMs = 24 * 60 * 60 * 1000; // duration until expires at 24 hours
                 setSignedUrl(id, token, ttlMs);
@@ -249,7 +249,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
         try {
             const filename = image.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
-            const uploadUrlResponse: UploadURLResponse = await generateImageUploadURL({ filename: filename });
+            const uploadUrlResponse: UploadURLResponse = await generateImageUploadURL({ albumId, profileId, filename: filename });
 
             if (!uploadUrlResponse.success) {
                 console.error(uploadUrlResponse.errors.join(", "), '\n', uploadUrlResponse.messages.join(", "));
@@ -297,7 +297,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
 
         try {
             const filename = video.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
-            const uploadUrlResponse = await generateVideoUploadURL({ filename: filename });
+            const uploadUrlResponse = await generateVideoUploadURL({ albumId, profileId, filename: filename });
 
             if (!uploadUrlResponse.success) {
                 console.error(uploadUrlResponse.errors.join(", "), '\n', uploadUrlResponse.messages.join(", "));

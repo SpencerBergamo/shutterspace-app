@@ -26,7 +26,9 @@
 
 import { v } from "convex/values";
 import crypto from 'crypto';
+import { api } from "./_generated/api";
 import { action } from "./_generated/server";
+
 
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}`;
@@ -43,8 +45,19 @@ const STREAM_BASE_URL = ``
 
 export const generateImageUploadURL = action({
     args: {
+        albumId: v.id('albums'),
+        profileId: v.id('profiles'),
         filename: v.string(),
-    }, handler: async (ctx, { filename }) => {
+    }, handler: async (ctx, { albumId, profileId, filename }) => {
+        const identity = await ctx.auth.getUserIdentity();
+
+        const membership = await ctx.runQuery(api.albums.getAlbumMembership, {
+            albumId,
+            profileId,
+        });
+
+        if (!membership || !identity) throw new Error('Unauthorized');
+
         const url = `${BASE_URL}/images/v2/direct_upload`;
 
         const form = new FormData();
@@ -77,9 +90,20 @@ export const generateImageUploadURL = action({
 
 export const generateSignedImageURL = action({
     args: {
+        albumId: v.id('albums'),
+        profileId: v.id('profiles'),
         identifier: v.string(), // image_id
         variant: v.optional(v.string()), // variant name
-    }, handler: async (ctx, { identifier, variant }) => {
+    }, handler: async (ctx, { albumId, profileId, identifier, variant }) => {
+        const identity = await ctx.auth.getUserIdentity();
+
+        const membership = await ctx.runQuery(api.albums.getAlbumMembership, {
+            albumId,
+            profileId,
+        });
+
+        if (!membership || !identity) throw new Error('Unauthorized');
+
         const sigKey = process.env.CLOUDFLARE_IMAGE_SIG_TOKEN;
         const accountHash = process.env.CLOUDFLARE_ACCOUNT_HASH;
 
@@ -115,8 +139,18 @@ export const generateSignedImageURL = action({
  */
 export const generateVideoUploadURL = action({
     args: {
+        albumId: v.id('albums'),
+        profileId: v.id('profiles'),
         filename: v.string(),
-    }, handler: async (ctx, { filename }) => {
+    }, handler: async (ctx, { albumId, profileId, filename }) => {
+        const identity = await ctx.auth.getUserIdentity();
+        const membership = await ctx.runQuery(api.albums.getAlbumMembership, {
+            albumId,
+            profileId,
+        });
+
+        if (!membership || !identity) throw new Error('Unauthorized');
+
         const url = `${BASE_URL}/stream/direct_upload`;
 
         const form = new FormData();
@@ -147,10 +181,17 @@ export const generateVideoUploadURL = action({
 
 export const generateVideoToken = action({
     args: {
+        albumId: v.id('albums'),
+        profileId: v.id('profiles'),
         videoUID: v.string(),
-    }, handler: async (ctx, { videoUID }) => {
+    }, handler: async (ctx, { albumId, profileId, videoUID }) => {
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error('Unauthorized');
+        const membership = await ctx.runQuery(api.albums.getAlbumMembership, {
+            albumId,
+            profileId,
+        });
+
+        if (!membership || !identity) throw new Error('Unauthorized');
 
         const pem = process.env.CLOUDFLARE_STREAM_PEM;
         const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;
