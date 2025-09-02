@@ -7,7 +7,6 @@ import { action } from "./_generated/server";
 
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}`;
-const STREAM_BASE_URL = ``
 
 /**
  * @function requestImageUploadURL
@@ -34,7 +33,6 @@ export const requestImageUploadURL = action({
 
         const url = `${BASE_URL}/images/v2/direct_upload`;
         const form = new FormData();
-        // form.append('expiry', new Date(Date.now() + 1000 * 60 * 2).toISOString());
         form.append('requireSignedURLs', 'true');
         form.append('metadata', JSON.stringify({ filename }));
         const response = await fetch(url, {
@@ -75,19 +73,24 @@ export const requestVideoUploadURL = action({
 
         if (!membership || !identity) throw new Error('Unauthorized');
 
-        const url = `${BASE_URL}/stream/direct_upload`;
-
-        const form = new FormData();
-        form.append('maxDurationSeconds', '60');
-        form.append('requireSignedURLs', 'true');
-        form.append('metadata', JSON.stringify({ filename }));
+        const url = `${BASE_URL}/stream/direct_upload`
+        // const form = new FormData();
+        // form.append('maxDurationSeconds', '60');
+        // form.append('requireSignedURLs', 'true');
+        // form.append('meta', JSON.stringify({ filename }));
+        const body = JSON.stringify({
+            maxDurationSeconds: 60,
+            requireSignedURLs: true,
+            meta: { filename: filename },
+        })
 
         const response = await fetch(url, {
             method: 'POST',
             headers: {
+                'Content-Type': 'multipart/form-data',
                 Authorization: `Bearer ${API_TOKEN}`,
             },
-            body: form,
+            body,
         });
 
         if (!response.ok) {
@@ -175,10 +178,10 @@ export const requestThumbnailAccess = action({
         if (type === 'image') {
             return issueSignedImageURL(fileId);
         } else {
-            return issueSignedVideoToken(fileId);
+            const token = await issueSignedVideoToken(fileId);
+            console.log("Video Token: ", token);
+            return `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${token}/thumbnails/thumbnail.png`;
         }
-
-
     },
 })
 
@@ -213,6 +216,8 @@ async function issueSignedVideoToken(videoUID: string): Promise<string> {
     const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;
     const expiresIn = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 1 day
 
+    if (!pem || !keyID) throw new Error('Missing PEM or Key ID');
+
     const header = {
         alg: 'RS256',
         kid: keyID,
@@ -234,15 +239,26 @@ async function issueSignedVideoToken(videoUID: string): Promise<string> {
 
     const token = `${encode(header)}.${encode(payload)}`;
 
-    const signer = crypto.createSign('RSA-SHA256');
-    signer.update(token);
-    signer.end();
+    try {
+        const signer = crypto.createSign('RSA-SHA256');
+        signer.update(token);
+        signer.end();
 
-    const signature = signer.sign(pem);
-    const signatureB64 = signature.toString('base64')
-        .replace(/=/g, "")
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_");
+        const signature = signer.sign(pem);
+        const signatureB64 = signature.toString('base64')
+            .replace(/=/g, "")
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_");
 
-    return `${token}.${signatureB64}`;
+        return `${token}.${signatureB64}`;
+    } catch (e) {
+        console.error("Issue Signed Video Token Failed: ", e);
+        console.error("PEM Key format check: ", {
+            hasPrivateKeyHeader: pem.includes('-----BEGIN PRIVATE KEY-----'),
+            hasRSAHeader: pem.includes('-----BEGIN RSA PRIVATE KEY-----'),
+            keyLength: pem.length,
+            firstLine: pem.split('\n')[0]
+        });
+        throw new Error('Failed to issue signed video token');
+    }
 }

@@ -33,7 +33,7 @@ interface MediaTileProps {
 }
 
 function MediaTile({ media, albumId, profileId, width, height }: MediaTileProps) {
-    const { ensureSigned, getThumbnailURLAsync } = useSignedUrls();
+    const { getThumbnailURLAsync, getVideoThumbnailURLAsync } = useSignedUrls();
 
     const type = media.asset.type;
     const fileId = type === 'image' ? media.asset.imageId : media.asset.videoUid;
@@ -43,7 +43,14 @@ function MediaTile({ media, albumId, profileId, width, height }: MediaTileProps)
 
     useEffect(() => {
         const signed = async () => {
-            const signature = await getThumbnailURLAsync({ type, fileId, albumId, profileId });
+            let signature: string | undefined;
+
+            if (type === 'video') {
+                signature = await getVideoThumbnailURLAsync({ type, fileId, albumId, profileId });
+            } else {
+                signature = await getThumbnailURLAsync({ type, fileId, albumId, profileId });
+            }
+
             if (signature) {
                 setUri(signature);
                 setImageError(false);
@@ -51,7 +58,7 @@ function MediaTile({ media, albumId, profileId, width, height }: MediaTileProps)
         }
 
         signed();
-    }, [media._id, uri, ensureSigned]);
+    }, [media._id, uri, getThumbnailURLAsync]);
 
     if (imageError) return (
         <View style={[styles.mediaTile, { width, height }]}>

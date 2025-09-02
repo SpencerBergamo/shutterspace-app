@@ -264,10 +264,6 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
                 return { status: 'error', error: 'Failed to upload video', result: null };
             }
 
-            // Debugging
-            const jsonVideoResponse = await videoResponse.json();
-            console.log("Video Response: ", jsonVideoResponse);
-
             ensureSigned({ type: 'video', id: uid, albumId, profileId });
             return {
                 status: 'success',
