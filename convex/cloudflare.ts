@@ -162,30 +162,6 @@ export const requestVideoPlaybackToken = action({
     }
 });
 
-/**
- * @function requestThumbnailAccess
- * @description This function is used to request access to a thumbnail for a given type and file ID.
- * @param {string} type - the type of the file to request access to.
- * @param {string} fileId - the ID of the file to request access to.
- * @returns {Promise<string>} - a promise resolving to the signed URL or token.
- */
-export const requestThumbnailAccess = action({
-    args: {
-        type: v.union(v.literal('image'), v.literal('video')),
-        fileId: v.string(),
-    }, handler: async (ctx, { type, fileId }) => {
-
-        if (type === 'image') {
-            return issueSignedImageURL(fileId);
-        } else {
-            const token = await issueSignedVideoToken(fileId);
-            console.log("Video Token: ", token);
-            return `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${token}/thumbnails/thumbnail.png`;
-        }
-    },
-})
-
-
 /** 
  * @function issueSignedImageURL
  * @description This function is used to issue a signed image URL for a given identifier.
@@ -210,6 +186,8 @@ async function issueSignedImageURL(identifier: string): Promise<string> {
  * @description This function is used to issue a signed video token for a given video UID.
  * @param {string} videoUID - the UID of the video to issue a signed token for.
  * @returns {Promise<string>} - a promise resolving to the signed video token.
+ * 
+ * @reference https://developers.cloudflare.com/stream/viewing-videos/securing-your-stream/#step-2-generate-tokens-using-the-key
  */
 async function issueSignedVideoToken(videoUID: string): Promise<string> {
     const pem = process.env.CLOUDFLARE_STREAM_PEM;
@@ -225,12 +203,11 @@ async function issueSignedVideoToken(videoUID: string): Promise<string> {
 
     const payload = {
         sub: videoUID,
-        kid: keyID,
         exp: expiresIn,
     };
 
     const encode = (obj: any) => {
-        return Buffer.from(JSON.stringify(obj))
+        return Buffer.from(JSON.stringify(obj), "utf8")
             .toString('base64')
             .replace(/=/g, "")
             .replace(/\+/g, "-")
@@ -245,20 +222,21 @@ async function issueSignedVideoToken(videoUID: string): Promise<string> {
         signer.end();
 
         const signature = signer.sign(pem);
-        const signatureB64 = signature.toString('base64')
+        const signatureB64 = signature
+            .toString('base64')
             .replace(/=/g, "")
             .replace(/\+/g, "-")
             .replace(/\//g, "_");
 
         return `${token}.${signatureB64}`;
     } catch (e) {
-        console.error("Issue Signed Video Token Failed: ", e);
         console.error("PEM Key format check: ", {
             hasPrivateKeyHeader: pem.includes('-----BEGIN PRIVATE KEY-----'),
             hasRSAHeader: pem.includes('-----BEGIN RSA PRIVATE KEY-----'),
             keyLength: pem.length,
             firstLine: pem.split('\n')[0]
         });
-        throw new Error('Failed to issue signed video token');
+
+        throw new Error('issueSignedVideoToken FAIL: ' + e);
     }
 }
