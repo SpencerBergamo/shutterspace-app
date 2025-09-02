@@ -190,14 +190,17 @@ async function issueSignedImageURL(identifier: string): Promise<string> {
  * @reference https://developers.cloudflare.com/stream/viewing-videos/securing-your-stream/#step-2-generate-tokens-using-the-key
  */
 async function issueSignedVideoToken(videoUID: string): Promise<string> {
-    const pem = process.env.CLOUDFLARE_STREAM_PEM;
+    const base64PEM = process.env.CLOUDFLARE_STREAM_PEM;
     const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;
-    const expiresIn = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 1 day
 
-    if (!pem || !keyID) throw new Error('Missing PEM or Key ID');
+    if (!base64PEM || !keyID) throw new Error('Missing PEM or Key ID');
+
+    const pem = Buffer.from(base64PEM, 'base64').toString('utf8');
+    const expiresIn = Math.floor(Date.now() / 1000) + 60 * 60 * 6; // 6 hours
 
     const header = {
         alg: 'RS256',
+        typ: 'JWT', //new
         kid: keyID,
     };
 
@@ -207,36 +210,29 @@ async function issueSignedVideoToken(videoUID: string): Promise<string> {
     };
 
     const encode = (obj: any) => {
-        return Buffer.from(JSON.stringify(obj), "utf8")
+        const json = JSON.stringify(obj);
+        return Buffer.from(json)
             .toString('base64')
             .replace(/=/g, "")
             .replace(/\+/g, "-")
             .replace(/\//g, "_");
     };
 
-    const token = `${encode(header)}.${encode(payload)}`;
+    const encodedHeader = encode(header);
+    const encodedPayload = encode(payload);
+    const message = `${encodedHeader}.${encodedPayload}`;
 
-    try {
-        const signer = crypto.createSign('RSA-SHA256');
-        signer.update(token);
-        signer.end();
+    const signer = crypto.createSign('RSA-SHA256');
+    signer.update(message);
+    signer.end();
 
-        const signature = signer.sign(pem);
-        const signatureB64 = signature
-            .toString('base64')
-            .replace(/=/g, "")
-            .replace(/\+/g, "-")
-            .replace(/\//g, "_");
+    const signatureToBuffer = signer.sign(pem, 'base64');
+    const signature = signatureToBuffer
+        .replace(/=/g, "")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_");
 
-        return `${token}.${signatureB64}`;
-    } catch (e) {
-        console.error("PEM Key format check: ", {
-            hasPrivateKeyHeader: pem.includes('-----BEGIN PRIVATE KEY-----'),
-            hasRSAHeader: pem.includes('-----BEGIN RSA PRIVATE KEY-----'),
-            keyLength: pem.length,
-            firstLine: pem.split('\n')[0]
-        });
+    console.log(`Signed Video Token: ${message}.${signature}`);
+    return `${message}.${signature}`;
 
-        throw new Error('issueSignedVideoToken FAIL: ' + e);
-    }
-}
+};

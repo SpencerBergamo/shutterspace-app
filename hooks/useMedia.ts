@@ -3,50 +3,32 @@ import { useSignedUrls } from "@/context/SignedUrlsContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { AlbumThumbnail } from "@/types/Album";
-import { DbMedia, Media, ProcessAssetResponse, TypeAndID, UploadURLResponse } from "@/types/Media";
+import { Media, ProcessAssetResponse, UploadURLResponse } from "@/types/Media";
 import { useAction, useMutation, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback } from "react";
 
 /**
  * 
- * 
- * @constant {signedUrls} - tracks the signed urls for the ids
- * 
- * @constant {prefetch} - prefetches the signatures for the media. This will check to see
- * if the signature is already in the cache and not expired. If it's not, it will call [ensureSigned]
- * to generate a new signature and add it to the cache.
- * 
- * @constant {ensureSigned} - double check the signature doesnt exist or is expired before continueing
- * the request for a new signature. 
- * 
- * @constant {signedUrls} - manage signed urls of both media types in a map keyed by the id. Uses [SignedEntry]
- * to manage the url and expiry of the signed url.
- * @type {SignedEntry} - a type to manage image (signed urls) and video (signed tokens)
- * @type {TypeAndID} - a type and id for the media to make it easy to identify the type of media. The
- * type of media ('image' or 'video') specifies which id to use (id or uid, respectively).
  */
-
 
 interface UseAlbumMediaResult {
     media: Media[];
     uploadMedia: () => Promise<void>;
 }
 
-
-// export type SignedEntry = { url: string; expiresAt: number; }
-
-
-// Video Stream -> https://customer-<customer_id>.cloudflarestream.com/<signed_token>/
-
 export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     const { profileId } = useProfile();
     const { ensureSigned } = useSignedUrls();
 
+    const requestImageUploadURL = useAction(api.cloudflare.requestImageUploadURL);
+    const requestVideoUploadURL = useAction(api.cloudflare.requestVideoUploadURL);
+    const updateAlbum = useMutation(api.albums.updateAlbum);
+    const dbMedia: Media[] | undefined = useQuery(api.media.getMediaForAlbum, { albumId, profileId });
     const createMedia = useMutation(api.media.createMedia).withOptimisticUpdate(
         (localStore, args) => {
             const existingMedia = localStore.getQuery(api.media.getMediaForAlbum, { albumId, profileId });
-            const optimisticMedia: DbMedia = {
+            const optimisticMedia: Media = {
                 _id: args.filename as Id<'media'>,
                 _creationTime: Date.now(),
                 albumId,
@@ -63,26 +45,8 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         },
     );
 
-    const dbMedia: DbMedia[] | undefined = useQuery(api.media.getMediaForAlbum, { albumId, profileId });
-    // const [optimisticMedia, setOptimisticMedia] = useState<OptimisticMedia[]>([]);
-
-    // Signatures
-    const requestImageUploadURL = useAction(api.cloudflare.requestImageUploadURL);
-    const requestImageDeliveryURL = useAction(api.cloudflare.requestImageDeliveryURL);
-    const requestVideoUploadURL = useAction(api.cloudflare.requestVideoUploadURL);
-    const requestVideoPlaybackToken = useAction(api.cloudflare.requestVideoPlaybackToken);
-    const updateAlbum = useMutation(api.albums.updateAlbum);
-
-    // const media = useCallback(() => {
-    //     return [
-    //         ...(optimisticMedia as OptimisticMedia[] || []),
-    //         ...(dbMedia as DbMedia[] || []),
-    //     ] as Media[];
-    // }, [dbMedia, optimisticMedia]);
-
     /* Media Upload */
     const uploadMedia = useCallback(async () => {
-        // const assets = await selectAssets();
         const { assets } = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images', 'videos'],
             allowsMultipleSelection: true,
@@ -91,24 +55,6 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         });
 
         if (!assets || assets.length === 0) return;
-
-        // const newOptimisticMedia: OptimisticMedia[] = [];
-        // for (const asset of assets) {
-        //     const filename = asset.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
-
-        //     newOptimisticMedia.push({
-        //         _id: filename,
-        //         albumId,
-        //         uploaderId: profileId,
-        //         filename: filename,
-        //         size: asset.fileSize,
-        //         isDeleted: false,
-        //         file: asset,
-        //         type: asset.type === 'video' ? 'video' : 'image',
-        //         status: 'pending',
-        //     });
-        // }
-        // setOptimisticMedia(prev => [...prev, ...newOptimisticMedia]);
 
         const batch_size = 10;
         let newAlbumThumbnail: AlbumThumbnail | undefined;
@@ -282,18 +228,6 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             return { status: 'error', error: 'Failed to upload video', result: null };
         }
     }, [albumId, requestVideoUploadURL, ensureSigned, profileId]);
-
-    function splitAssets(assets: ImagePicker.ImagePickerAsset[]): {
-        images: ImagePicker.ImagePickerAsset[];
-        videos: ImagePicker.ImagePickerAsset[];
-        other: ImagePicker.ImagePickerAsset[];
-    } {
-        const images = assets.filter(asset => asset.type === 'image');
-        const videos = assets.filter(asset => asset.type === 'video');
-        const other = assets.filter(asset => asset.type !== 'image' && asset.type !== 'video');
-
-        return { images, videos, other };
-    }
 
     return {
         media: dbMedia || [],

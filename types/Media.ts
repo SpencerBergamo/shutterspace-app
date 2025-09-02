@@ -1,8 +1,7 @@
 import { Id } from "@/convex/_generated/dataModel";
-import * as ImagePicker from 'expo-image-picker';
 
 // Base media document that represents the data stored in Convex
-export type DbMedia = {
+export type Media = {
     _id: Id<'media'>; // the filename of the asset
     _creationTime: number;
     albumId: Id<'albums'>;
@@ -30,16 +29,6 @@ export type DbMedia = {
     },
     isDeleted: boolean;
 }
-
-export type OptimisticMedia = Omit<DbMedia, "_id" | "asset"> & {
-    _id: string;
-    file: ImagePicker.ImagePickerAsset;
-    type: 'image' | 'video';
-    status: 'pending' | 'uploading' | 'success' | 'error' | 'paused';
-    error?: string;
-}
-
-export type Media = DbMedia | OptimisticMedia;
 
 export type TypeAndID = { type: 'image' | 'video'; id: string; }
 

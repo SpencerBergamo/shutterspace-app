@@ -21,8 +21,7 @@ interface EnsureSignedRequest {
 }
 
 interface SignedUrlsContextType {
-    getThumbnailURLAsync: ({ fileId, type, albumId, profileId }: ThumbnailURLRequest) => Promise<string | undefined>;
-    getVideoThumbnailURLAsync: ({ fileId, type, albumId, profileId }: ThumbnailURLRequest) => Promise<string | undefined>;
+    getThumbnailURL: ({ fileId, type, albumId, profileId }: ThumbnailURLRequest) => Promise<string | undefined>;
     ensureSigned: ({ type, id, albumId, profileId }: EnsureSignedRequest) => Promise<string | undefined>;
     clearSignedEntries: () => void;
     getCacheSize: () => number;
@@ -34,9 +33,7 @@ export function SignedUrlsProvider({ children }: { children: React.ReactNode }) 
 
     const cacheRef = useRef<LRUCache<string, string>>(new LRUCache(50));
 
-    const requestImageUploadURL = useAction(api.cloudflare.requestImageUploadURL);
     const requestImageDeliveryURL = useAction(api.cloudflare.requestImageDeliveryURL);
-    const requestVideoUploadURL = useAction(api.cloudflare.requestVideoUploadURL);
     const requestVideoPlaybackToken = useAction(api.cloudflare.requestVideoPlaybackToken);
 
     const saveCache = useCallback(async () => {
@@ -107,14 +104,15 @@ export function SignedUrlsProvider({ children }: { children: React.ReactNode }) 
 
         try {
             if (type === 'image') {
+                // in the case of an image, the url is equivalent to the image delivery url
                 const url = await requestImageDeliveryURL({ albumId, profileId, identifier: id });
                 const expiresAt = parseExpiry(url);
                 const ttlMs = Math.max(expiresAt - Date.now(), 1000); // duration until expires at
                 setSignedEntry(id, url, ttlMs);
                 return url;
             } else if (type === 'video') {
+                // in the case of a video, the url is equivalent to the video token (not a full signed url)
                 const token = await requestVideoPlaybackToken({ albumId, profileId, videoUID: id });
-                console.log("Video Token: ", token);
                 const ttlMs = 24 * 60 * 60 * 1000; // duration until expires at 24 hours
                 setSignedEntry(id, token, ttlMs);
                 return token;
@@ -124,29 +122,20 @@ export function SignedUrlsProvider({ children }: { children: React.ReactNode }) 
         }
     }, [requestImageDeliveryURL, requestVideoPlaybackToken, setSignedEntry]);
 
-    // we want this the first point of contact for any signed url/token requests
-    const getThumbnailURLAsync = useCallback(async ({ fileId, type, albumId, profileId }: ThumbnailURLRequest) => {
+    const getThumbnailURL = useCallback(async ({ fileId, type, albumId, profileId }: ThumbnailURLRequest) => {
         const signed = await ensureSigned({ type, id: fileId, albumId, profileId });
         if (!signed) return undefined;
 
         if (type === 'video') {
-            return `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${signed}/thumbnails/thumbnail.png`;
-        } else {
+            return `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${fileId}/thumbnails/thumbnail.jpg?token=${signed}`;
+            // return `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${signed}/thumbnails/thumbnail.jpg`;
+        } else if (type === 'image') {
             return signed;
         }
     }, [ensureSigned]);
 
-    const getVideoThumbnailURLAsync = useCallback(async ({ fileId, type, albumId, profileId }: ThumbnailURLRequest) => {
-        const signed = await ensureSigned({ type, id: fileId, albumId, profileId });
-        if (signed) {
-            const base = `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com`;
-            return `${base}/${signed}/thumbnails/thumbnail.png`;
-        }
-    }, [ensureSigned]);
-
     const value = {
-        getThumbnailURLAsync,
-        getVideoThumbnailURLAsync,
+        getThumbnailURL,
         ensureSigned,
         clearSignedEntries,
         getCacheSize

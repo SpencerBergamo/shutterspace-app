@@ -15,11 +15,10 @@ import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
-import { DbMedia, OptimisticMedia } from "@/types/Media";
+import { Media } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { getThumbnailAsync } from "expo-video-thumbnails";
 import { CircleEllipsis, CloudAlert, Images, Play } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
@@ -27,13 +26,13 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDime
 interface MediaTileProps {
     albumId: Id<'albums'>;
     profileId: Id<'profiles'>;
-    media: DbMedia;
+    media: Media;
     width: number;
     height: number;
 }
 
 function MediaTile({ media, albumId, profileId, width, height }: MediaTileProps) {
-    const { getThumbnailURLAsync, getVideoThumbnailURLAsync } = useSignedUrls();
+    const { getThumbnailURL } = useSignedUrls();
 
     const type = media.asset.type;
     const fileId = type === 'image' ? media.asset.imageId : media.asset.videoUid;
@@ -43,13 +42,7 @@ function MediaTile({ media, albumId, profileId, width, height }: MediaTileProps)
 
     useEffect(() => {
         const signed = async () => {
-            let signature: string | undefined;
-
-            if (type === 'video') {
-                signature = await getVideoThumbnailURLAsync({ type, fileId, albumId, profileId });
-            } else {
-                signature = await getThumbnailURLAsync({ type, fileId, albumId, profileId });
-            }
+            let signature: string | undefined = await getThumbnailURL({ type, fileId, albumId, profileId });
 
             if (signature) {
                 setUri(signature);
@@ -58,7 +51,7 @@ function MediaTile({ media, albumId, profileId, width, height }: MediaTileProps)
         }
 
         signed();
-    }, [media._id, uri, getThumbnailURLAsync]);
+    }, [media._id, uri, getThumbnailURL]);
 
     if (imageError) return (
         <View style={[styles.mediaTile, { width, height }]}>
@@ -80,41 +73,6 @@ function MediaTile({ media, albumId, profileId, width, height }: MediaTileProps)
 
             {type === 'video' && <View style={[styles.stackContainer, styles.videoOverlay]}>
                 <Play size={24} color="white" />
-            </View>}
-        </View>
-    );
-}
-
-function OptimisticMediaTile({ media, width, height }: { media: OptimisticMedia, width: number; height: number }) {
-
-    const mediaType = media.type;
-    const [uri, setUri] = useState<string | undefined>(undefined);
-
-    useEffect(() => {
-        (async () => {
-            if (mediaType === 'video') {
-
-                const thumb = await getThumbnailAsync(media.file.uri, {
-                    quality: 0.9,
-                });
-
-                setUri(thumb.uri);
-            } else {
-                setUri(media.file.uri);
-            }
-        })();
-    }, []);
-
-    return (
-        <View style={[styles.mediaTile, { width, height }]}>
-            <Image
-                source={{ uri }}
-                style={{ width: '100%', height: '100%' }}
-                contentFit="cover"
-            />
-
-            {media.status === 'pending' && <View style={[styles.stackContainer, styles.mediaLoadingIndicator]}>
-                <ActivityIndicator size="small" color="white" />
             </View>}
         </View>
     );
@@ -164,23 +122,14 @@ export default function AlbumScreen() {
                     columnWrapperStyle={gridConfig.columnWrapperStyle}
                     contentContainerStyle={gridConfig.contentContainerStyle}
                     style={{ padding: 2 }}
-                    renderItem={({ item }) => {
-                        if ('file' in item) {
-                            return <OptimisticMediaTile
-                                media={item}
-                                width={gridConfig.tileWidth}
-                                height={gridConfig.tileHeight}
-                            />
-                        }
-
-                        return <MediaTile
-                            albumId={albumId}
-                            profileId={profileId}
-                            media={item}
-                            width={gridConfig.tileWidth}
-                            height={gridConfig.tileHeight}
-                        />
-                    }}
+                    renderItem={({ item }) => <MediaTile
+                        albumId={albumId}
+                        profileId={profileId}
+                        media={item}
+                        width={gridConfig.tileWidth}
+                        height={gridConfig.tileHeight}
+                    />
+                    }
 
                 />
             ) : (

@@ -1,5 +1,6 @@
 
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
+import { useSignedUrls } from "@/context/SignedUrlsContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
@@ -7,7 +8,7 @@ import { AlbumFormData, AlbumFormState } from "@/types/Album";
 import { validateDescription, validateTitle } from "@/utils/validators";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Button, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 type UpdateStatus = 'idle' | 'saving' | 'success' | 'error';
@@ -16,6 +17,7 @@ export default function AlbumSettingsScreen() {
     const { theme } = useTheme();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbumById, updateAlbum } = useAlbums();
+    const { clearSignedEntries } = useSignedUrls();
 
     const album = getAlbumById(albumId);
     if (!album) return null;
@@ -140,6 +142,8 @@ export default function AlbumSettingsScreen() {
                         Something went wrong, please try again.
                     </Text>
                 )}
+
+                <Button title="Clear Cache" onPress={() => clearSignedEntries()} />
 
             </KeyboardAwareScrollView>
         </View>
