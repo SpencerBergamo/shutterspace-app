@@ -18,6 +18,8 @@ import type * as albums from "../albums.js";
 import type * as cloudflare from "../cloudflare.js";
 import type * as cloudinary from "../cloudinary.js";
 import type * as comment from "../comment.js";
+import type * as crypto from "../crypto.js";
+import type * as http from "../http.js";
 import type * as media from "../media.js";
 import type * as profile from "../profile.js";
 
@@ -35,6 +37,8 @@ declare const fullApi: ApiFromModules<{
   cloudflare: typeof cloudflare;
   cloudinary: typeof cloudinary;
   comment: typeof comment;
+  crypto: typeof crypto;
+  http: typeof http;
   media: typeof media;
   profile: typeof profile;
 }>;

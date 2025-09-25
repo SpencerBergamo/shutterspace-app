@@ -1,6 +1,4 @@
 import { ImagePickerAsset } from "expo-image-picker";
-import { getThumbnailAsync } from 'expo-video-thumbnails';
-import { Image, Video } from 'react-native-compressor';
 
 export const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -8,281 +6,55 @@ export const formatDuration = (seconds: number): string => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-export const getMediaType = (type: ImagePickerAsset['type']): 'image' | 'video' => {
-    return type === 'video' ? 'video' : 'image';
+
+export interface ValidatedAsset {
+    error?: string;
+    props: {
+        uri: string;
+        size: number;
+        type: 'image' | 'video';
+        mimeType: string;
+        filename: string;
+    } | null;
 }
 
-export const calculateAspectRatio = (width: number, height: number): number => {
-    return width / height;
-}
-
-interface ProcessedVideo {
-    uri: string;
-    thumbnail: string;
-}
-
-interface ProcessedMedia {
-    images: string[];
-    videos: ProcessedVideo[];
-}
-
-/**
- * Time Complexity: O(n) where n is the number of assets
- * - Filtering: O(n)
- * - Image compression: O(n) - parallel processing
- * - Video compression: O(n) - sequential processing
- * - Thumbnail generation: O(n) - sequential processing
- * 
- * Space Complexity: O(n)
- * - Stores compressed images and videos in memory
- * - Returns arrays proportional to input size
- */
-export const processMedia = async (assets: ImagePickerAsset[]): Promise<ProcessedMedia> => {
-    const startTime = performance.now();
-
+export const validateAsset = (asset: ImagePickerAsset): ValidatedAsset => {
     try {
-        // O(n) - filter operation
-        const images = assets.filter(a => a.type === 'image');
-        const videos = assets.filter(a => a.type === 'video');
+        const uri = asset.uri;
+        const size = asset.fileSize;
+        const type = asset.type === 'video' ? 'video' : 'image';
+        const filename = asset.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
 
-        const videoResults: ProcessedVideo[] = [];
-
-        // O(n) - parallel image compression, but each compression is O(1) per image
-        const imageResults: string[] = await Promise.all(images.map(async (image) => {
-            const compressedUri = await Image.compress(image.uri, {
-                output: 'jpg',
-                quality: 0.9,
-            });
-
-            return compressedUri;
-        }));
-
-        // O(n) - sequential video processing (compression + thumbnail generation)
-        for (const asset of videos) {
-            // O(1) per video - compression time depends on video size, not array size
-            const compressedUri = await Video.compress(asset.uri, {
-                compressionMethod: 'auto',
-
-            });
-
-            // O(1) per video - thumbnail generation time depends on video size, not array size
-            const thumbnail = await getThumbnailAsync(asset.uri, {
-                quality: 0.9,
-            });
-
-            videoResults.push({
-                uri: compressedUri,
-                thumbnail: thumbnail.uri,
-            });
+        let mimeType = asset.mimeType;
+        if (!mimeType) {
+            const ext = uri.split('.').pop()?.toLowerCase();
+            if (type === 'video') {
+                mimeType = ext === 'mov' ? 'video/quicktime' :
+                    ext === 'mp4' ? 'video/mp4' :
+                        ext === 'avi' ? 'video/avi' : 'video/mp4';
+            } else {
+                mimeType = ext === 'png' ? 'image/png' :
+                    ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' :
+                        ext === 'webp' ? 'image/webp' : 'image/jpeg';
+            }
         }
 
-        return {
-            images: imageResults,
-            videos: videoResults,
+        const maxSize = type === 'video' ? 10000000 : 1000000;
+        if (!size) {
+            throw new Error("Invalid file size");
+        } else if (size && size > maxSize) {
+            throw new Error("File size exceeds max size");
         }
-    } catch (e) {
-        const endTime = performance.now();
-        const duration = endTime - startTime;
-        console.log(`mediaFactory:processMedia (FAIL) - ${duration}ms`);
-        console.error('mediaFactory:processMedia (FAIL)', e);
-        throw e;
-    } finally {
-        const endTime = performance.now();
-        const duration = endTime - startTime;
-        console.log(`mediaFactory:processMedia (SUCCESS) - ${duration}ms`);
+
+        const allowedTypes = type === 'video'
+            ? ['video/mp4', 'video/quicktime', 'video/mov', 'video/m4v', 'video/avi', 'video/wmv', 'video/flv', 'video/webm', 'video/mkv', 'video/mpeg', 'video/mpeg-2-ts', 'video/mpeg-2-ps', 'video/mxf', 'video/lxf', 'video/gxf', 'video/3gp', 'video/mpg']
+            : ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+        if (!allowedTypes.includes(mimeType)) {
+            throw new Error(`File type ${mimeType} is not allowed`);
+        }
+
+        return { props: { uri, size, type, mimeType, filename }, error: undefined };
+    } catch (e: any) {
+        return { props: null, error: e.message };
     }
 }
-
-// export const createOptimisticMedia = (
-//     assets: ImagePickerAsset[],
-//     albumId: Id<'albums'>,
-//     profileId: Id<'profiles'>,
-// ): OptimisticMedia[] => {
-//     return assets.map(asset => ({
-//         albumId: albumId,
-//         createdAt: Date.now(),
-//         uploadedById: profileId,
-//         filename: asset.fileName ?? `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`,
-//         type: asset.type === 'video' ? 'video' : 'image',
-//         width: asset.width,
-//         height: asset.height,
-//         duration: asset.duration ?? undefined,
-//         asset: asset,
-//         status: 'pending',
-//     }));
-// }
-
-// export async function processImage(
-//     media: OptimisticMedia,
-//     storageRef: FirebaseStorageTypes.Reference,
-//     onProgress: (progress: number) => void,
-//     onError: (error: string) => void,
-//     onSuccess: () => void,
-// ) {
-//     const asset = media.asset;
-//     const createMediaEntry = useMutation(api.media.createMedia);
-//     let uploadTask: FirebaseStorageTypes.Task | null = null;
-
-//     try {
-//         onProgress(5);
-
-//         // Compression phase (0-30%)
-//         const compressedUri = await Image.compress(asset.uri, {
-//             output: 'jpg',
-//             quality: 0.9,
-//         });
-//         onProgress(30);
-
-//         // Upload phase (30-90%)
-
-//         const downloadUrl = await new Promise<string>((resolve, reject) => {
-//             uploadTask = storageRef.child(`images/${media.filename}.jpg`).putFile(compressedUri, {
-//                 contentType: 'image/jpeg',
-//             });
-
-//             uploadTask.on('state_changed',
-//                 (snapshot) => {
-//                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-//                     onProgress(30 + (progress * 0.6));
-//                 },
-//                 (error) => {
-//                     uploadTask?.cancel();
-//                     reject(error);
-//                 },
-//                 async () => {
-//                     const url = await uploadTask?.snapshot?.ref.getDownloadURL();
-//                     if (url) resolve(url);
-//                     else reject(new Error(`Failed to get image download URL`));
-//                 }
-//             );
-//         });
-
-//         onProgress(90);
-
-//         // Convex phase (90-100%)
-//         await createMediaEntry({
-//             filename: media.filename,
-//             createdAt: media.createdAt,
-//             albumId: media.albumId,
-//             uploadedById: media.uploadedById,
-//             downloadUrl: downloadUrl,
-//             thumbnailUrl: downloadUrl,
-//             type: 'image',
-//             width: media.width,
-//             height: media.height,
-//             uploadedAt: Date.now(),
-//         });
-
-//         onProgress(100);
-//         onSuccess();
-//     } catch (e: any) {
-//         console.error('mediaFactory:processImage (FAIL)', e);
-//         onError('unknown');
-//     }
-// }
-
-// export async function processVideo(
-//     media: OptimisticMedia,
-//     storageRef: FirebaseStorageTypes.Reference,
-//     onProgress: (progress: number) => void,
-//     onError: (error: string) => void,
-//     onSuccess: () => void,
-// ) {
-//     const asset = media.asset;
-//     const createMediaEntry = useMutation(api.media.createMedia);
-//     let videoTask: FirebaseStorageTypes.Task | null = null;
-//     let thumbnailTask: FirebaseStorageTypes.Task | null = null;
-
-//     try {
-//         onProgress(5);
-
-//         // Video compression phase (5-35%)
-//         const compressedUri = await Video.compress(
-//             asset.uri,
-//             { compressionMethod: 'auto' },
-//             (progress) => onProgress(5 + (progress * 0.3))
-//         );
-
-//         // Thumbnail generation phase (35-40%)
-//         const thumbnail = await getThumbnailAsync(asset.uri, {
-//             quality: 0.8,
-//         });
-//         onProgress(40);
-
-//         // Parallel upload phase (40-85%)
-//         const videoUploadPromise = new Promise<string>((resolve, reject) => {
-//             videoTask = storageRef
-//                 .child(`videos/${media.filename}.mp4`)
-//                 .putFile(compressedUri, { contentType: 'video/mp4' });
-
-//             videoTask.on('state_changed',
-//                 (snapshot: any) => {
-//                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-//                     onProgress(40 + (progress * 0.35));
-//                 },
-//                 (error) => {
-//                     videoTask?.cancel();
-//                     reject(error);
-//                 },
-//                 async () => {
-//                     try {
-//                         const url = await videoTask?.snapshot?.ref.getDownloadURL();
-//                         if (url) resolve(url);
-//                         else reject(new Error(`Failed to get video download URL`));
-//                     } catch (error: any) {
-//                         reject(error);
-//                     }
-//                 },
-//             );
-//         });
-
-
-//         const thumbnailUploadPromise = new Promise<string>((resolve, reject) => {
-//             thumbnailTask = storageRef
-//                 .child(`thumbnails/${media.filename}_thumb.jpg`)
-//                 .putFile(thumbnail.uri, { contentType: 'image/jpeg' });
-
-//             thumbnailTask.on('state_changed',
-//                 (snapshot: any) => {
-//                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-//                     onProgress(75 + (progress * 0.1)); // 75-80%
-//                 },
-//                 (error: any) => {
-//                     thumbnailTask?.cancel();
-//                     reject(error);
-//                 },
-//                 async () => {
-//                     try {
-//                         const url = await thumbnailTask?.snapshot?.ref.getDownloadURL();
-//                         if (url) resolve(url);
-//                         else reject(new Error(`Failed to get thumbnail download URL`));
-//                     } catch (error: any) {
-//                         reject(error);
-//                     }
-//                 },
-//             );
-//         });
-
-//         const [downloadUrl, thumbnailUrl] = await Promise.all([videoUploadPromise, thumbnailUploadPromise]);
-//         onProgress(85);
-
-//         await createMediaEntry({
-//             filename: media.filename,
-//             createdAt: media.createdAt,
-//             albumId: media.albumId,
-//             uploadedById: media.uploadedById,
-//             downloadUrl: downloadUrl,
-//             thumbnailUrl: thumbnailUrl,
-//             type: 'video',
-//             width: media.width,
-//             height: media.height,
-//             uploadedAt: Date.now(),
-//         });
-
-//         onProgress(100);
-//         onSuccess();
-//     } catch (e: any) {
-//         console.error('mediaFactory:processVideo (FAIL)', e);
-//         onError('unknown');
-//     }
-// }

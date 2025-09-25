@@ -1,13 +1,3 @@
-/**
- * @title Album Screen
- * @description This React Component is the main screen for an album. This screen is dynamic
- * to the selected album.
- * 
- * 
- * 
- * 
- */
-
 import FloatingActionButton from "@/components/FloatingActionButton";
 import { useProfile } from "@/context/ProfileContext";
 import { useSignedUrls } from "@/context/SignedUrlsContext";
@@ -15,43 +5,52 @@ import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
-import { Media } from "@/types/Media";
+import { DbMedia } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { CircleEllipsis, CloudAlert, Images, Play } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 interface MediaTileProps {
     albumId: Id<'albums'>;
-    profileId: Id<'profiles'>;
-    media: Media;
+    media: DbMedia;
     width: number;
     height: number;
 }
 
-function MediaTile({ media, albumId, profileId, width, height }: MediaTileProps) {
-    const { getThumbnailURL } = useSignedUrls();
+function MediaTile({ media, albumId, width, height }: MediaTileProps) {
+    const { profileId } = useProfile();
+    const { requestSignedEntry } = useSignedUrls();
 
-    const type = media.asset.type;
-    const fileId = type === 'image' ? media.asset.imageId : media.asset.videoUid;
+    const type = media.identifier.type;
+    const cloudflareId = type === 'image' ? media.identifier.imageId : media.identifier.videoUid;
 
     const [uri, setUri] = useState<string | undefined>(undefined);
     const [imageError, setImageError] = useState<boolean>(false);
 
     useEffect(() => {
         const signed = async () => {
-            let signature: string | undefined = await getThumbnailURL({ type, fileId, albumId, profileId });
+            const cached = await requestSignedEntry({ albumId, profileId, mediaId: media._id, cloudflareId, type });
+            if (cached) {
+                if (type === 'video') {
+                    setUri(`${process.env.CLOUDFLARE_STREAMS_BASE_URL}/thumbnails/thumbnail.jpg?token=${cached.value}`);
+                } else if (type === 'image') {
+                    setUri(cached.value);
+                } else {
+                    setImageError(true);
+                }
 
-            if (signature) {
-                setUri(signature);
                 setImageError(false);
+            } else {
+                setUri(undefined);
+                setImageError(true);
             }
         }
 
         signed();
-    }, [media._id, uri, getThumbnailURL]);
+    }, [media, uri, requestSignedEntry]);
 
     if (imageError) return (
         <View style={[styles.mediaTile, { width, height }]}>
@@ -79,15 +78,47 @@ function MediaTile({ media, albumId, profileId, width, height }: MediaTileProps)
 }
 
 export default function AlbumScreen() {
-    const { profileId } = useProfile();
     const { width } = useWindowDimensions();
     const { theme } = useTheme();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbumById } = useAlbums();
     const album = getAlbumById(albumId);
-    const { media, uploadMedia } = useMedia(albumId);
+    const { media, selectAndUpload, inFlightUploads } = useMedia(albumId);
 
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 3, gap: 2, aspectRatio: 1 }), [width]);
+    const [showHeader] = useState<boolean>(false);
+    const animatedHeaderHeight = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (inFlightUploads.length > 0) {
+            const toValue = showHeader ? 0 : 70;
+            Animated.timing(animatedHeaderHeight, {
+                toValue,
+                duration: 300,
+                useNativeDriver: false,
+            }).start();
+        } else {
+            animatedHeaderHeight.setValue(0);
+        }
+    }, [inFlightUploads, showHeader]);
+
+    const renderHeader = useCallback(() => {
+        const anyFailed = inFlightUploads.some(upload => upload.status === 'error');
+        return (
+            <Animated.View style={{ flex: 1, height: animatedHeaderHeight }}>
+                <View style={{ flex: 1, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}>
+                    {anyFailed ? (
+                        <View>
+                            <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginRight: 12 }} />
+                            <Text>Uploading {inFlightUploads.length} photos...</Text>
+                        </View>
+                    ) : (
+                        <View></View>
+                    )}
+                </View>
+            </Animated.View>
+        );
+    }, [inFlightUploads, theme]);
 
     if (!album) return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -113,37 +144,32 @@ export default function AlbumScreen() {
                     </Pressable>
                 )
             }} />
+            <FlatList
+                data={media}
+                keyExtractor={(item) => item._id}
+                numColumns={gridConfig.numColumns}
+                columnWrapperStyle={gridConfig.columnWrapperStyle}
+                contentContainerStyle={gridConfig.contentContainerStyle}
+                style={{ padding: 2 }}
+                ListHeaderComponent={renderHeader}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Images size={48} color="#ccc" style={{ margin: 16 }} />
 
-            {media.length > 0 ? (
-                <FlatList
-                    data={media}
-                    keyExtractor={(item) => item._id}
-                    numColumns={gridConfig.numColumns}
-                    columnWrapperStyle={gridConfig.columnWrapperStyle}
-                    contentContainerStyle={gridConfig.contentContainerStyle}
-                    style={{ padding: 2 }}
-                    renderItem={({ item }) => <MediaTile
-                        albumId={albumId}
-                        profileId={profileId}
-                        media={item}
-                        width={gridConfig.tileWidth}
-                        height={gridConfig.tileHeight}
-                    />
-                    }
+                        <Text style={styles.emptyTitle}>Ready to share memories?</Text>
+                        <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
+                    </View>
+                }
 
-                />
-            ) : (
-                <View style={styles.emptyContainer}>
+                renderItem={({ item }) => <MediaTile
+                    albumId={albumId}
+                    media={item}
+                    width={gridConfig.tileWidth}
+                    height={gridConfig.tileHeight}
+                />}
+            />
 
-                    <Images size={48} color="#ccc" style={{ margin: 16 }} />
-
-                    <Text style={styles.emptyTitle}>Ready to share memories?</Text>
-                    <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
-                </View>
-            )}
-
-            <FloatingActionButton icon="plus" onPress={uploadMedia} />
-
+            <FloatingActionButton icon="plus" onPress={selectAndUpload} />
         </View>
     );
 }

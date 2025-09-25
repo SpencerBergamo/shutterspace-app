@@ -57,12 +57,12 @@ function HomeLayout() {
 
 export default function Layout() {
     return (
-        <SignedUrlsProvider>
-            <ProfileProvider>
+        <ProfileProvider>
+            <SignedUrlsProvider>
                 <ActionSheetProvider>
                     <HomeLayout />
                 </ActionSheetProvider>
-            </ProfileProvider>
-        </SignedUrlsProvider>
+            </SignedUrlsProvider>
+        </ProfileProvider>
     );
 }

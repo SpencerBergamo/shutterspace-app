@@ -80,7 +80,7 @@ export default defineSchema({
         albumId: v.id("albums"),
         uploaderId: v.id('profiles'),
         filename: v.string(),
-        asset: v.union(
+        identifier: v.union(
             v.object({
                 type: v.literal('image'),
                 imageId: v.string(),
@@ -104,8 +104,15 @@ export default defineSchema({
             address: v.optional(v.string()),
         })),
         isDeleted: v.boolean(),
+        uploadStatus: v.optional(v.union(
+            v.literal('pending'),
+            v.literal('uploading'),
+            v.literal('success'),
+            v.literal('error'),
+        )),
     }).index("by_albumId", ["albumId"])
-        .index("by_profileId", ["uploaderId"]),
+        .index("by_profileId", ["uploaderId"])
+        .index("by_videoUid", ["identifier.videoUid"]),
 
     comments: defineTable({
         mediaId: v.id("media"),

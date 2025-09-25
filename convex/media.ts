@@ -6,7 +6,7 @@ export const createMedia = mutation({
         albumId: v.id('albums'),
         uploaderId: v.id('profiles'),
         filename: v.string(),
-        asset: v.union(
+        identifier: v.union(
             v.object({
                 type: v.literal('image'),
                 imageId: v.string(),
@@ -34,7 +34,7 @@ export const createMedia = mutation({
             albumId: args.albumId,
             uploaderId: args.uploaderId,
             filename: args.filename,
-            asset: args.asset,
+            identifier: args.identifier,
             size: args.size,
             dateTaken: args.dateTaken,
             location: args.location,
@@ -84,3 +84,26 @@ export const deleteMedia = mutation({
         await ctx.db.delete(mediaId);
     }
 });
+
+export const updateMediaUploadStatusByVideoUid = mutation({
+    args: {
+        videoUid: v.string(),
+        status: v.union(
+            v.literal('pending'),
+            v.literal('uploading'),
+            v.literal('success'),
+            v.literal('error'),
+        ),
+    }, handler: async (ctx, { videoUid, status }) => {
+        const media = await ctx.db.query('media')
+            .withIndex('by_videoUid', q => q.eq('identifier.videoUid', videoUid))
+            .first();
+
+        if (!media) {
+            console.log("Media not found for videoUid: ", videoUid);
+            return;
+        }
+
+        await ctx.db.patch(media._id, { uploadStatus: status });
+    }
+})

@@ -1,62 +1,93 @@
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { LRUCache } from "@/utils/lruCache";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAction } from "convex/react";
-import { createContext, useCallback, useContext, useEffect, useRef } from "react";
+import { createContext, useCallback, useContext } from "react";
 
-
-interface ThumbnailURLRequest {
-    fileId: string;
-    type: 'image' | 'video';
-    albumId: Id<'albums'>;
-    profileId: Id<'profiles'>;
+interface SignedEntry {
+    value: string;
+    expiresAt: number;
 }
 
-interface EnsureSignedRequest {
-    type: 'image' | 'video';
-    id: string;
+interface RequestSignedEntryRequest {
     albumId: Id<'albums'>;
     profileId: Id<'profiles'>;
+    mediaId: Id<'media'>;
+    cloudflareId: string;
+    type: 'image' | 'video';
 }
 
 interface SignedUrlsContextType {
-    getThumbnailURL: ({ fileId, type, albumId, profileId }: ThumbnailURLRequest) => Promise<string | undefined>;
-    ensureSigned: ({ type, id, albumId, profileId }: EnsureSignedRequest) => Promise<string | undefined>;
+    requestSignedEntry: (request: RequestSignedEntryRequest) => Promise<SignedEntry | null>;
+    setSignedEntry: (mediaId: Id<'media'>, value: string, expiresAt: number, localUri?: string) => Promise<void>;
     clearSignedEntries: () => void;
-    getCacheSize: () => number;
 }
+
+const CACHE_KEY = '@shutterspace-media-';
 
 const SignedUrlsContext = createContext<SignedUrlsContextType | undefined>(undefined);
 
 export function SignedUrlsProvider({ children }: { children: React.ReactNode }) {
-
-    const cacheRef = useRef<LRUCache<string, string>>(new LRUCache(50));
-
     const requestImageDeliveryURL = useAction(api.cloudflare.requestImageDeliveryURL);
     const requestVideoPlaybackToken = useAction(api.cloudflare.requestVideoPlaybackToken);
 
-    const saveCache = useCallback(async () => {
+    const setSignedEntry = useCallback(async (mediaId: Id<'media'>, value: string, expiresAt: number) => {
+        const entry: SignedEntry = {
+            value,
+            expiresAt,
+        }
+
         try {
-            const entries = cacheRef.current.getEntries();
-            await AsyncStorage.setItem("@signed-urls", JSON.stringify(entries));
+            const key = `${CACHE_KEY}-${mediaId}`;
+            await AsyncStorage.setItem(key, JSON.stringify(entry));
         } catch (e) {
-            console.error('Failed to save signed URLs to storage: ', e);
+            console.error("SignedUrlsContext saveEntry: ", e);
         }
     }, []);
 
-    const setSignedEntry = useCallback((id: string, url: string, ttlMs: number) => {
-        cacheRef.current.set(id, url, ttlMs);
-        saveCache();
-    }, [saveCache]);
+    const requestSignedEntry = useCallback(async (request: RequestSignedEntryRequest): Promise<SignedEntry | null> => {
+        const { mediaId, cloudflareId, type, albumId, profileId } = request;
 
-    const clearSignedEntries = useCallback(() => {
-        cacheRef.current.clear();
-        AsyncStorage.removeItem("@signed-urls");
-    }, []);
+        try {
+            const key = `${CACHE_KEY}-${mediaId}`;
+            const stored = await AsyncStorage.getItem(key);
 
-    const getCacheSize = useCallback(() => {
-        return cacheRef.current.size();
+            if (stored) {
+                const parsed = JSON.parse(stored) as SignedEntry;
+                if (parsed.expiresAt > Date.now()) {
+                    return parsed;
+                } else {
+                    await AsyncStorage.removeItem(key);
+                }
+            }
+
+            if (type === 'image') {
+                const url = await requestImageDeliveryURL({ albumId, profileId, imageId: cloudflareId });
+                const expiresAt = parseExpiry(url);
+                await setSignedEntry(mediaId, url, expiresAt);
+                return { value: url, expiresAt };
+            } else if (type === 'video') {
+                const token = await requestVideoPlaybackToken({ albumId, profileId, videoUID: cloudflareId });
+                const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // duration until expires at 24 hours
+                await setSignedEntry(mediaId, token, expiresAt);
+                return { value: token, expiresAt };
+            }
+
+            return null;
+        } catch (e) {
+            console.error("SignedUrlsContext requestSignedEntry: ", e);
+            return null;
+        }
+    }, [requestImageDeliveryURL, requestVideoPlaybackToken, setSignedEntry]);
+
+    const clearSignedEntries = useCallback(async () => {
+        try {
+            const keys = await AsyncStorage.getAllKeys();
+            const signedKeys = keys.filter(key => key.startsWith(CACHE_KEY));
+            await AsyncStorage.multiRemove(signedKeys);
+        } catch (e) {
+            console.error("SignedUrlsContext clearSignedEntries: ", e);
+        }
     }, []);
 
     const parseExpiry = (url: string): number => {
@@ -76,69 +107,10 @@ export function SignedUrlsProvider({ children }: { children: React.ReactNode }) 
         }
     };
 
-    // on mount: load any cache from async storage
-    useEffect(() => {
-        const loadCache = async () => {
-            try {
-                const stored = await AsyncStorage.getItem("@signed-urls");
-                if (stored) {
-                    const entries: [string, { value: string, expiresAt: number }][] = JSON.parse(stored);
-                    entries.forEach(([id, { value, expiresAt }]) => {
-                        const ttlMs = Math.max(expiresAt - Date.now(), 0);
-                        if (ttlMs > 0) {
-                            cacheRef.current.set(id, value, ttlMs);
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error("Error loading cache: ", e);
-            }
-        }
-
-        loadCache();
-    }, []);
-
-    const ensureSigned = useCallback(async ({ type, id, albumId, profileId }: EnsureSignedRequest): Promise<string | undefined> => {
-        const cache = cacheRef.current.get(id);
-        if (cache) return cache;
-
-        try {
-            if (type === 'image') {
-                // in the case of an image, the url is equivalent to the image delivery url
-                const url = await requestImageDeliveryURL({ albumId, profileId, identifier: id });
-                const expiresAt = parseExpiry(url);
-                const ttlMs = Math.max(expiresAt - Date.now(), 1000); // duration until expires at
-                setSignedEntry(id, url, ttlMs);
-                return url;
-            } else if (type === 'video') {
-                // in the case of a video, the url is equivalent to the video token (not a full signed url)
-                const token = await requestVideoPlaybackToken({ albumId, profileId, videoUID: id });
-                const ttlMs = 24 * 60 * 60 * 1000; // duration until expires at 24 hours
-                setSignedEntry(id, token, ttlMs);
-                return token;
-            }
-        } catch (e) {
-            console.error("getSignedUrl FAIL: ", id, e);
-        }
-    }, [requestImageDeliveryURL, requestVideoPlaybackToken, setSignedEntry]);
-
-    const getThumbnailURL = useCallback(async ({ fileId, type, albumId, profileId }: ThumbnailURLRequest) => {
-        const signed = await ensureSigned({ type, id: fileId, albumId, profileId });
-        if (!signed) return undefined;
-
-        if (type === 'video') {
-            return `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${fileId}/thumbnails/thumbnail.jpg?token=${signed}`;
-            // return `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${signed}/thumbnails/thumbnail.jpg`;
-        } else if (type === 'image') {
-            return signed;
-        }
-    }, [ensureSigned]);
-
     const value = {
-        getThumbnailURL,
-        ensureSigned,
+        requestSignedEntry,
+        setSignedEntry,
         clearSignedEntries,
-        getCacheSize
     }
 
     return (

@@ -1,52 +1,226 @@
 import { useProfile } from "@/context/ProfileContext";
-import { useSignedUrls } from "@/context/SignedUrlsContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { AlbumThumbnail } from "@/types/Album";
-import { Media, ProcessAssetResponse, UploadURLResponse } from "@/types/Media";
+import { DbMedia, Media } from "@/types/Media";
+import { validateAsset } from "@/utils/mediaFactory";
+import axios from "axios";
 import { useAction, useMutation, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-/**
- * 
- */
+
+type InFlightUploadStatus = 'pending' | 'uploading' | 'success' | 'error';
+
+interface InFlightUpload {
+    asset: ImagePicker.ImagePickerAsset;
+    status: InFlightUploadStatus;
+    mediaId?: Id<'media'>; // Track the created media document ID
+    identifier?: string; // Track the imageId or videoUid for matching
+}
 
 interface UseAlbumMediaResult {
     media: Media[];
-    uploadMedia: () => Promise<void>;
+    selectAndUpload: () => Promise<void>;
+    inFlightUploads: InFlightUpload[];
 }
 
 export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     const { profileId } = useProfile();
-    const { ensureSigned } = useSignedUrls();
 
     const requestImageUploadURL = useAction(api.cloudflare.requestImageUploadURL);
     const requestVideoUploadURL = useAction(api.cloudflare.requestVideoUploadURL);
     const updateAlbum = useMutation(api.albums.updateAlbum);
-    const dbMedia: Media[] | undefined = useQuery(api.media.getMediaForAlbum, { albumId, profileId });
-    const createMedia = useMutation(api.media.createMedia).withOptimisticUpdate(
-        (localStore, args) => {
-            const existingMedia = localStore.getQuery(api.media.getMediaForAlbum, { albumId, profileId });
-            const optimisticMedia: Media = {
-                _id: args.filename as Id<'media'>,
-                _creationTime: Date.now(),
+    const dbMedia: DbMedia[] | undefined = useQuery(api.media.getMediaForAlbum, { albumId, profileId }) ?? [];
+    const createMedia = useMutation(api.media.createMedia);
+
+    const [inFlightUploads, setInFlightUploads] = useState<InFlightUpload[]>([]);
+
+    const addInFlightUpload = useCallback((asset: ImagePicker.ImagePickerAsset, status: InFlightUploadStatus, mediaId?: Id<'media'>, identifier?: string) => {
+        setInFlightUploads(prev => [...prev, { asset, status, mediaId, identifier }]);
+    }, []);
+
+    const updateInFlightUpload = useCallback((asset: ImagePicker.ImagePickerAsset, updates: Partial<InFlightUpload>) => {
+        setInFlightUploads(prev => prev.map(upload =>
+            upload.asset === asset ? { ...upload, ...updates } : upload
+        ));
+    }, []);
+
+    const removeInFlightUpload = useCallback((asset: ImagePicker.ImagePickerAsset) => {
+        setInFlightUploads(prev => prev.filter(upload => upload.asset !== asset));
+    }, []);
+
+    const media: Media[] = useMemo(() => {
+        // For the current user, merge dbMedia with inFlightUploads to show local URIs during upload
+        return dbMedia.map(dbMediaItem => {
+            // Find matching inFlightUpload by mediaId or identifier
+            const matchingInFlightUpload = inFlightUploads.find(upload => {
+                // First try to match by mediaId (most reliable)
+                if (upload.mediaId === dbMediaItem._id) {
+                    return true;
+                }
+
+                // Fallback: match by identifier (imageId or videoUid)
+                if (upload.identifier) {
+                    if (dbMediaItem.identifier.type === 'image') {
+                        return upload.identifier === dbMediaItem.identifier.imageId;
+                    } else if (dbMediaItem.identifier.type === 'video') {
+                        return upload.identifier === dbMediaItem.identifier.videoUid;
+                    }
+                }
+
+                return false;
+            });
+
+            // Only show local URI for current user's uploads that are still in progress
+            if (matchingInFlightUpload &&
+                dbMediaItem.uploaderId === profileId &&
+                (dbMediaItem.uploadStatus === 'uploading' || dbMediaItem.uploadStatus === 'pending')) {
+
+                return {
+                    ...dbMediaItem,
+                    localUri: matchingInFlightUpload.asset.uri, // Use local device URI for immediate display
+                } as Media;
+            }
+
+            // For completed uploads, other users' uploads, or when no matching inFlightUpload
+            return {
+                ...dbMediaItem,
+                localUri: '', // Empty - UI will request signed URLs from Cloudflare
+            } as Media;
+        });
+    }, [dbMedia, inFlightUploads, profileId]);
+
+    const uploadImage = useCallback(async (image: ImagePicker.ImagePickerAsset, isLast: boolean) => {
+        if (image.type !== 'image') return;
+
+        try {
+            const { props, error } = validateAsset(image);
+            if (!props || error) return;
+
+            const uploadUrlResponse = await requestImageUploadURL({ albumId, profileId, filename: props.filename });
+            if (!uploadUrlResponse.success) return;
+
+            const { id, uploadURL } = uploadUrlResponse.result;
+
+            // Add to inFlightUploads with identifier for tracking
+            addInFlightUpload(image, 'uploading', undefined, id);
+
+            // Create the media document in Convex
+            const mediaId = await createMedia({
                 albumId,
                 uploaderId: profileId,
-                filename: args.filename,
-                asset: args.asset,
-                size: args.size,
-                dateTaken: args.dateTaken,
-                location: args.location,
-                isDeleted: false,
+                filename: props.filename,
+                identifier: {
+                    type: 'image',
+                    imageId: id,
+                    width: image.width,
+                    height: image.height,
+                },
+                size: props.size,
+            });
+
+            // Update inFlightUpload with the created mediaId for better matching
+            updateInFlightUpload(image, { mediaId });
+
+            const form = new FormData();
+            form.append('file', {
+                uri: props.uri,
+                name: props.filename,
+                type: props.mimeType,
+            } as any);
+            const response = await axios.post(uploadURL, form);
+            if (!response.data || response.status !== 200) {
+                updateInFlightUpload(image, { status: 'error' });
+                return;
             };
 
-            localStore.setQuery(api.media.getMediaForAlbum, { albumId, profileId }, [optimisticMedia, ...existingMedia || []]);
-        },
-    );
+            // Mark as successful
+            updateInFlightUpload(image, { status: 'success' });
 
-    /* Media Upload */
-    const uploadMedia = useCallback(async () => {
+            if (isLast) {
+                updateAlbum({
+                    albumId,
+                    profileId,
+                    thumbnailFileId: {
+                        type: 'image',
+                        fileId: id,
+                    },
+                });
+            }
+
+        } catch (e) {
+            console.error("uploadImage error: ", e);
+            updateInFlightUpload(image, { status: 'error' });
+        } finally {
+        }
+    }, [createMedia, requestImageUploadURL, albumId, profileId, addInFlightUpload, updateInFlightUpload, removeInFlightUpload, updateAlbum]);
+
+    const uploadVideo = useCallback(async (video: ImagePicker.ImagePickerAsset, isLast: boolean) => {
+        if (video.type !== 'video') return;
+
+        try {
+            const { props, error } = validateAsset(video);
+            if (!props || error) return;
+
+            const uploadUrlResponse = await requestVideoUploadURL({ albumId, profileId, filename: props.filename });
+            if (!uploadUrlResponse.success) return;
+
+            const { uid, uploadURL } = uploadUrlResponse.result;
+
+            // Add to inFlightUploads with identifier for tracking
+            addInFlightUpload(video, 'uploading', undefined, uid);
+
+            // Create the media document in Convex
+            const mediaId = await createMedia({
+                albumId,
+                uploaderId: profileId,
+                filename: props.filename,
+                identifier: {
+                    type: 'video',
+                    videoUid: uid,
+                    duration: video.duration ?? 0,
+                },
+            });
+
+            // Update inFlightUpload with the created mediaId for better matching
+            updateInFlightUpload(video, { mediaId });
+
+            const form = new FormData();
+            form.append('file', {
+                uri: props.uri,
+                name: props.filename,
+                type: props.mimeType,
+            } as any);
+
+            const response = await axios.post(uploadURL, form);
+            if (!response.data || response.status !== 200) {
+                updateInFlightUpload(video, { status: 'error' });
+                return;
+            };
+
+            // Mark as successful (video processing will update via webhook)
+            updateInFlightUpload(video, { status: 'success' });
+
+            if (isLast) {
+                updateAlbum({
+                    albumId,
+                    profileId,
+                    thumbnailFileId: {
+                        type: 'video',
+                        fileId: uid,
+                    },
+                });
+            }
+        } catch (e: any) {
+            console.error("uploadVideo error: ", e);
+            updateInFlightUpload(video, { status: 'error' });
+        } finally {
+            removeInFlightUpload(video);
+        }
+
+    }, [createMedia, requestVideoUploadURL, albumId, profileId, addInFlightUpload, updateInFlightUpload, removeInFlightUpload, updateAlbum]);
+
+    const selectAndUpload = useCallback(async () => {
         const { assets } = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images', 'videos'],
             allowsMultipleSelection: true,
@@ -57,181 +231,31 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         if (!assets || assets.length === 0) return;
 
         const batch_size = 10;
-        let newAlbumThumbnail: AlbumThumbnail | undefined;
         for (let i = 0; i < assets.length; i += batch_size) {
             const batch = assets.slice(i, i + batch_size);
+
             await Promise.all(batch.map(async (asset) => {
                 const isLast = assets.at(-1) === asset;
 
                 if (asset.type === 'image') {
-                    const { status, result, error } = await processImage(asset);
-                    if (status === 'success' && result) {
-                        await createMedia({
-                            albumId,
-                            uploaderId: profileId,
-                            filename: result.filename,
-                            asset: {
-                                type: 'image',
-                                imageId: result.assetId,
-                                width: result.width,
-                                height: result.height,
-                            },
-                            size: result.size,
-                        });
-
-                        if (isLast) {
-                            newAlbumThumbnail = {
-                                type: 'image',
-                                fileId: result.assetId,
-                            }
-                        }
-                    }
+                    await uploadImage(asset, isLast);
                 } else if (asset.type === 'video') {
-                    console.log("Processing Video: ", asset.fileName);
-                    const response = await processVideo(asset);
-                    if (response.status === 'success' && response.result) {
-                        await createMedia({
-                            albumId,
-                            uploaderId: profileId,
-                            filename: response.result.filename,
-                            asset: {
-                                type: 'video',
-                                videoUid: response.result.assetId,
-                                duration: response.result.duration ?? 0,
-                            },
-                            size: response.result.size,
-                        });
-
-                        if (isLast) {
-                            newAlbumThumbnail = {
-                                type: 'video',
-                                fileId: response.result.assetId,
-                            }
-                        }
-                    } else {
-                        console.error("processVideo failed", response.error);
-                    }
-                } else {
-                    console.error("Type is invalid", asset.type);
+                    await uploadVideo(asset, isLast);
                 }
             }));
         }
+    }, [uploadImage, uploadVideo]);
 
-        await updateAlbum({
-            albumId,
-            profileId,
-            thumbnailFileId: newAlbumThumbnail,
-        });
-    }, [albumId, profileId, createMedia, updateAlbum]);
+    const requestMediaThumbnail = useCallback(async (media: Id<'media'>) => {
+        // return a cache if available
 
-    const processImage = useCallback(async (image: ImagePicker.ImagePickerAsset): Promise<ProcessAssetResponse> => {
-        if (image.type !== 'image') return { status: 'error', error: 'Invalid image type', result: null };
-
-        try {
-            const filename = image.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
-            const uploadUrlResponse: UploadURLResponse = await requestImageUploadURL({ albumId, profileId, filename: filename });
-
-            if (!uploadUrlResponse.success) {
-                console.error(uploadUrlResponse.errors.join(", "), '\n', uploadUrlResponse.messages.join(", "));
-                return { status: 'error', error: 'Upload URL Generation Failed', result: null };
-            }
-
-            const { id, uploadURL } = uploadUrlResponse.result;
-            const form = new FormData();
-            form.append('file', {
-                uri: image.uri,
-                name: filename,
-                type: image.mimeType || 'image/jpeg',
-            } as unknown as Blob);
-
-            const imgResponse = await fetch(uploadURL, {
-                method: 'POST',
-                headers: {},
-                body: form,
-            });
-
-            if (!imgResponse.ok) {
-                console.error(`Failed to upload image ${imgResponse.status} - ${imgResponse.statusText}`);
-                return { status: 'error', error: 'Failed to upload image', result: null };
-            }
-
-            ensureSigned({ type: 'image', id, albumId, profileId });
-            return {
-                status: 'success',
-                result: {
-                    filename,
-                    size: image.fileSize,
-                    type: 'image',
-                    assetId: id,
-                    width: image.width,
-                    height: image.height,
-                }
-            };
-        } catch (e) {
-            console.error(e);
-            return { status: 'error', error: 'Failed to upload image', result: null };
-        }
-    }, [albumId, requestImageUploadURL, ensureSigned, profileId]);
-
-    const processVideo = useCallback(async (video: ImagePicker.ImagePickerAsset): Promise<ProcessAssetResponse> => {
-        if (video.type !== 'video') {
-            console.error("Invalid video type", video.type);
-            return { status: 'error', error: 'Invalid video type', result: null };
-        };
-
-        try {
-            console.log("Processing Video: ", video.fileName);
-            const filename = video.fileName || new Date().getTime() + Math.random().toString(36).substring(2, 15);
-            const uploadUrlResponse = await requestVideoUploadURL({ albumId, profileId, filename: filename });
-
-            if (!uploadUrlResponse.success) {
-                console.error(uploadUrlResponse.errors.join(", "), '\n', uploadUrlResponse.messages.join(", "));
-                return { status: 'error', error: 'Upload URL Generation Failed', result: null };
-            }
-
-            const { uid, uploadURL } = uploadUrlResponse.result;
-            const form = new FormData();
-            form.append('file', {
-                uri: video.uri,
-                name: filename,
-                type: video.mimeType || 'video/mp4',
-            } as unknown as Blob);
-
-            const videoResponse = await fetch(uploadURL, {
-                method: 'POST',
-                headers: {
-                    // Don't set Content-Type - let fetch set it automatically with boundary
-                },
-                body: form,
-            });
-
-            if (!videoResponse.ok) {
-                console.error(`Failed to upload video ${videoResponse.status} - ${videoResponse.statusText}`);
-                return { status: 'error', error: 'Failed to upload video', result: null };
-            }
-
-            ensureSigned({ type: 'video', id: uid, albumId, profileId });
-            return {
-                status: 'success',
-                result: {
-                    filename,
-                    size: video.fileSize,
-                    type: 'video',
-                    assetId: uid,
-                    duration: video.duration ?? 0,
-                    width: video.width,
-                    height: video.height,
-                }
-            };
-        } catch (e) {
-            console.error(e);
-            return { status: 'error', error: 'Failed to upload video', result: null };
-        }
-    }, [albumId, requestVideoUploadURL, ensureSigned, profileId]);
+        // request thumbnail from cloudflare and save to cache
+    }, []);
 
     return {
-        media: dbMedia || [],
-        uploadMedia,
+        media,
+        selectAndUpload,
+        inFlightUploads,
     }
 }
 

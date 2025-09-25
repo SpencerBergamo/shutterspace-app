@@ -87,7 +87,6 @@ export const requestVideoUploadURL = action({
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'multipart/form-data',
                 Authorization: `Bearer ${API_TOKEN}`,
             },
             body,
@@ -120,9 +119,8 @@ export const requestImageDeliveryURL = action({
     args: {
         albumId: v.id('albums'),
         profileId: v.id('profiles'),
-        identifier: v.string(), // image_id
-        variant: v.optional(v.string()), // variant name
-    }, handler: async (ctx, { albumId, profileId, identifier, variant }) => {
+        imageId: v.string(), // image_id
+    }, handler: async (ctx, { albumId, profileId, imageId }) => {
         const identity = await ctx.auth.getUserIdentity();
 
         const membership = await ctx.runQuery(api.albums.getAlbumMembership, {
@@ -132,7 +130,7 @@ export const requestImageDeliveryURL = action({
 
         if (!membership || !identity) throw new Error('Unauthorized');
 
-        return issueSignedImageURL(identifier);
+        return issueSignedImageURL(imageId);
     }
 });
 
