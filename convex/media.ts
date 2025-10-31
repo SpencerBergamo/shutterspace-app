@@ -63,6 +63,14 @@ export const getMediaForAlbum = query({
     }
 });
 
+export const getMediaById = query({
+    args: {
+        mediaId: v.id('media'),
+    }, handler: async (ctx, { mediaId }) => {
+        return await ctx.db.get(mediaId);
+    }
+});
+
 
 export const deleteMedia = mutation({
     args: {

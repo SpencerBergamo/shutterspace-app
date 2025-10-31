@@ -3,7 +3,7 @@
 # dependencies
 node_modules/
 
-android/
+# android/
 ios/
 credentials/
 credentials.json
@@ -48,3 +48,5 @@ app-example
 .firebase/
 
 secret-keys/
+
+audit-report.json

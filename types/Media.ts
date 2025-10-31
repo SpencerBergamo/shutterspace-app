@@ -41,70 +41,71 @@ export type DbMedia = {
         address?: string;
     },
     isDeleted: boolean;
-    uploadStatus?: 'pending' | 'uploading' | 'success' | 'error';
+    status: 'pending' | 'ready' | 'error';
 }
 
 export type TypeAndID = { type: 'image' | 'video'; id: string; }
 
 export type Media = DbMedia & {
-    localUri: string;
+    uri?: string;
+    error: boolean;
 }
 
 // Optimistic media for immediate display of selected assets before upload
-export type PendingMedia = {
-    tempId: string; // unique identifier for local tracking
-    albumId: Id<'albums'>;
-    localUri: string;
-    filename: string;
-    type: 'image' | 'video';
-    width: number;
-    height: number;
-    duration?: number;
-    size?: number;
-    dateTaken?: string;
-    uploadStatus: 'pending' | 'uploading' | 'success' | 'error';
-    progress?: number;
-    error?: string;
-    // Will be populated after successful upload
-    remoteId?: string; // imageId or videoUid from Cloudflare
-    _id?: Id<'media'>; // Convex document ID after creation
-}
+// export type PendingMedia = {
+//     tempId: string; // unique identifier for local tracking
+//     albumId: Id<'albums'>;
+//     localUri: string;
+//     filename: string;
+//     type: 'image' | 'video';
+//     width: number;
+//     height: number;
+//     duration?: number;
+//     size?: number;
+//     dateTaken?: string;
+//     uploadStatus: 'pending' | 'uploading' | 'success' | 'error';
+//     progress?: number;
+//     error?: string;
+//     // Will be populated after successful upload
+//     remoteId?: string; // imageId or videoUid from Cloudflare
+//     _id?: Id<'media'>; // Convex document ID after creation
+// }
 
-// Combined type for rendering in UI
-export type DisplayMedia = Media | PendingMedia;
+// // Combined type for rendering in UI
+// export type DisplayMedia = Media | PendingMedia;
 
-// Type guards
-export const isPendingMedia = (media: DisplayMedia): media is PendingMedia => {
-    return 'tempId' in media && 'uploadStatus' in media;
-}
+// // Type guards
+// export const isPendingMedia = (media: DisplayMedia): media is PendingMedia => {
+//     return 'tempId' in media && 'uploadStatus' in media;
+// }
 
-export const isDbMedia = (media: DisplayMedia): media is Media => {
-    return '_id' in media && !('tempId' in media);
-}
+// export const isDbMedia = (media: DisplayMedia): media is Media => {
+//     return '_id' in media && !('tempId' in media);
+// }
 
-export interface ProcessAssetResponse {
-    status: 'success' | 'error';
-    error?: string;
-    result: {
-        filename: string;
-        size: number | undefined;
-        type: string;
-        assetId: string;
-        width: number;
-        height: number;
-        duration?: number;
-    } | null;
-}
+// export interface ProcessAssetResponse {
+//     status: 'success' | 'error';
+//     error?: string;
+//     result: {
+//         filename: string;
+//         size: number | undefined;
+//         type: string;
+//         assetId: string;
+//         width: number;
+//         height: number;
+//         duration?: number;
+//     } | null;
+// }
 
-export interface UploadURLResponse {
-    result: {
-        id: string;
-        uploadURL: string;
-    };
-    success: boolean;
-    errors: string[];
-    messages: string[];
-}
+// export interface UploadURLResponse {
+//     result: {
+//         id: string;
+//         uploadURL: string;
+//     };
+//     success: boolean;
+//     errors: string[];
+//     messages: string[];
+// }
 
 
 

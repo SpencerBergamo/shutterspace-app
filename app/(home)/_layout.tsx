@@ -1,5 +1,5 @@
+import { MediaCacheProvider } from "@/context/MediaCacheContext";
 import { ProfileProvider } from "@/context/ProfileContext";
-import { SignedUrlsProvider } from "@/context/SignedUrlsContext";
 
 import { useTheme } from "@/context/ThemeContext";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
@@ -46,6 +46,10 @@ function HomeLayout() {
                 headerShown: true,
             }} />
 
+            <Stack.Screen name="album/[albumId]/gallery" options={{
+                headerShown: true,
+            }} />
+
             <Stack.Screen name="(profile)/edit" options={{
                 headerTitle: 'Edit Profile',
                 headerLeft: backButton,
@@ -58,11 +62,11 @@ function HomeLayout() {
 export default function Layout() {
     return (
         <ProfileProvider>
-            <SignedUrlsProvider>
+            <MediaCacheProvider>
                 <ActionSheetProvider>
                     <HomeLayout />
                 </ActionSheetProvider>
-            </SignedUrlsProvider>
+            </MediaCacheProvider>
         </ProfileProvider>
     );
 }

@@ -1,3 +1,4 @@
+import { useMediaCache } from "@/context/MediaCacheContext";
 import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -9,7 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useMemo, useState } from "react";
 
 
-type InFlightUploadStatus = 'pending' | 'uploading' | 'success' | 'error';
+type InFlightUploadStatus = 'pending' | 'ready' | 'error';
 
 interface InFlightUpload {
     asset: ImagePicker.ImagePickerAsset;
@@ -18,14 +19,14 @@ interface InFlightUpload {
     identifier?: string; // Track the imageId or videoUid for matching
 }
 
-interface UseAlbumMediaResult {
+interface UseMediaResult {
     media: Media[];
     selectAndUpload: () => Promise<void>;
-    inFlightUploads: InFlightUpload[];
 }
 
-export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
+export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
     const { profileId } = useProfile();
+    const { cachedMedia, cacheMediaInBackground } = useMediaCache();
 
     const requestImageUploadURL = useAction(api.cloudflare.requestImageUploadURL);
     const requestVideoUploadURL = useAction(api.cloudflare.requestVideoUploadURL);
@@ -33,62 +34,74 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
     const dbMedia: DbMedia[] | undefined = useQuery(api.media.getMediaForAlbum, { albumId, profileId }) ?? [];
     const createMedia = useMutation(api.media.createMedia);
 
-    const [inFlightUploads, setInFlightUploads] = useState<InFlightUpload[]>([]);
+    const [inFlightUploads, setInFlightUploads] = useState<Record<Id<'albums'>, InFlightUpload[]>>({});
 
     const addInFlightUpload = useCallback((asset: ImagePicker.ImagePickerAsset, status: InFlightUploadStatus, mediaId?: Id<'media'>, identifier?: string) => {
-        setInFlightUploads(prev => [...prev, { asset, status, mediaId, identifier }]);
-    }, []);
+        // setInFlightUploads(prev => [...prev, { asset, status, mediaId, identifier }]);
+        setInFlightUploads(prev => ({
+            ...prev,
+            [albumId]: [...(prev[albumId] || []), { asset, status, mediaId, identifier }],
+        }))
+    }, [albumId]);
 
     const updateInFlightUpload = useCallback((asset: ImagePicker.ImagePickerAsset, updates: Partial<InFlightUpload>) => {
-        setInFlightUploads(prev => prev.map(upload =>
-            upload.asset === asset ? { ...upload, ...updates } : upload
-        ));
-    }, []);
+        setInFlightUploads(prev => ({
+            ...prev,
+            [albumId]: prev[albumId].map(upload =>
+                upload.asset === asset ? { ...upload, ...updates } : upload
+            ),
+        }))
+    }, [albumId]);
 
     const removeInFlightUpload = useCallback((asset: ImagePicker.ImagePickerAsset) => {
-        setInFlightUploads(prev => prev.filter(upload => upload.asset !== asset));
-    }, []);
+        setInFlightUploads(prev => ({
+            ...prev,
+            [albumId]: prev[albumId].filter(upload => upload.asset !== asset),
+        }))
+    }, [albumId]);
 
     const media: Media[] = useMemo(() => {
-        // For the current user, merge dbMedia with inFlightUploads to show local URIs during upload
+        if (!dbMedia) return [];
+
+        const albumInFlightUploads = inFlightUploads[albumId] || [];
+
         return dbMedia.map(dbMediaItem => {
-            // Find matching inFlightUpload by mediaId or identifier
-            const matchingInFlightUpload = inFlightUploads.find(upload => {
-                // First try to match by mediaId (most reliable)
-                if (upload.mediaId === dbMediaItem._id) {
-                    return true;
-                }
+            switch (dbMediaItem.status) {
+                case 'pending':
+                    const matchingInFlightUpload = albumInFlightUploads.find(upload => upload.mediaId === dbMediaItem._id);
 
-                // Fallback: match by identifier (imageId or videoUid)
-                if (upload.identifier) {
-                    if (dbMediaItem.identifier.type === 'image') {
-                        return upload.identifier === dbMediaItem.identifier.imageId;
-                    } else if (dbMediaItem.identifier.type === 'video') {
-                        return upload.identifier === dbMediaItem.identifier.videoUid;
+                    return {
+                        ...dbMediaItem,
+                        uri: matchingInFlightUpload?.asset.uri ?? undefined,
+                        error: false,
                     }
-                }
+                case 'error':
+                    return {
+                        ...dbMediaItem,
+                        error: true,
+                    } as Media;
+                case 'ready':
+                    const uri = cachedMedia.find(m => m.mediaId === dbMediaItem._id)?.uri ?? undefined;
 
-                return false;
-            });
+                    if (!uri) {
+                        cacheMediaInBackground(dbMediaItem, profileId);
+                    }
 
-            // Only show local URI for current user's uploads that are still in progress
-            if (matchingInFlightUpload &&
-                dbMediaItem.uploaderId === profileId &&
-                (dbMediaItem.uploadStatus === 'uploading' || dbMediaItem.uploadStatus === 'pending')) {
+                    return {
+                        ...dbMediaItem,
+                        uri,
+                        error: false,
+                    } as Media;
 
-                return {
-                    ...dbMediaItem,
-                    localUri: matchingInFlightUpload.asset.uri, // Use local device URI for immediate display
-                } as Media;
+                default:
+                    return {
+                        ...dbMediaItem,
+                    } as Media;
+
             }
-
-            // For completed uploads, other users' uploads, or when no matching inFlightUpload
-            return {
-                ...dbMediaItem,
-                localUri: '', // Empty - UI will request signed URLs from Cloudflare
-            } as Media;
         });
-    }, [dbMedia, inFlightUploads, profileId]);
+
+    }, [dbMedia, inFlightUploads, cachedMedia, cacheMediaInBackground, albumId, profileId]);
 
     const uploadImage = useCallback(async (image: ImagePicker.ImagePickerAsset, isLast: boolean) => {
         if (image.type !== 'image') return;
@@ -103,7 +116,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             const { id, uploadURL } = uploadUrlResponse.result;
 
             // Add to inFlightUploads with identifier for tracking
-            addInFlightUpload(image, 'uploading', undefined, id);
+            addInFlightUpload(image, 'pending', undefined, id);
 
             // Create the media document in Convex
             const mediaId = await createMedia({
@@ -135,7 +148,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             };
 
             // Mark as successful
-            updateInFlightUpload(image, { status: 'success' });
+            updateInFlightUpload(image, { status: 'ready' });
 
             if (isLast) {
                 updateAlbum({
@@ -168,7 +181,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             const { uid, uploadURL } = uploadUrlResponse.result;
 
             // Add to inFlightUploads with identifier for tracking
-            addInFlightUpload(video, 'uploading', undefined, uid);
+            addInFlightUpload(video, 'pending', undefined, uid);
 
             // Create the media document in Convex
             const mediaId = await createMedia({
@@ -199,7 +212,7 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
             };
 
             // Mark as successful (video processing will update via webhook)
-            updateInFlightUpload(video, { status: 'success' });
+            updateInFlightUpload(video, { status: 'ready' });
 
             if (isLast) {
                 updateAlbum({
@@ -246,16 +259,9 @@ export const useMedia = (albumId: Id<'albums'>): UseAlbumMediaResult => {
         }
     }, [uploadImage, uploadVideo]);
 
-    const requestMediaThumbnail = useCallback(async (media: Id<'media'>) => {
-        // return a cache if available
-
-        // request thumbnail from cloudflare and save to cache
-    }, []);
-
     return {
         media,
         selectAndUpload,
-        inFlightUploads,
     }
 }
 

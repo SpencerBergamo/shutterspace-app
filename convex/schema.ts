@@ -104,10 +104,9 @@ export default defineSchema({
             address: v.optional(v.string()),
         })),
         isDeleted: v.boolean(),
-        uploadStatus: v.optional(v.union(
+        status: v.optional(v.union(
             v.literal('pending'),
-            v.literal('uploading'),
-            v.literal('success'),
+            v.literal('ready'),
             v.literal('error'),
         )),
     }).index("by_albumId", ["albumId"])

@@ -1,124 +1,28 @@
 import FloatingActionButton from "@/components/FloatingActionButton";
-import { useProfile } from "@/context/ProfileContext";
-import { useSignedUrls } from "@/context/SignedUrlsContext";
+import MediaTile from "@/components/media/mediaTile";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
-import { DbMedia } from "@/types/Media";
+import { Media } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
-import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { CircleEllipsis, CloudAlert, Images, Play } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
-
-interface MediaTileProps {
-    albumId: Id<'albums'>;
-    media: DbMedia;
-    width: number;
-    height: number;
-}
-
-function MediaTile({ media, albumId, width, height }: MediaTileProps) {
-    const { profileId } = useProfile();
-    const { requestSignedEntry } = useSignedUrls();
-
-    const type = media.identifier.type;
-    const cloudflareId = type === 'image' ? media.identifier.imageId : media.identifier.videoUid;
-
-    const [uri, setUri] = useState<string | undefined>(undefined);
-    const [imageError, setImageError] = useState<boolean>(false);
-
-    useEffect(() => {
-        const signed = async () => {
-            const cached = await requestSignedEntry({ albumId, profileId, mediaId: media._id, cloudflareId, type });
-            if (cached) {
-                if (type === 'video') {
-                    setUri(`${process.env.CLOUDFLARE_STREAMS_BASE_URL}/thumbnails/thumbnail.jpg?token=${cached.value}`);
-                } else if (type === 'image') {
-                    setUri(cached.value);
-                } else {
-                    setImageError(true);
-                }
-
-                setImageError(false);
-            } else {
-                setUri(undefined);
-                setImageError(true);
-            }
-        }
-
-        signed();
-    }, [media, uri, requestSignedEntry]);
-
-    if (imageError) return (
-        <View style={[styles.mediaTile, { width, height }]}>
-            <CloudAlert size={24} color="red" />
-        </View>
-    );
-
-    return (
-        <View style={[styles.mediaTile, { width, height }]}>
-            <Image
-                source={{ uri }}
-                style={{ width: '100%', height: '100%' }}
-                contentFit="cover"
-            />
-
-            {!uri && <View style={[styles.stackContainer, styles.mediaLoadingIndicator]}>
-                <ActivityIndicator size="small" color="white" />
-            </View>}
-
-            {type === 'video' && <View style={[styles.stackContainer, styles.videoOverlay]}>
-                <Play size={24} color="white" />
-            </View>}
-        </View>
-    );
-}
+import { CircleEllipsis, Images } from "lucide-react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export default function AlbumScreen() {
-    const { width } = useWindowDimensions();
     const { theme } = useTheme();
-    const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
-    const { getAlbumById } = useAlbums();
-    const album = getAlbumById(albumId);
-    const { media, selectAndUpload, inFlightUploads } = useMedia(albumId);
-
+    const { width } = useWindowDimensions();
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 3, gap: 2, aspectRatio: 1 }), [width]);
-    const [showHeader] = useState<boolean>(false);
-    const animatedHeaderHeight = useRef(new Animated.Value(0)).current;
 
-    useEffect(() => {
-        if (inFlightUploads.length > 0) {
-            const toValue = showHeader ? 0 : 70;
-            Animated.timing(animatedHeaderHeight, {
-                toValue,
-                duration: 300,
-                useNativeDriver: false,
-            }).start();
-        } else {
-            animatedHeaderHeight.setValue(0);
-        }
-    }, [inFlightUploads, showHeader]);
+    const { getAlbumById } = useAlbums();
+    const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
+    const album = getAlbumById(albumId);
+    const { media, selectAndUpload } = useMedia(albumId);
 
-    const renderHeader = useCallback(() => {
-        const anyFailed = inFlightUploads.some(upload => upload.status === 'error');
-        return (
-            <Animated.View style={{ flex: 1, height: animatedHeaderHeight }}>
-                <View style={{ flex: 1, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}>
-                    {anyFailed ? (
-                        <View>
-                            <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginRight: 12 }} />
-                            <Text>Uploading {inFlightUploads.length} photos...</Text>
-                        </View>
-                    ) : (
-                        <View></View>
-                    )}
-                </View>
-            </Animated.View>
-        );
-    }, [inFlightUploads, theme]);
+    const [showMediaViewer, setShowMediaViewer] = useState(false);
+    const flatListRef = useRef<FlatList>(null);
 
     if (!album) return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -134,6 +38,17 @@ export default function AlbumScreen() {
         </View>
     );
 
+    const renderMediaTile = useCallback(({ media }: { media: Media }) => {
+        return (
+            <MediaTile
+                media={media}
+                onPress={() => { console.log('press', media._id) }}
+                onDelete={() => { console.log('delete', media._id) }}
+                onError={() => console.error('error loading uri', media._id)}
+            />
+        );
+    }, [media]);
+
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <Stack.Screen options={{
@@ -145,13 +60,14 @@ export default function AlbumScreen() {
                 )
             }} />
             <FlatList
+                ref={flatListRef}
                 data={media}
                 keyExtractor={(item) => item._id}
                 numColumns={gridConfig.numColumns}
                 columnWrapperStyle={gridConfig.columnWrapperStyle}
                 contentContainerStyle={gridConfig.contentContainerStyle}
                 style={{ padding: 2 }}
-                ListHeaderComponent={renderHeader}
+                // ListHeaderComponent={renderHeader}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Images size={48} color="#ccc" style={{ margin: 16 }} />
@@ -160,16 +76,15 @@ export default function AlbumScreen() {
                         <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
                     </View>
                 }
-
-                renderItem={({ item }) => <MediaTile
-                    albumId={albumId}
-                    media={item}
-                    width={gridConfig.tileWidth}
-                    height={gridConfig.tileHeight}
-                />}
+                renderItem={({ item }) => renderMediaTile(item)}
             />
 
             <FloatingActionButton icon="plus" onPress={selectAndUpload} />
+
+            {/* {showMediaViewer && <MediaViewer
+                media={media}
+                initialIndex={0}
+                onClose={() => setShowMediaViewer(false)} />} */}
         </View>
     );
 }
@@ -211,32 +126,5 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-
-    // Media Tile Styles
-    mediaTile: {
-        overflow: 'hidden',
-        position: 'relative',
-        borderRadius: 4,
-    },
-
-    stackContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-    },
-
-    mediaLoadingIndicator: {
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-
-    videoOverlay: {
-        justifyContent: 'flex-end',
-        alignItems: 'flex-end',
-        padding: 12,
     },
 });

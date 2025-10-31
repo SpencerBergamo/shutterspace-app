@@ -22,9 +22,9 @@
       }
     },
     "splash": {
-      "backgroundColor": "#00ADB5",
+      "backgroundColor": "#ffffff",
       "resizeMode": "contain",
-      "image": "./assets/brand/splash/splash-icon.png"
+      "image": "./assets/brand/splash/splash-light.png"
     },
     "android": {
       "versionCode": 10,
@@ -33,7 +33,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/brand/android/adaptive-icon.png",
         "monochromeImage": "./assets/brand/android/adaptive-icon.png",
-        "backgroundColor": "#00ADB5"
+        "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
@@ -102,18 +102,22 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/brand/splash/splash-icon.png",
+          "image": "./assets/brand/splash/splash-light.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#00ADB5",
+          "backgroundColor": "#ffffff",
           "dark": {
-            "image": "./assets/brand/splash/splash-icon.png",
+            "image": "./assets/brand/splash/splash-dark.png",
             "backgroundColor": "#000000"
           }
         }
       ],
+      [
+        "expo-sqlite"
+      ],
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-sqlite"
     ],
     "extra": {
       "eas": {
