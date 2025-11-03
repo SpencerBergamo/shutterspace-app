@@ -1,6 +1,4 @@
-import { MediaCacheProvider } from "@/context/MediaCacheContext";
 import { ProfileProvider } from "@/context/ProfileContext";
-
 import { useTheme } from "@/context/ThemeContext";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { router, Stack } from "expo-router";
@@ -62,11 +60,9 @@ function HomeLayout() {
 export default function Layout() {
     return (
         <ProfileProvider>
-            <MediaCacheProvider>
-                <ActionSheetProvider>
-                    <HomeLayout />
-                </ActionSheetProvider>
-            </MediaCacheProvider>
+            <ActionSheetProvider>
+                <HomeLayout />
+            </ActionSheetProvider>
         </ProfileProvider>
     );
 }

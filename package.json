@@ -9,10 +9,8 @@
   },
   "dependencies": {
     "@expo/react-native-action-sheet": "^4.1.1",
-    "@expo/vector-icons": "^14.1.0",
     "@gorhom/bottom-sheet": "^5.1.6",
     "@invertase/react-native-apple-authentication": "^2.4.1",
-    "@kolking/react-native-avatar": "^2.1.5",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-community/datetimepicker": "8.4.1",
     "@react-native-firebase/app": "^22.2.1",
@@ -51,9 +49,7 @@
     "expo-secure-store": "~14.2.4",
     "expo-sharing": "~13.1.5",
     "expo-splash-screen": "~0.30.10",
-    "expo-sqlite": "~15.2.14",
     "expo-status-bar": "~2.2.3",
-    "expo-symbols": "~0.4.4",
     "expo-system-ui": "~5.0.11",
     "expo-task-manager": "~13.1.6",
     "expo-video": "~2.2.1",
@@ -64,7 +60,6 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.6",
-    "react-native-dialog": "^9.3.0",
     "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-get-random-values": "^1.11.0",
@@ -74,8 +69,6 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-svg": "15.11.2",
-    "react-native-toast-message": "^2.3.0",
-    "react-native-webview": "13.13.5",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

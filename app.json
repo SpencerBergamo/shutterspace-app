@@ -111,12 +111,8 @@
           }
         }
       ],
-      [
-        "expo-sqlite"
-      ],
       "expo-secure-store",
-      "expo-web-browser",
-      "expo-sqlite"
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

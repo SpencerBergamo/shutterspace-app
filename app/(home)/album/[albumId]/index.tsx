@@ -1,5 +1,5 @@
 import FloatingActionButton from "@/components/FloatingActionButton";
-import MediaTile from "@/components/media/tile";
+import MediaTile from "@/components/media/mediaTile";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
