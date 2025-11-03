@@ -98,7 +98,6 @@
           "cameraPermission": "Shutterspace needs access to your camera to let you take photos and videos."
         }
       ],
-      "react-native-compressor",
       [
         "expo-splash-screen",
         {
