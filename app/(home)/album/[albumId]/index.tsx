@@ -1,14 +1,13 @@
 import FloatingActionButton from "@/components/FloatingActionButton";
-import MediaTile from "@/components/media/mediaTile";
+import MediaTile from "@/components/media/tile";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
-import { Media } from "@/types/Media";
 import getGridLayout from "@/utils/getGridLyout";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { CircleEllipsis, Images } from "lucide-react-native";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export default function AlbumScreen() {
@@ -20,8 +19,6 @@ export default function AlbumScreen() {
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const album = getAlbumById(albumId);
     const { media, selectAndUpload } = useMedia(albumId);
-
-    const [showMediaViewer, setShowMediaViewer] = useState(false);
     const flatListRef = useRef<FlatList>(null);
 
     if (!album) return (
@@ -37,17 +34,6 @@ export default function AlbumScreen() {
             </View>
         </View>
     );
-
-    const renderMediaTile = useCallback(({ media }: { media: Media }) => {
-        return (
-            <MediaTile
-                media={media}
-                onPress={() => { console.log('press', media._id) }}
-                onDelete={() => { console.log('delete', media._id) }}
-                onError={() => console.error('error loading uri', media._id)}
-            />
-        );
-    }, [media]);
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -76,15 +62,19 @@ export default function AlbumScreen() {
                         <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
                     </View>
                 }
-                renderItem={({ item }) => renderMediaTile(item)}
+                renderItem={({ item }) => {
+                    return (
+                        <Pressable onPress={() => { }} onLongPress={() => { }}>
+                            <MediaTile
+                                media={item}
+                                onError={() => { }}
+                            />
+                        </Pressable>
+                    );
+                }}
             />
 
             <FloatingActionButton icon="plus" onPress={selectAndUpload} />
-
-            {/* {showMediaViewer && <MediaViewer
-                media={media}
-                initialIndex={0}
-                onClose={() => setShowMediaViewer(false)} />} */}
         </View>
     );
 }

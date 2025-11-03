@@ -98,8 +98,7 @@ export const updateMediaUploadStatusByVideoUid = mutation({
         videoUid: v.string(),
         status: v.union(
             v.literal('pending'),
-            v.literal('uploading'),
-            v.literal('success'),
+            v.literal('ready'),
             v.literal('error'),
         ),
     }, handler: async (ctx, { videoUid, status }) => {
@@ -112,6 +111,6 @@ export const updateMediaUploadStatusByVideoUid = mutation({
             return;
         }
 
-        await ctx.db.patch(media._id, { uploadStatus: status });
+        await ctx.db.patch(media._id, { status: status });
     }
 })

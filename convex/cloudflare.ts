@@ -130,7 +130,17 @@ export const requestImageDeliveryURL = action({
 
         if (!membership || !identity) throw new Error('Unauthorized');
 
-        return issueSignedImageURL(imageId);
+        // return issueSignedImageURL(imageId);
+        const sigKey = process.env.CLOUDFLARE_IMAGE_SIG_TOKEN;
+        const accountHash = process.env.CLOUDFLARE_ACCOUNT_HASH;
+
+        const expiry = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
+
+        const path = `/${accountHash}/${imageId}/public?exp=${expiry}`;
+
+        const sig = crypto.createHmac('sha256', sigKey).update(path).digest('hex');
+
+        return `https://imagedelivery.net${path}&sig=${sig}`;
     }
 });
 
@@ -156,28 +166,52 @@ export const requestVideoPlaybackToken = action({
 
         if (!membership || !identity) throw new Error('Unauthorized');
 
-        return issueSignedVideoToken(videoUID);
+        const base64PEM = process.env.CLOUDFLARE_STREAM_PEM;
+        const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;
+
+        if (!base64PEM || !keyID) throw new Error('Missing PEM or Key ID');
+
+        const pem = Buffer.from(base64PEM, 'base64').toString('utf8');
+        const expiresIn = Math.floor(Date.now() / 1000) + 60 * 60 * 6; // 6 hours
+
+        const header = {
+            alg: 'RS256',
+            typ: 'JWT', //new
+            kid: keyID,
+        };
+
+        const payload = {
+            sub: videoUID,
+            exp: expiresIn,
+        };
+
+        const encode = (obj: any) => {
+            const json = JSON.stringify(obj);
+            return Buffer.from(json)
+                .toString('base64')
+                .replace(/=/g, "")
+                .replace(/\+/g, "-")
+                .replace(/\//g, "_");
+        };
+
+        const encodedHeader = encode(header);
+        const encodedPayload = encode(payload);
+        const message = `${encodedHeader}.${encodedPayload}`;
+
+        const signer = crypto.createSign('RSA-SHA256');
+        signer.update(message);
+        signer.end();
+
+        const signatureToBuffer = signer.sign(pem, 'base64');
+        const signature = signatureToBuffer
+            .replace(/=/g, "")
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_");
+
+        console.log(`Signed Video Token: ${message}.${signature}`);
+        return `${message}.${signature}`;
     }
 });
-
-/** 
- * @function issueSignedImageURL
- * @description This function is used to issue a signed image URL for a given identifier.
- * @param {string} identifier - the identifier of the image to issue a signed URL for.
- * @returns {Promise<string>} - a promise resolving to the signed image URL.
- */
-async function issueSignedImageURL(identifier: string): Promise<string> {
-    const sigKey = process.env.CLOUDFLARE_IMAGE_SIG_TOKEN;
-    const accountHash = process.env.CLOUDFLARE_ACCOUNT_HASH;
-
-    const expiry = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
-
-    const path = `/${accountHash}/${identifier}/public?exp=${expiry}`;
-
-    const sig = crypto.createHmac('sha256', sigKey).update(path).digest('hex');
-
-    return `https://imagedelivery.net${path}&sig=${sig}`;
-}
 
 /**
  * @param videoUID @function issueSignedVideoToken
@@ -230,7 +264,6 @@ async function issueSignedVideoToken(videoUID: string): Promise<string> {
         .replace(/\+/g, "-")
         .replace(/\//g, "_");
 
-    console.log(`Signed Video Token: ${message}.${signature}`);
+    // console.log(`Signed Video Token: ${message}.${signature}`);
     return `${message}.${signature}`;
-
 };
