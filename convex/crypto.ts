@@ -2,6 +2,9 @@
 
 import { v } from 'convex/values';
 import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
+import { internal } from './_generated/api';
+import { Id } from './_generated/dataModel';
 import { action } from './_generated/server';
 
 /**
@@ -49,5 +52,27 @@ export const verifyWebhookSig = action({
         );
 
         return valid;
+    }
+});
+
+export const generateInviteCode = action({
+    args: {
+        albumId: v.id('albums'),
+        createdBy: v.id('profiles'),
+        role: v.union(
+            v.literal('member'),
+            v.literal('moderator'),
+        ),
+    },
+    handler: async (ctx, args): Promise<Id<'inviteCodes'>> => {
+
+        const expiresAt = Date.now() + 1000 * 60 * 60 * 24; // 3 days
+        const code = crypto.createHash('sha256').update(uuidv4()).digest('base64url');
+
+        return await ctx.runMutation(internal.inviteCodes.createInviteCode, {
+            ...args,
+            expiresAt,
+            code,
+        });
     }
 })
