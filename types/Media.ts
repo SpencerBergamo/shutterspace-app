@@ -14,11 +14,11 @@ import { Id } from "@/convex/_generated/dataModel";
 // }
 
 // Base media document that represents the data stored in Convex
-export type DbMedia = {
+export type Media = {
     _id: Id<'media'>; // the filename of the asset
     _creationTime: number;
     albumId: Id<'albums'>;
-    uploaderId: Id<'profiles'>;
+    createdBy: Id<'profiles'>;
     filename: string;
     identifier: {
         type: 'image';
@@ -42,13 +42,6 @@ export type DbMedia = {
     },
     isDeleted: boolean;
     status: 'pending' | 'ready' | 'error';
-}
-
-export type TypeAndID = { type: 'image' | 'video'; id: string; }
-
-export type Media = DbMedia & {
-    uri?: string;
-    error: boolean;
 }
 
 // Optimistic media for immediate display of selected assets before upload

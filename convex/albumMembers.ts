@@ -12,4 +12,4 @@ export const isMember = query({
 
         return !!member;
     }
-})
+});

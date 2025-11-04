@@ -27,7 +27,6 @@ export default defineSchema({
         createdAt: v.number(),
         updatedAt: v.number(),
     }).index('by_userId', ['userId'])
-        .index('by_friendId', ['friendId'])
         .index('by_user_and_status', ['userId', 'friendId', 'status'])
         .index('by_pair', ['userId', 'friendId'])
         .index('by_pair_reverse', ['friendId', 'userId']),
@@ -36,12 +35,10 @@ export default defineSchema({
         hostId: v.id("profiles"),
         title: v.string(),
         description: v.optional(v.string()),
-        thumbnailFileId: v.optional(v.object({
-            type: v.union(v.literal('image'), v.literal('video')),
-            fileId: v.string(),
-        })),
+        thumbnail: v.optional(v.id('media')),
         isDynamicThumbnail: v.boolean(),
         openInvites: v.boolean(),
+        inviteCode: v.optional(v.string()),
         dateRange: v.optional(v.object({
             start: v.string(),
             end: v.optional(v.string()),
@@ -56,7 +53,10 @@ export default defineSchema({
         expiresAt: v.optional(v.number()),
         isDeleted: v.boolean(),
     }).index('by_hostId', ['hostId'])
-        .index('by_updatedAt', ['updatedAt']),
+        .index('by_updatedAt', ['updatedAt'])
+        .index('by_dateRange', ['dateRange'])
+        .index('by_location', ['location'])
+        .index('by_isDeleted', ['isDeleted']),
 
     albumMembers: defineTable({
         albumId: v.id("albums"),
@@ -71,14 +71,20 @@ export default defineSchema({
         .index("by_profileId", ["profileId"])
         .index("by_album_profileId", ["albumId", "profileId"]),
 
-    joinCodes: defineTable({
+    inviteCodes: defineTable({
+        code: v.string(), // 6-character alphanumeric code
         albumId: v.id('albums'),
-        expiresAt: v.optional(v.number()),
+        createdBy: v.id('profiles'),
+        expiresAt: v.number(),
+        role: v.union(
+            v.literal('member'),
+            v.literal('moderator'),
+        )
     }),
 
     media: defineTable({
         albumId: v.id("albums"),
-        uploaderId: v.id('profiles'),
+        createdBy: v.id('profiles'),
         filename: v.string(),
         identifier: v.union(
             v.object({
@@ -104,23 +110,25 @@ export default defineSchema({
             address: v.optional(v.string()),
         })),
         isDeleted: v.boolean(),
-        status: v.optional(v.union(
+        status: v.union(
             v.literal('pending'),
             v.literal('ready'),
             v.literal('error'),
-        )),
+        ),
     }).index("by_albumId", ["albumId"])
-        .index("by_profileId", ["uploaderId"])
-        .index("by_videoUid", ["identifier.videoUid"]),
+        .index("by_profileId", ["createdBy"])
+        .index("by_videoUid", ["identifier.videoUid"])
+        .index("by_imageId", ["identifier.imageId"])
+        .index('by_isDeleted', ['isDeleted']),
 
     comments: defineTable({
         mediaId: v.id("media"),
-        profileId: v.id("profiles"),
+        createdBy: v.id("profiles"),
         text: v.string(),
         createdAt: v.number(),
         parentCommentId: v.optional(v.id('comments')),
     }).index("by_mediaId", ["mediaId"])
-        .index("by_profileId", ["profileId"])
+        .index("by_profileId", ["createdBy"])
         .index("by_parentCommentId", ["parentCommentId"]) // for threaded replies
         .index('by_mediaId_createdAt', ['mediaId', 'createdAt']), // for chronological ordering
 
@@ -128,8 +136,7 @@ export default defineSchema({
         mediaId: v.id("media"),
         profileId: v.id("profiles"),
         createdAt: v.number(), // Timestamp
-    })
-        .index("by_mediaId", ["mediaId"])
+    }).index("by_mediaId", ["mediaId"])
         .index("by_profileId", ["profileId"])
         .index("by_mediaId_profileId", ["mediaId", "profileId"]), // for tracking likes per media
 });

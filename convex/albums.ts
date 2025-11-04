@@ -63,7 +63,7 @@ export const getPublicAlbumInfo = query({
             hostId: album.hostId,
             title: album.title,
             description: album.description,
-            thumbnailFileId: album.thumbnailFileId,
+            thumbnail: album.thumbnail,
             dateRange: album.dateRange,
             location: album.location,
             expiresAt: album.expiresAt,
@@ -76,10 +76,7 @@ export const createAlbum = mutation({
         hostId: v.id('profiles'),
         title: v.string(),
         description: v.optional(v.string()),
-        thumbnailFileId: v.optional(v.object({
-            type: v.union(v.literal('image'), v.literal('video')),
-            fileId: v.string(),
-        })),
+        thumbnail: v.optional(v.id('media')),
         isDynamicThumbnail: v.boolean(),
         openInvites: v.boolean(),
         dateRange: v.optional(v.object({
@@ -101,7 +98,7 @@ export const createAlbum = mutation({
             hostId: args.hostId,
             title: args.title,
             description: args.description,
-            thumbnailFileId: args.thumbnailFileId,
+            thumbnail: args.thumbnail,
             isDynamicThumbnail: args.isDynamicThumbnail,
             openInvites: args.openInvites,
             dateRange: args.dateRange,
@@ -128,10 +125,7 @@ export const updateAlbum = mutation({
         profileId: v.id('profiles'),
         title: v.optional(v.string()),
         description: v.optional(v.string()),
-        thumbnailFileId: v.optional(v.object({
-            type: v.union(v.literal('image'), v.literal('video')),
-            fileId: v.string(),
-        })),
+        thumbnail: v.optional(v.id('media')),
         isDynamicThumbnail: v.optional(v.boolean()),
         openInvites: v.optional(v.boolean()),
         dateRange: v.optional(v.object({
@@ -166,7 +160,7 @@ export const updateAlbum = mutation({
         const updates = {
             title: args.title ?? album.title,
             description: args.description ?? album.description,
-            thumbnailFileId: args.thumbnailFileId ?? album.thumbnailFileId,
+            thumbnail: args.thumbnail ?? album.thumbnail,
             isDynamicThumbnail: args.isDynamicThumbnail ?? true,
             openInvites: args.openInvites ?? true,
             dateRange: args.dateRange ?? album.dateRange,

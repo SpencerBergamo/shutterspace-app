@@ -18,7 +18,7 @@ export default function AlbumScreen() {
     const { getAlbumById } = useAlbums();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const album = getAlbumById(albumId);
-    const { media, selectAndUpload } = useMedia(albumId);
+    const { media, selectAndUpload, removeInFlightUpload, getInFlightUploadURI } = useMedia(albumId);
     const flatListRef = useRef<FlatList>(null);
 
     if (!album) return (
@@ -63,13 +63,19 @@ export default function AlbumScreen() {
                     </View>
                 }
                 renderItem={({ item }) => {
+                    const inFlightURI = getInFlightUploadURI(item._id);
+
                     return (
-                        <Pressable onPress={() => { }} onLongPress={() => { }}>
-                            <MediaTile
-                                media={item}
-                                onError={() => { }}
-                            />
-                        </Pressable>
+                        <MediaTile
+                            media={item}
+                            onPress={() => { }}
+                            onLongPress={() => { }}
+                            onReady={() => {
+                                removeInFlightUpload(item._id);
+                            }}
+                            onError={() => { }}
+                            inFlightURI={inFlightURI}
+                        />
                     );
                 }}
             />

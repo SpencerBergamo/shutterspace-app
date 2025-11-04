@@ -1,5 +1,6 @@
+import { Media } from "@/types/Media";
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 
 export const createMedia = mutation({
     args: {
@@ -32,12 +33,13 @@ export const createMedia = mutation({
     }, handler: async (ctx, args) => {
         return await ctx.db.insert("media", {
             albumId: args.albumId,
-            uploaderId: args.uploaderId,
+            createdBy: args.uploaderId,
             filename: args.filename,
             identifier: args.identifier,
             size: args.size,
             dateTaken: args.dateTaken,
             location: args.location,
+            status: 'pending',
             isDeleted: false,
         });
     }
@@ -86,12 +88,45 @@ export const deleteMedia = mutation({
 
         if (!membership) throw new Error("You are not a member of this album");
 
-        const canDelete = membership.role === 'host' || membership.role === 'moderator' || media.uploaderId === profileId;
+        const canDelete = membership.role === 'host' || membership.role === 'moderator' || media.createdBy === profileId;
         if (!canDelete) throw new Error("You don't have permission to delete this media");
 
         await ctx.db.delete(mediaId);
     }
 });
+
+export const updateMediaStatus = internalMutation({
+    args: {
+        uid: v.string(),
+        type: v.union(
+            v.literal('image'),
+            v.literal('video'),
+        ),
+        status: v.union(
+            v.literal('pending'),
+            v.literal('ready'),
+            v.literal('error'),
+        )
+    }, handler: async (ctx, { uid, type, status }) => {
+        let media: Media | undefined | null;
+
+        switch (type) {
+            case 'image':
+                media = await ctx.db.query('media').withIndex('by_imageId', q => q.eq('identifier.imageId', uid)).first();
+                break;
+
+            case 'video':
+                media = await ctx.db.query('media').withIndex('by_videoUid', q => q.eq('identifier.videoUid', uid)).first();
+                break;
+
+            default: throw new Error("Invalid type");
+        }
+
+        if (!media) throw new Error("Media not found");
+
+        await ctx.db.patch(media._id, { status });
+    }
+})
 
 export const updateMediaUploadStatusByVideoUid = mutation({
     args: {

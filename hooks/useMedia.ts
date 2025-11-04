@@ -1,107 +1,54 @@
-import { useMediaCache } from "@/context/MediaCacheContext";
 import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { DbMedia, Media } from "@/types/Media";
+import { Media } from "@/types/Media";
 import { validateAsset } from "@/utils/mediaFactory";
 import axios from "axios";
 import { useAction, useMutation, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 
-
-type InFlightUploadStatus = 'pending' | 'ready' | 'error';
 
 interface InFlightUpload {
+    mediaId: Id<'media'>;
     asset: ImagePicker.ImagePickerAsset;
-    status: InFlightUploadStatus;
-    mediaId?: Id<'media'>; // Track the created media document ID
-    identifier?: string; // Track the imageId or videoUid for matching
 }
 
 interface UseMediaResult {
     media: Media[];
     selectAndUpload: () => Promise<void>;
+    getInFlightUploadURI: (mediaId: Id<'media'>) => string | undefined;
+    removeInFlightUpload: (mediaId: Id<'media'>) => void;
 }
 
 export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
     const { profileId } = useProfile();
-    const { cachedMedia, cacheMediaInBackground } = useMediaCache();
 
     const requestImageUploadURL = useAction(api.cloudflare.requestImageUploadURL);
     const requestVideoUploadURL = useAction(api.cloudflare.requestVideoUploadURL);
     const updateAlbum = useMutation(api.albums.updateAlbum);
-    const dbMedia: DbMedia[] | undefined = useQuery(api.media.getMediaForAlbum, { albumId, profileId }) ?? [];
+    const media = useQuery(api.media.getMediaForAlbum, { albumId, profileId }) ?? [];
     const createMedia = useMutation(api.media.createMedia);
 
     const [inFlightUploads, setInFlightUploads] = useState<Record<Id<'albums'>, InFlightUpload[]>>({});
 
-    const addInFlightUpload = useCallback((asset: ImagePicker.ImagePickerAsset, status: InFlightUploadStatus, mediaId?: Id<'media'>, identifier?: string) => {
-        // setInFlightUploads(prev => [...prev, { asset, status, mediaId, identifier }]);
+    const addInFlightUpload = useCallback((asset: ImagePicker.ImagePickerAsset, mediaId: Id<'media'>) => {
         setInFlightUploads(prev => ({
             ...prev,
-            [albumId]: [...(prev[albumId] || []), { asset, status, mediaId, identifier }],
+            [albumId]: [...(prev[albumId] || []), { asset, mediaId }],
         }))
     }, [albumId]);
 
-    const updateInFlightUpload = useCallback((asset: ImagePicker.ImagePickerAsset, updates: Partial<InFlightUpload>) => {
+    const removeInFlightUpload = useCallback((mediaId: Id<'media'>) => {
         setInFlightUploads(prev => ({
             ...prev,
-            [albumId]: prev[albumId].map(upload =>
-                upload.asset === asset ? { ...upload, ...updates } : upload
-            ),
+            [albumId]: prev[albumId].filter(upload => upload.mediaId !== mediaId),
         }))
     }, [albumId]);
 
-    const removeInFlightUpload = useCallback((asset: ImagePicker.ImagePickerAsset) => {
-        setInFlightUploads(prev => ({
-            ...prev,
-            [albumId]: prev[albumId].filter(upload => upload.asset !== asset),
-        }))
-    }, [albumId]);
-
-    const media: Media[] = useMemo(() => {
-        if (!dbMedia) return [];
-
-        const albumInFlightUploads = inFlightUploads[albumId] || [];
-
-        return dbMedia.map(dbMediaItem => {
-            switch (dbMediaItem.status) {
-                case 'pending':
-                    const matchingInFlightUpload = albumInFlightUploads.find(upload => upload.mediaId === dbMediaItem._id);
-
-                    return {
-                        ...dbMediaItem,
-                        uri: matchingInFlightUpload?.asset.uri ?? undefined,
-                        error: false,
-                    }
-                case 'error':
-                    return {
-                        ...dbMediaItem,
-                        error: true,
-                    } as Media;
-                case 'ready':
-                    const uri = cachedMedia.find(m => m.mediaId === dbMediaItem._id)?.uri ?? undefined;
-
-                    if (!uri) {
-                        cacheMediaInBackground(dbMediaItem, profileId);
-                    }
-
-                    return {
-                        ...dbMediaItem,
-                        uri,
-                        error: false,
-                    } as Media;
-
-                default:
-                    return {
-                        ...dbMediaItem,
-                    } as Media;
-
-            }
-        });
-
-    }, [dbMedia, inFlightUploads, cachedMedia, cacheMediaInBackground, albumId, profileId]);
+    const getInFlightUploadURI = useCallback((mediaId: Id<'media'>) => {
+        return inFlightUploads[albumId].find(upload => upload.mediaId === mediaId)?.asset.uri;
+    }, [albumId, inFlightUploads]);
 
     const uploadImage = useCallback(async (image: ImagePicker.ImagePickerAsset, isLast: boolean) => {
         if (image.type !== 'image') return;
@@ -116,10 +63,10 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
             const { id, uploadURL } = uploadUrlResponse.result;
 
             // Add to inFlightUploads with identifier for tracking
-            addInFlightUpload(image, 'pending', undefined, id);
+            addInFlightUpload(image, id);
 
             // Create the media document in Convex
-            const mediaId = await createMedia({
+            await createMedia({
                 albumId,
                 uploaderId: profileId,
                 filename: props.filename,
@@ -132,9 +79,6 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                 size: props.size,
             });
 
-            // Update inFlightUpload with the created mediaId for better matching
-            updateInFlightUpload(image, { mediaId });
-
             const form = new FormData();
             form.append('file', {
                 uri: props.uri,
@@ -142,31 +86,20 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                 type: props.mimeType,
             } as any);
             const response = await axios.post(uploadURL, form);
-            if (!response.data || response.status !== 200) {
-                updateInFlightUpload(image, { status: 'error' });
-                return;
-            };
-
-            // Mark as successful
-            updateInFlightUpload(image, { status: 'ready' });
+            console.log("Image Upload Response: ", response.data);
 
             if (isLast) {
                 updateAlbum({
                     albumId,
                     profileId,
-                    thumbnailFileId: {
-                        type: 'image',
-                        fileId: id,
-                    },
+                    thumbnail: id,
                 });
             }
 
         } catch (e) {
             console.error("uploadImage error: ", e);
-            updateInFlightUpload(image, { status: 'error' });
-        } finally {
         }
-    }, [createMedia, requestImageUploadURL, albumId, profileId, addInFlightUpload, updateInFlightUpload, removeInFlightUpload, updateAlbum]);
+    }, [createMedia, requestImageUploadURL, albumId, profileId, addInFlightUpload, removeInFlightUpload, updateAlbum]);
 
     const uploadVideo = useCallback(async (video: ImagePicker.ImagePickerAsset, isLast: boolean) => {
         if (video.type !== 'video') return;
@@ -181,10 +114,10 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
             const { uid, uploadURL } = uploadUrlResponse.result;
 
             // Add to inFlightUploads with identifier for tracking
-            addInFlightUpload(video, 'pending', undefined, uid);
+            addInFlightUpload(video, uid);
 
             // Create the media document in Convex
-            const mediaId = await createMedia({
+            await createMedia({
                 albumId,
                 uploaderId: profileId,
                 filename: props.filename,
@@ -195,9 +128,6 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                 },
             });
 
-            // Update inFlightUpload with the created mediaId for better matching
-            updateInFlightUpload(video, { mediaId });
-
             const form = new FormData();
             form.append('file', {
                 uri: props.uri,
@@ -206,32 +136,20 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
             } as any);
 
             const response = await axios.post(uploadURL, form);
-            if (!response.data || response.status !== 200) {
-                updateInFlightUpload(video, { status: 'error' });
-                return;
-            };
-
-            // Mark as successful (video processing will update via webhook)
-            updateInFlightUpload(video, { status: 'ready' });
+            console.log("Video Upload Response: ", response.data);
 
             if (isLast) {
                 updateAlbum({
                     albumId,
                     profileId,
-                    thumbnailFileId: {
-                        type: 'video',
-                        fileId: uid,
-                    },
+                    thumbnail: uid,
                 });
             }
         } catch (e: any) {
             console.error("uploadVideo error: ", e);
-            updateInFlightUpload(video, { status: 'error' });
-        } finally {
-            removeInFlightUpload(video);
         }
 
-    }, [createMedia, requestVideoUploadURL, albumId, profileId, addInFlightUpload, updateInFlightUpload, removeInFlightUpload, updateAlbum]);
+    }, [createMedia, requestVideoUploadURL, albumId, profileId, addInFlightUpload, updateAlbum]);
 
     const selectAndUpload = useCallback(async () => {
         const { assets } = await ImagePicker.launchImageLibraryAsync({
@@ -262,6 +180,8 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
     return {
         media,
         selectAndUpload,
+        getInFlightUploadURI,
+        removeInFlightUpload,
     }
 }
 

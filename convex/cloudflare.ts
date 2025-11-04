@@ -1,5 +1,6 @@
 "use node";
 
+import axios from "axios";
 import { v } from "convex/values";
 import crypto from 'crypto';
 import { api } from "./_generated/api";
@@ -115,6 +116,20 @@ export const requestVideoUploadURL = action({
  * @param {string} variant - the variant of the image to request access to.
  * @returns {Promise<string>} - a promise resolving to the signed image URL.
  */
+export const checkImageStatus = action({
+    args: { imageId: v.string() }, handler: async (_ctx, { imageId }) => {
+        const url = `${BASE_URL}/images/v1/${imageId}`;
+        const response = await axios.get(url, {
+            headers: {
+                Authorization: `Bearer ${API_TOKEN}`,
+            },
+        });
+
+        return !response.data.result?.draft; // draft is removed after the image is uploaded so if it's undefined, the image is ready
+    },
+})
+
+
 export const requestImageDeliveryURL = action({
     args: {
         albumId: v.id('albums'),
@@ -130,7 +145,6 @@ export const requestImageDeliveryURL = action({
 
         if (!membership || !identity) throw new Error('Unauthorized');
 
-        // return issueSignedImageURL(imageId);
         const sigKey = process.env.CLOUDFLARE_IMAGE_SIG_TOKEN;
         const accountHash = process.env.CLOUDFLARE_ACCOUNT_HASH;
 

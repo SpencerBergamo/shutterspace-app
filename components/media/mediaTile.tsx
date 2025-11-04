@@ -6,16 +6,20 @@ import { useAction } from "convex/react";
 import { Image } from 'expo-image';
 import { CloudAlert, Play } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 
 interface MediaTileProps {
     media: Media;
+    onPress: (mediaId: Id<'media'>) => void;
+    onLongPress: (mediaId: Id<'media'>) => void;
+    onReady: (mediaId: Id<'media'>) => void;
     onError: (mediaId: Id<'media'>) => void;
+    inFlightURI?: string;
 }
 
 type ImageStatus = 'loading' | 'ready' | 'error';
 
-export default function MediaTile({ media, onError }: MediaTileProps) {
+export default function MediaTile({ media, onPress, onLongPress, onReady, onError, inFlightURI }: MediaTileProps) {
     const { profileId } = useProfile();
     const requestImageDeliveryURL = useAction(api.cloudflare.requestImageDeliveryURL);
     const requestVideoPlaybackToken = useAction(api.cloudflare.requestVideoPlaybackToken);
@@ -24,15 +28,15 @@ export default function MediaTile({ media, onError }: MediaTileProps) {
     const mediaStatus = media.status;
     const type = media.identifier.type;
     const [status, setStatus] = useState<ImageStatus>('loading');
-    const [uri, setUri] = useState<string | undefined>();
+    const [uri, setUri] = useState<string | undefined>(inFlightURI);
 
     useEffect(() => {
         (async () => {
             switch (mediaStatus) {
-                case 'pending': return;
                 case 'error':
                     setStatus('error');
-                    return;
+                    break;
+
                 case 'ready':
                     try {
                         const localUri = await Image.getCachePathAsync(mediaId);
@@ -65,15 +69,17 @@ export default function MediaTile({ media, onError }: MediaTileProps) {
     }, [media, mediaStatus]);
 
     return (
-        <View style={styles.container}>
+        <Pressable style={styles.container} onPress={() => onPress(mediaId)} onLongPress={() => onLongPress(mediaId)}>
             <Image
                 key={mediaId}
                 source={{ uri, cacheKey: mediaId }}
                 style={{ width: '100%', height: '100%' }}
                 contentFit="cover"
                 cachePolicy={'memory-disk'}
+                placeholder={inFlightURI}
                 onDisplay={() => {
                     setStatus('ready');
+                    onReady(mediaId);
                 }}
                 onError={() => {
                     onError(mediaId);
@@ -93,7 +99,7 @@ export default function MediaTile({ media, onError }: MediaTileProps) {
             {status === 'error' && (
                 <CloudAlert size={24} color="red" />
             )}
-        </View>
+        </Pressable>
     );
 };
 
