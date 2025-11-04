@@ -52,7 +52,6 @@
     "expo-status-bar": "~2.2.3",
     "expo-system-ui": "~5.0.11",
     "expo-task-manager": "~13.1.6",
-    "expo-video": "~2.2.1",
     "expo-video-thumbnails": "~9.1.3",
     "expo-web-browser": "~14.2.0",
     "jsonwebtoken": "^9.0.2",
@@ -69,6 +68,7 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-svg": "15.11.2",
+    "react-native-video": "^6.17.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

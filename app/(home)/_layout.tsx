@@ -44,7 +44,7 @@ function HomeLayout() {
                 headerShown: true,
             }} />
 
-            <Stack.Screen name="album/[albumId]/gallery" options={{
+            <Stack.Screen name="viewer/[mediaId]/index" options={{
                 headerShown: true,
             }} />
 
