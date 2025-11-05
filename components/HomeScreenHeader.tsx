@@ -7,12 +7,6 @@ import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-
-/*  <Image source={ASSETS.logoSimple}
-                    style={{ height: 32, width: 32 }}
-                    contentFit="contain" /> 
-*/
-
 export default function HomeScreenHeader() {
     const { profile } = useProfile();
     const { theme } = useTheme();

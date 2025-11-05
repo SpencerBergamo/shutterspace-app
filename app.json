@@ -70,8 +70,13 @@
         "expo-media-library",
         {
           "photosPermission": "Shutterspace needs access to your photos to let you share them.",
-          "savePhotosPermission": "The app needs access to your photos to let you save them.",
-          "isAccessMediaLocationEnabled": true
+          "savePhotosPermission": "Shutterspace needs access to your photos to let you save them.",
+          "isAccessMediaLocationEnabled": true,
+          "granularPermissions": [
+            "audio",
+            "photo",
+            "video"
+          ]
         }
       ],
       [
@@ -90,7 +95,6 @@
           ]
         }
       ],
-      "expo-video",
       [
         "expo-image-picker",
         {

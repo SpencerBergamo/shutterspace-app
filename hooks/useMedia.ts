@@ -16,7 +16,7 @@ interface InFlightUpload {
 
 interface UseMediaResult {
     media: Media[];
-    selectAndUpload: () => Promise<void>;
+    uploadAssets: (assets: ImagePicker.ImagePickerAsset[]) => Promise<void>;
     getInFlightUploadURI: (mediaId: Id<'media'>) => string | undefined;
     removeInFlightUpload: (mediaId: Id<'media'>) => void;
 }
@@ -85,8 +85,8 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                 name: props.filename,
                 type: props.mimeType,
             } as any);
-            const response = await axios.post(uploadURL, form);
-            console.log("Image Upload Response: ", response.data);
+
+            await axios.post(uploadURL, form);
 
             if (isLast) {
                 updateAlbum({
@@ -97,7 +97,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
             }
 
         } catch (e) {
-            console.error("uploadImage error: ", e);
+            console.error("Failed to upload an image - ", e);
         }
     }, [createMedia, requestImageUploadURL, albumId, profileId, addInFlightUpload, removeInFlightUpload, updateAlbum]);
 
@@ -135,8 +135,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                 type: props.mimeType,
             } as any);
 
-            const response = await axios.post(uploadURL, form);
-            console.log("Video Upload Response: ", response.data);
+            await axios.post(uploadURL, form);
 
             if (isLast) {
                 updateAlbum({
@@ -146,40 +145,28 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                 });
             }
         } catch (e: any) {
-            console.error("uploadVideo error: ", e);
+            console.error("Failed to upload a video - ", e);
         }
 
     }, [createMedia, requestVideoUploadURL, albumId, profileId, addInFlightUpload, updateAlbum]);
 
-    const selectAndUpload = useCallback(async () => {
-        const { assets } = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images', 'videos'],
-            allowsMultipleSelection: true,
-            exif: true,
-            videoMaxDuration: 60,
-        });
+    const uploadAssets = useCallback(async (assets: ImagePicker.ImagePickerAsset[]) => {
 
-        if (!assets || assets.length === 0) return;
+        for (const asset of assets) {
+            const isLast = assets.at(-1) === asset;
 
-        const batch_size = 10;
-        for (let i = 0; i < assets.length; i += batch_size) {
-            const batch = assets.slice(i, i + batch_size);
-
-            await Promise.all(batch.map(async (asset) => {
-                const isLast = assets.at(-1) === asset;
-
-                if (asset.type === 'image') {
-                    await uploadImage(asset, isLast);
-                } else if (asset.type === 'video') {
-                    await uploadVideo(asset, isLast);
-                }
-            }));
+            if (asset.type === 'image') {
+                uploadImage(asset, isLast);
+            } else if (asset.type === 'video') {
+                uploadVideo(asset, isLast);
+            }
         }
     }, [uploadImage, uploadVideo]);
 
+
     return {
         media,
-        selectAndUpload,
+        uploadAssets,
         getInFlightUploadURI,
         removeInFlightUpload,
     }

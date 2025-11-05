@@ -39,7 +39,7 @@ export const validateAsset = (asset: ImagePickerAsset): ValidatedAsset => {
             }
         }
 
-        const maxSize = type === 'video' ? 10000000 : 1000000;
+        const maxSize = type === 'video' ? 2e+8 : 1e+7; // 200MB for videos, 10MB for images
         if (!size) {
             throw new Error("Invalid file size");
         } else if (size && size > maxSize) {
@@ -47,8 +47,9 @@ export const validateAsset = (asset: ImagePickerAsset): ValidatedAsset => {
         }
 
         const allowedTypes = type === 'video'
-            ? ['video/mp4', 'video/quicktime', 'video/mov', 'video/m4v', 'video/avi', 'video/wmv', 'video/flv', 'video/webm', 'video/mkv', 'video/mpeg', 'video/mpeg-2-ts', 'video/mpeg-2-ps', 'video/mxf', 'video/lxf', 'video/gxf', 'video/3gp', 'video/mpg']
-            : ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+            ? ['video/mp4', 'video/mov', 'video/quicktime']
+            : ['image/jpeg', 'image/png', 'image/jpg', 'image/heic'];
+
         if (!allowedTypes.includes(mimeType)) {
             throw new Error(`File type ${mimeType} is not allowed`);
         }

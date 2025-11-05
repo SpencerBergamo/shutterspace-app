@@ -5,8 +5,9 @@ import { useTheme } from "@/context/ThemeContext";
 import { useAlbums } from "@/hooks/useAlbums";
 import getGridLayout from "@/utils/getGridLyout";
 import { router } from "expo-router";
+import { Plus } from "lucide-react-native";
 import { useMemo } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, useWindowDimensions, View } from "react-native";
+import { FlatList, StyleSheet, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
     const { width } = useWindowDimensions();
@@ -18,27 +19,28 @@ export default function HomeScreen() {
     return (
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <HomeScreenHeader />
+            <FlatList
+                data={albums}
+                keyExtractor={(item) => item._id}
+                numColumns={gridConfig.numColumns}
+                columnWrapperStyle={gridConfig.columnWrapperStyle}
+                contentContainerStyle={gridConfig.contentContainerStyle}
+                style={{ padding: 16 }}
+                ListEmptyComponent={
+                    <View></View>
+                }
+                renderItem={({ item }) => (
+                    <AlbumCard
+                        album={item}
+                        width={gridConfig.tileWidth}
+                        height={gridConfig.tileHeight} />
+                )}
+            />
 
-            {isLoading && (<ActivityIndicator size="large" />)}
-
-            {albums.length > 0 ? (
-                <FlatList
-                    data={albums}
-                    keyExtractor={(item) => item._id}
-                    numColumns={gridConfig.numColumns}
-                    columnWrapperStyle={gridConfig.columnWrapperStyle}
-                    contentContainerStyle={gridConfig.contentContainerStyle}
-                    style={{ padding: 16 }}
-                    renderItem={({ item }) => (
-                        <AlbumCard
-                            album={item}
-                            width={gridConfig.tileWidth}
-                            height={gridConfig.tileHeight} />
-                    )}
-                />
-            ) : (<></>)}
-
-            <FloatingActionButton icon='plus' onPress={() => router.push('/new-album')} />
+            <FloatingActionButton
+                render={() => <Plus size={24} color="white" />}
+                onPress={() => router.push('/new-album')}
+            />
         </View>
     );
 }
