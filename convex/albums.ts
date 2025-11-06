@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { Doc, Id } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 
 export const getAlbumMembership = query({
     args: {
@@ -175,6 +175,15 @@ export const updateAlbum = mutation({
         return albumId;
     },
 });
+
+export const updateThumbnail = internalMutation({
+    args: {
+        albumId: v.id('albums'),
+        thumbnail: v.id('media'),
+    }, handler: async (ctx, { albumId, thumbnail }) => {
+        await ctx.db.patch(albumId, { thumbnail });
+    }
+})
 
 export const deleteAlbum = mutation({
     args: {

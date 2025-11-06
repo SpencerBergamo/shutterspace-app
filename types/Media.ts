@@ -6,18 +6,7 @@ export type Media = {
     albumId: Id<'albums'>;
     createdBy: Id<'profiles'>;
     filename: string;
-    identifier: {
-        type: 'image';
-        imageId: string;
-        width: number;
-        height: number;
-    } | {
-        type: 'video';
-        videoUid: string;
-        duration: number;
-        width?: number;
-        height?: number;
-    }
+    identifier: MediaIdentifier;
     size?: number;
     dateTaken?: string;
     location?: {
@@ -26,6 +15,19 @@ export type Media = {
         name?: string;
         address?: string;
     },
-    isDeleted: boolean;
     status: 'pending' | 'ready' | 'error';
+    isDeleted: boolean;
+}
+
+export type MediaIdentifier = {
+    type: 'image';
+    imageId: string;
+    width: number;
+    height: number;
+} | {
+    type: 'video';
+    videoUid: string;
+    duration: number;
+    width?: number;
+    height?: number;
 }

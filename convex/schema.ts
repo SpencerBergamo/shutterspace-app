@@ -85,6 +85,7 @@ export default defineSchema({
     media: defineTable({
         albumId: v.id("albums"),
         createdBy: v.id('profiles'),
+        assetId: v.string(),
         filename: v.string(),
         identifier: v.union(
             v.object({
@@ -109,16 +110,15 @@ export default defineSchema({
             name: v.optional(v.string()),
             address: v.optional(v.string()),
         })),
-        isDeleted: v.boolean(),
         status: v.union(
             v.literal('pending'),
             v.literal('ready'),
             v.literal('error'),
         ),
+        isDeleted: v.boolean(),
     }).index("by_albumId", ["albumId"])
         .index("by_profileId", ["createdBy"])
         .index("by_videoUid", ["identifier.videoUid"])
-        .index("by_imageId", ["identifier.imageId"])
         .index('by_isDeleted', ['isDeleted']),
 
     comments: defineTable({

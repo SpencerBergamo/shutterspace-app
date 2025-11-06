@@ -5,10 +5,9 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
 import getGridLayout from "@/utils/getGridLyout";
-import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { CircleEllipsis, Images, Plus } from "lucide-react-native";
-import { useCallback, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export default function AlbumScreen() {
@@ -19,21 +18,8 @@ export default function AlbumScreen() {
     const { getAlbumById } = useAlbums();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const album = getAlbumById(albumId);
-    const { media, removeInFlightUpload, getInFlightUploadURI, uploadAssets } = useMedia(albumId);
+    const { media, selectAndUploadAssets, inFlightUploads, removeInFlightUpload, } = useMedia(albumId);
     const flatListRef = useRef<FlatList>(null);
-
-    const selectAndUpload = useCallback(async () => {
-        const response = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images', 'videos'],
-            allowsMultipleSelection: true,
-            exif: true,
-            videoMaxDuration: 60,
-        });
-
-        if (response.assets && response.assets.length > 0) {
-            uploadAssets(response.assets);
-        }
-    }, [albumId]);
 
     if (!album) return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -78,7 +64,7 @@ export default function AlbumScreen() {
                     </View>
                 }
                 renderItem={({ item }) => {
-                    const inFlightURI = getInFlightUploadURI(item._id);
+                    const inFlightURI = inFlightUploads[item.assetId];
 
                     return (
                         <MediaTile
@@ -97,7 +83,7 @@ export default function AlbumScreen() {
 
             <FloatingActionButton
                 render={() => <Plus size={24} color="white" />}
-                onPress={selectAndUpload}
+                onPress={selectAndUploadAssets}
             />
         </View>
     );
