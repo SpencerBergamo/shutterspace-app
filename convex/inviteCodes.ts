@@ -32,7 +32,7 @@ export const createInviteCode = internalMutation({
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) throw new Error('Unauthorized');
 
-        const membership = await ctx.runQuery(api.albums.getAlbumMembership, {
+        const membership = await ctx.runQuery(api.albums.getMembership, {
             albumId: args.albumId,
             profileId: args.createdBy,
         });

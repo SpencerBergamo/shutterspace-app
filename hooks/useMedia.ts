@@ -3,7 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Media } from "@/types/Media";
 import { validateAssets } from "@/utils/validateAssets";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useState } from "react";
 
@@ -18,7 +18,6 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
     const { profileId } = useProfile();
 
     const uploadMedia = useAction(api.media.uploadMedia);
-    const updateAlbum = useMutation(api.albums.updateAlbum);
     const media = useQuery(api.media.getMediaForAlbum, { albumId, profileId }) ?? [];
 
     const [inFlightUploads, setInFlightUploads] = useState<Record<string, string>>({});

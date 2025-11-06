@@ -26,7 +26,7 @@ export const uploadMedia = action({
             })),
         })),
     }, handler: async (ctx, { albumId, profileId, files }) => {
-        const membership = await ctx.runQuery(api.albums.getAlbumMembership, {
+        const membership = await ctx.runQuery(api.albums.getMembership, {
             albumId,
             profileId,
         });

@@ -102,7 +102,7 @@ export const requestImageDeliveryURL = action({
     }, handler: async (ctx, { albumId, profileId, imageId }) => {
         const identity = await ctx.auth.getUserIdentity();
 
-        const membership = await ctx.runQuery(api.albums.getAlbumMembership, {
+        const membership = await ctx.runQuery(api.albums.getMembership, {
             albumId,
             profileId,
         });
@@ -137,7 +137,7 @@ export const requestVideoPlaybackToken = action({
         videoUID: v.string(),
     }, handler: async (ctx, { albumId, profileId, videoUID }) => {
         const identity = await ctx.auth.getUserIdentity();
-        const membership = await ctx.runQuery(api.albums.getAlbumMembership, {
+        const membership = await ctx.runQuery(api.albums.getMembership, {
             albumId,
             profileId,
         });

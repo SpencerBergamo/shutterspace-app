@@ -27,14 +27,14 @@ export default function MediaTile({ media, onPress, onLongPress, onReady, onErro
     const mediaId = media._id;
     const mediaStatus = media.status;
     const type = media.identifier.type;
-    const [status, setStatus] = useState<ImageStatus>('loading');
+    const [renderState, setRenderState] = useState<ImageStatus>('loading');
     const [uri, setUri] = useState<string | undefined>(inFlightURI);
 
     useEffect(() => {
         (async () => {
             switch (mediaStatus) {
                 case 'error':
-                    setStatus('error');
+                    setRenderState('error');
                     break;
 
                 case 'ready':
@@ -42,7 +42,7 @@ export default function MediaTile({ media, onPress, onLongPress, onReady, onErro
                         const localUri = await Image.getCachePathAsync(mediaId);
                         if (localUri) {
                             setUri(localUri);
-                            setStatus('ready');
+                            setRenderState('ready');
                             return;
                         }
 
@@ -59,7 +59,7 @@ export default function MediaTile({ media, onPress, onLongPress, onReady, onErro
 
                         setUri(requestUrl);
                     } catch (e) {
-                        setStatus('error');
+                        setRenderState('error');
                         onError(mediaId);
                     }
                 default: return;
@@ -78,7 +78,7 @@ export default function MediaTile({ media, onPress, onLongPress, onReady, onErro
                 cachePolicy={'memory-disk'}
                 placeholder={inFlightURI}
                 onDisplay={() => {
-                    setStatus('ready');
+                    setRenderState('ready');
                     onReady(mediaId);
                 }}
                 onError={() => {
@@ -92,11 +92,11 @@ export default function MediaTile({ media, onPress, onLongPress, onReady, onErro
                 </View>
             )}
 
-            {status === 'loading' && (
+            {renderState === 'loading' && (
                 <ActivityIndicator size="small" color="white" />
             )}
 
-            {status === 'error' && (
+            {renderState === 'error' && (
                 <CloudAlert size={24} color="red" />
             )}
         </Pressable>
