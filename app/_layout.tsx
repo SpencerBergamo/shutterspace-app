@@ -49,6 +49,8 @@ function AppLayout() {
                     headerTitle: '',
                 }} />
             </Stack.Protected>
+
+            <Stack.Screen name="invite/[code]" options={{}} />
         </Stack>
     );
 }

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Shutterspace",
-    "slug": "Shutterspace",
+    "slug": "shutterspace",
     "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/brand/ios/ios-light.png",
@@ -19,7 +19,11 @@
         "dark": "./assets/brand/ios/ios-dark.png",
         "light": "./assets/brand/ios/ios-light.png",
         "tinted": "./assets/brand/ios/ios-tinted.png"
-      }
+      },
+      "associatedDomains": [
+        "applinks:shutterspace.app",
+        "applinks:join.shutterspace.app"
+      ]
     },
     "splash": {
       "backgroundColor": "#ffffff",
@@ -40,6 +44,28 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.ACCESS_MEDIA_LOCATION"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "shutterspace.app",
+              "pathPrefix": "/"
+            },
+            {
+              "scheme": "https",
+              "host": "join.shutterspace.app",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ]
     },
     "web": {
