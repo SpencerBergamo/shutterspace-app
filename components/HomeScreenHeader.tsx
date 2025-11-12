@@ -19,19 +19,18 @@ export default function HomeScreenHeader() {
 
     return (
         <View style={[styles.container, { paddingTop: top }]}>
-            {/* <Hexagon size={32} color={theme.colors.text} /> */}
             <Image source={ASSETS.logo} style={{ height: 32, width: 32 }} contentFit="contain" />
 
             <View style={styles.rightContainer}>
                 <Text style={[styles.greeting, { color: theme.colors.text }]}>
                     Hey, <Text style={[styles.greeting, styles.greetingNickname, { color: theme.colors.text }]}>
-                        {profile.nickname}
+                        {profile.nickname} 👋
                     </Text>
                 </Text>
                 <TouchableOpacity
                     style={[
                         styles.avatarContainer,
-                        { width: 48, height: 48, backgroundColor: theme.colors.accent }
+                        { backgroundColor: theme.colors.accent }
                     ]}
                     onPress={handleAvatarPress}
                     activeOpacity={0.8} >
@@ -78,14 +77,16 @@ const styles = StyleSheet.create({
     avatarContainer: {
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 16,
+        borderRadius: 12,
+        width: 40,
+        height: 40,
         overflow: 'hidden',
     },
 
     avatarImage: {
         width: '100%',
         height: '100%',
-        borderRadius: 16,
+        borderRadius: 12,
     },
 
     avatarInitial: {

@@ -1,5 +1,4 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
-import FloatingActionButton from "@/components/FloatingActionButton";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlbums } from "@/hooks/useAlbums";
 import { AlbumFormData } from "@/types/Album";
@@ -129,7 +128,7 @@ export default function NewAlbum() {
             </KeyboardAwareScrollView>
 
             <KeyboardStickyView offset={{ closed: 0, opened: 30 }}>
-                <FloatingActionButton icon="check" onPress={handleSubmit} disabled={!isFormValid} />
+                {/* <FloatingActionButton icon="check" onPress={handleSubmit} disabled={!isFormValid} /> */}
             </KeyboardStickyView>
         </View >
     );

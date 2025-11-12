@@ -2,19 +2,33 @@ import AlbumCard from "@/components/albums/AlbumCard";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
 import { useTheme } from "@/context/ThemeContext";
+import { api } from "@/convex/_generated/api";
 import { useAlbums } from "@/hooks/useAlbums";
 import getGridLayout from "@/utils/getGridLyout";
-import { router } from "expo-router";
+import BottomSheetModal from "@gorhom/bottom-sheet";
+import { useQuery } from "convex/react";
+import { router, useLocalSearchParams } from "expo-router";
 import { Plus } from "lucide-react-native";
-import { useMemo } from "react";
-import { FlatList, StyleSheet, useWindowDimensions, View } from "react-native";
+import { useEffect, useMemo, useRef } from "react";
+import { FlatList, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
+    const { inviteCode } = useLocalSearchParams<{ inviteCode?: string }>();
     const { width } = useWindowDimensions();
     const { theme } = useTheme();
-    const { albums, isLoading } = useAlbums();
+    const { albums } = useAlbums();
 
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 2, gap: 16, aspectRatio: 1 }), [width]);
+
+    // Only when inviteCode is provided
+    const inviteArgs = inviteCode ? { inviteCode } : "skip";
+    const inviteAlbum = useQuery(api.albums.getViaInviteCode, inviteArgs);
+    const inviteBottomSheetRef = useRef<BottomSheetModal>(null);
+    useEffect(() => {
+        if (inviteAlbum) {
+            inviteBottomSheetRef.current?.expand();
+        }
+    }, [inviteAlbum]);
 
     return (
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -25,9 +39,28 @@ export default function HomeScreen() {
                 numColumns={gridConfig.numColumns}
                 columnWrapperStyle={gridConfig.columnWrapperStyle}
                 contentContainerStyle={gridConfig.contentContainerStyle}
-                style={{ padding: 16 }}
+                style={{ paddingHorizontal: 16 }}
+                scrollEnabled={albums.length > 0}
                 ListEmptyComponent={
-                    <View></View>
+                    <View style={styles.emptyContainer}>
+                        <View style={[styles.emptyCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+                                Welcome to Shutterspace!
+                            </Text>
+                            <Text style={[styles.emptySubtitle, { color: theme.colors.caption }]}>
+                                You don't have any albums yet.
+                            </Text>
+                            <Text style={[styles.emptyDescription, { color: theme.colors.caption }]}>
+                                Create your first album to start sharing photos with friends and family.
+                            </Text>
+                            <View style={[styles.ctaContainer, { backgroundColor: theme.colors.background }]}>
+                                <Plus size={20} color={theme.colors.primary} />
+                                <Text style={[styles.ctaText, { color: theme.colors.primary }]}>
+                                    Tap the button below to get started
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
                 }
                 renderItem={({ item }) => (
                     <AlbumCard
@@ -48,5 +81,47 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    emptyContainer: {
+        flex: 1,
+        paddingTop: 12,
+    },
+    emptyCard: {
+        borderRadius: 16,
+        padding: 32,
+        borderWidth: 1,
+        alignItems: 'center',
+        maxWidth: 400,
+        width: '100%',
+    },
+    emptyTitle: {
+        fontSize: 24,
+        fontWeight: '700',
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    emptySubtitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    emptyDescription: {
+        fontSize: 15,
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 24,
+    },
+    ctaContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+    },
+    ctaText: {
+        fontSize: 14,
+        fontWeight: '600',
     },
 });

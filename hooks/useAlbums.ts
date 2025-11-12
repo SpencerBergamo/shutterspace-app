@@ -28,7 +28,7 @@ export const useAlbums = (): UseAlbumsResult => {
     }, [albums]);
 
     const getMemberRole = useCallback(async (albumId: Id<'albums'>): Promise<MemberRole> => {
-        return useQuery(api.albums.getAlbumMembership, {
+        return useQuery(api.albums.getMembership, {
             albumId,
             profileId: profile._id,
         }) || 'not-a-member';
@@ -36,7 +36,7 @@ export const useAlbums = (): UseAlbumsResult => {
 
     const createAlbum = useCallback(async (data: AlbumFormData): Promise<Id<'albums'>> => {
 
-        const isDynamicThumbnail: boolean = data.thumbnailFileId ? true : false;
+        const isDynamicThumbnail: boolean = data.thumbnail ? true : false;
 
         const openInvites: boolean = data.openInvites ?? true;
 
@@ -110,6 +110,10 @@ export const useAlbums = (): UseAlbumsResult => {
 
         await deleteMutation({ albumId });
     }, [deleteMutation, profile._id]);
+
+    const getAlbumByInviteCode = useCallback(async (inviteCode: string) => {
+
+    }, []);
 
     return {
         albums: albums || [],

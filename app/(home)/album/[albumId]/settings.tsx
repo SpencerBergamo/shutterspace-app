@@ -1,6 +1,5 @@
 
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
-import { useSignedUrls } from "@/context/SignedUrlsContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
@@ -17,7 +16,6 @@ export default function AlbumSettingsScreen() {
     const { theme } = useTheme();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbumById, updateAlbum } = useAlbums();
-    const { clearSignedEntries } = useSignedUrls();
 
     const album = getAlbumById(albumId);
     if (!album) return null;
@@ -143,7 +141,7 @@ export default function AlbumSettingsScreen() {
                     </Text>
                 )}
 
-                <Button title="Clear Cache" onPress={() => clearSignedEntries()} />
+                <Button title="Clear Cache" onPress={() => { console.log("Clear Cache Pressed") }} />
 
             </KeyboardAwareScrollView>
         </View>

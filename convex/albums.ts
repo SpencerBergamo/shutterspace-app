@@ -11,7 +11,7 @@ export const getMembership = query({
             .query('albumMembers')
             .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
                 .eq('profileId', profileId))
-            .first();
+            .unique();
 
         return membership?.role;
     }
@@ -40,6 +40,50 @@ export const getUserAlbums = query({
         return albums.sort((a, b) => b.updatedAt - a.updatedAt);
     },
 });
+
+export const getViaInviteCode = query({
+    args: {
+        inviteCode: v.string()
+    },
+    handler: async (ctx, { inviteCode }) => {
+        const invite = await ctx.db.query('inviteCodes')
+            .withIndex('by_code', q => q.eq('code', inviteCode))
+            .first();
+        if (!invite) throw new Error('Invalid invite code');
+
+        const album = await ctx.db.get(invite.albumId);
+        if (!album || album.isDeleted) throw new Error('Album not found');
+
+        return album;
+    },
+});
+
+export const joinViaInviteCode = mutation({
+    args: {
+        inviteCode: v.string(),
+        profileId: v.id('profiles'),
+    }, handler: async (ctx, { inviteCode, profileId }) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error('Not authenticated');
+
+        const invite = await ctx.db.query('inviteCodes')
+            .withIndex('by_code', q => q.eq('code', inviteCode))
+            .first();
+        if (!invite) throw new Error('Invalid invite code');
+
+        const role = invite.role;
+        const album = await ctx.db.get(invite.albumId);
+        if (!album || album.isDeleted) throw new Error('Album not found');
+
+        await ctx.db.insert('albumMembers', {
+            albumId: album._id,
+            profileId,
+            role,
+            joinedAt: Date.now(),
+        });
+
+    },
+})
 
 export const getPublicAlbumInfo = query({
     args: {

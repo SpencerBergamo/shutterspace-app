@@ -38,7 +38,6 @@ export default defineSchema({
         thumbnail: v.optional(v.id('media')),
         isDynamicThumbnail: v.boolean(),
         openInvites: v.boolean(),
-        inviteCode: v.optional(v.string()),
         dateRange: v.optional(v.object({
             start: v.string(),
             end: v.optional(v.string()),
@@ -79,8 +78,8 @@ export default defineSchema({
         role: v.union(
             v.literal('member'),
             v.literal('moderator'),
-        )
-    }),
+        ),
+    }).index('by_code', ['code']),
 
     media: defineTable({
         albumId: v.id("albums"),

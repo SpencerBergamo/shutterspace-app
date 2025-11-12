@@ -1,11 +1,7 @@
-import { ASSETS } from '@/constants/assets';
-import { useProfile } from '@/context/ProfileContext';
-import { useSignedUrls } from '@/context/SignedUrlsContext';
 import { Album } from '@/types/Album';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 
@@ -16,34 +12,34 @@ interface AlbumCardProps {
 }
 
 export default function AlbumCard({ album, width, height }: AlbumCardProps) {
-    const { profileId } = useProfile();
-    const { getThumbnailURL } = useSignedUrls();
+    // const { profileId } = useProfile();
+    // const { getThumbnailURL } = useSignedUrls();
 
-    const [thumbnail, setThumbnail] = useState<string | undefined>(undefined);
-    const [imageError, setImageError] = useState<boolean>(false);
+    // const [thumbnail, setThumbnail] = useState<string | undefined>(undefined);
+    // const [imageError, setImageError] = useState<boolean>(false);
 
-    useEffect(() => {
-        const signed = async () => {
-            if (album.thumbnailFileId?.fileId) {
-                const { type, fileId } = album.thumbnailFileId;
-                const signature = await getThumbnailURL({ type, fileId, albumId: album._id, profileId });
-                if (signature) {
-                    setThumbnail(signature);
-                    setImageError(false);
-                }
-            } else {
-                setThumbnail(ASSETS.defaultAlbumCover);
-            }
-        }
+    // useEffect(() => {
+    //     const signed = async () => {
+    //         if (album.thumbnailFileId?.fileId) {
+    //             const { type, fileId } = album.thumbnailFileId;
+    //             const signature = await getThumbnailURL({ type, fileId, albumId: album._id, profileId });
+    //             if (signature) {
+    //                 setThumbnail(signature);
+    //                 setImageError(false);
+    //             }
+    //         } else {
+    //             setThumbnail(ASSETS.defaultAlbumCover);
+    //         }
+    //     }
 
-        signed();
-    }, [getThumbnailURL, album, profileId, album.thumbnailFileId, thumbnail]);
+    //     signed();
+    // }, [getThumbnailURL, album, profileId, album.thumbnailFileId, thumbnail]);
 
     return (
         <Pressable onPress={() => router.push(`album/${album._id}`)} >
             <View style={[styles.container, { width: width, height: height }]}>
                 <Image
-                    source={{ uri: thumbnail }}
+                    source={{ uri: '' }}
                     style={{ width: '100%', height: '100%' }}
                     contentFit="cover"
                 />
