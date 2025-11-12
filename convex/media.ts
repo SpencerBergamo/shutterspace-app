@@ -79,7 +79,7 @@ export const uploadMedia = action({
                 status: file.type === 'video' ? 'pending' : 'ready',
             });
 
-            await ctx.runAction(internal.cloudflare.uploadFile, {
+            await ctx.runAction(internal.crypto.uploadFile, {
                 uploadURL: uploadUrl,
                 uri: file.uri,
                 filename: file.filename,

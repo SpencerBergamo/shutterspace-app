@@ -1,7 +1,23 @@
 import { v } from "convex/values";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { internalMutation } from "./_generated/server";
+import { action, internalMutation, internalQuery } from "./_generated/server";
+
+export const generateInvite = action({
+    args: {}, handler: async (ctx, args) => {
+
+        // get identity
+
+        // get media
+
+        // use media to generate cover url
+
+        // insert invite code 
+
+        const code = await ctx.runAction(internal.crypto.generateInviteCode, {});
+
+    },
+})
 
 export const expireInviteCode = internalMutation({
     args: {
@@ -24,28 +40,16 @@ export const createInviteCode = internalMutation({
             v.literal('member'),
             v.literal('moderator'),
         ),
-        code: v.string(),
         expiresAt: v.number(),
-
+        code: v.string(),
     },
     handler: async (ctx, args): Promise<Id<'inviteCodes'>> => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error('Unauthorized');
-
-        const membership = await ctx.runQuery(api.albums.getMembership, {
-            albumId: args.albumId,
-            profileId: args.createdBy,
-        });
-        if (!membership) throw new Error('Unauthorized');
-
-        const isHost = membership === 'host';
-
         const inviteCodeId = await ctx.db.insert('inviteCodes', {
             code: args.code,
             albumId: args.albumId,
             createdBy: args.createdBy,
             expiresAt: args.expiresAt,
-            role: isHost ? args.role : 'member'
+            role: args.role,
         });
 
         await ctx.scheduler.runAfter(
@@ -56,3 +60,17 @@ export const createInviteCode = internalMutation({
         return inviteCodeId;
     }
 });
+
+export const getInvite = internalQuery({
+    args: {
+        inviteCode: v.string(),
+    },
+    handler: async (ctx, { inviteCode }) => {
+        const invite = await ctx.db.query('inviteCodes')
+            .withIndex('by_code', q => q.eq('code', inviteCode))
+            .first();
+        if (!invite) throw new Error('Invalid invite code');
+
+        return invite;
+    }
+})

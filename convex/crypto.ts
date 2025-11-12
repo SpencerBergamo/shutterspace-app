@@ -1,11 +1,10 @@
 "use node";
 
+import axios from 'axios';
 import { v } from 'convex/values';
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { internal } from './_generated/api';
-import { Id } from './_generated/dataModel';
-import { action } from './_generated/server';
+import { action, internalAction } from './_generated/server';
 
 /**
  * @file crypto.ts - nodejs crypto helper functions
@@ -55,24 +54,29 @@ export const verifyWebhookSig = action({
     }
 });
 
-export const generateInviteCode = action({
+export const uploadFile = internalAction({
     args: {
-        albumId: v.id('albums'),
-        createdBy: v.id('profiles'),
-        role: v.union(
-            v.literal('member'),
-            v.literal('moderator'),
-        ),
-    },
-    handler: async (ctx, args): Promise<Id<'inviteCodes'>> => {
+        uploadURL: v.string(),
+        uri: v.string(),
+        filename: v.string(),
+        mimeType: v.string(),
+    }, handler: async (_ctx, { uploadURL, uri, filename, mimeType }) => {
 
-        const expiresAt = Date.now() + 1000 * 60 * 60 * 24; // 3 days
-        const code = crypto.createHash('sha256').update(uuidv4()).digest('base64url');
+        const form = new FormData();
+        form.append('file', {
+            uri,
+            filename,
+            mimeType,
+        } as any);
 
-        return await ctx.runMutation(internal.inviteCodes.createInviteCode, {
-            ...args,
-            expiresAt,
-            code,
-        });
+        const response = await axios.post(uploadURL, form);
+
+        return response.status;
     }
+});
+
+export const generateInviteCode = internalAction({
+    args: {}, handler: async (ctx, args) => {
+        return crypto.createHash('sha256').update(uuidv4()).digest('base64url');
+    },
 })

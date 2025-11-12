@@ -21,8 +21,8 @@ type ImageStatus = 'loading' | 'ready' | 'error';
 
 export default function MediaTile({ media, onPress, onLongPress, onReady, onError, inFlightURI }: MediaTileProps) {
     const { profileId } = useProfile();
-    const requestImageDeliveryURL = useAction(api.cloudflare.requestImageDeliveryURL);
-    const requestVideoPlaybackToken = useAction(api.cloudflare.requestVideoPlaybackToken);
+    const requestImageURL = useAction(api.cloudflare.requestImageURL);
+    const requestVideoThumbnailURL = useAction(api.cloudflare.requestVideoThumbnailURL);
 
     const mediaId = media._id;
     const mediaStatus = media.status;
@@ -51,10 +51,9 @@ export default function MediaTile({ media, onPress, onLongPress, onReady, onErro
                         let requestUrl: string | undefined;
 
                         if (type === 'image') {
-                            requestUrl = await requestImageDeliveryURL({ albumId, profileId, imageId: cloudflareId });
+                            requestUrl = await requestImageURL({ albumId, profileId, imageId: cloudflareId });
                         } else if (type === 'video') {
-                            const token = await requestVideoPlaybackToken({ albumId, profileId, videoUID: cloudflareId });
-                            requestUrl = `${process.env.CLOUDFLARE_STREAMS_BASE_URL}/${cloudflareId}/thumbnails/thumbnail.jpg?token=${token}`;
+                            requestUrl = await requestVideoThumbnailURL({ albumId, profileId, videoUID: cloudflareId });
                         }
 
                         setUri(requestUrl);

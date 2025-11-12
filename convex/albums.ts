@@ -41,23 +41,6 @@ export const getUserAlbums = query({
     },
 });
 
-export const getViaInviteCode = query({
-    args: {
-        inviteCode: v.string()
-    },
-    handler: async (ctx, { inviteCode }) => {
-        const invite = await ctx.db.query('inviteCodes')
-            .withIndex('by_code', q => q.eq('code', inviteCode))
-            .first();
-        if (!invite) throw new Error('Invalid invite code');
-
-        const album = await ctx.db.get(invite.albumId);
-        if (!album || album.isDeleted) throw new Error('Album not found');
-
-        return album;
-    },
-});
-
 export const joinViaInviteCode = mutation({
     args: {
         inviteCode: v.string(),
@@ -83,27 +66,7 @@ export const joinViaInviteCode = mutation({
         });
 
     },
-})
-
-export const getPublicAlbumInfo = query({
-    args: {
-        albumId: v.id('albums'),
-    }, handler: async (ctx, args) => {
-        const album = await ctx.db.get(args.albumId);
-        if (!album || album.isDeleted) throw new Error('Album not found');
-
-        return {
-            _id: album._id,
-            hostId: album.hostId,
-            title: album.title,
-            description: album.description,
-            thumbnail: album.thumbnail,
-            dateRange: album.dateRange,
-            location: album.location,
-            expiresAt: album.expiresAt,
-        }
-    }
-})
+});
 
 export const createAlbum = mutation({
     args: {
