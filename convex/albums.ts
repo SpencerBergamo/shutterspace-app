@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { Doc, Id } from "./_generated/dataModel";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 
 export const getMembership = query({
     args: {
@@ -173,6 +173,25 @@ export const updateAlbum = mutation({
     },
 });
 
+export const deleteAlbum = mutation({
+    args: {
+        albumId: v.id('albums'),
+    }, handler: async (ctx, { albumId }) => {
+        await ctx.db.delete(albumId);
+    },
+});
+
+// --- Internal ---
+export const getAlbumById = internalQuery({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        const album = await ctx.db.get(albumId);
+        if (!album || album.isDeleted) throw new Error('Album not found');
+
+        return album;
+    },
+});
+
 export const updateThumbnail = internalMutation({
     args: {
         albumId: v.id('albums'),
@@ -180,12 +199,4 @@ export const updateThumbnail = internalMutation({
     }, handler: async (ctx, { albumId, thumbnail }) => {
         await ctx.db.patch(albumId, { thumbnail });
     }
-})
-
-export const deleteAlbum = mutation({
-    args: {
-        albumId: v.id('albums'),
-    }, handler: async (ctx, { albumId }) => {
-        await ctx.db.delete(albumId);
-    },
 });

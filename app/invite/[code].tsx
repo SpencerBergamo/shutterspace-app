@@ -1,12 +1,13 @@
 import { api } from "@/convex/_generated/api";
+import { InviteContent } from "@/types/Invites";
 import { Ionicons } from "@expo/vector-icons";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useAction, useConvexAuth } from "convex/react";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function InviteScreen() {
@@ -16,26 +17,21 @@ export default function InviteScreen() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [isAcceptingInvite, setIsAcceptingInvite] = useState(false);
-    const [album, setAlbum] = useState(null);
+    const [invite, setInvite] = useState<InviteContent | null>(null);
 
-    const inviteAlbum = useQuery(api.albums.getViaInviteCode, { inviteCode: code });
+    const openInvite = useAction(api.inviteCodes.openInvite);
 
     useEffect(() => {
-        if (isAuthenticated && code) {
-            router.replace({
-                pathname: '/(home)',
-                params: {
-                    inviteCode: code,
-                },
-            });
-        }
-
-        // get public album info
+        (async () => {
+            const invite = await openInvite({ code });
+            setIsLoading(false);
+            setInvite(invite);
+        })();
     }, [isAuthenticated, code]);
 
     const acceptInvite = useCallback(async () => {
         setIsAcceptingInvite(true);
-    }, []);
+    }, [isAuthenticated]);
 
     const declineInvite = () => {
         Alert.alert(
@@ -54,13 +50,25 @@ export default function InviteScreen() {
         );
     };
 
-    if (!inviteAlbum) return null;
+    if (isLoading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" />
+            </View>
+        )
+    };
+
+    if (!invite) {
+        router.replace('/');
+        return null;
+    }
 
     return (
         <View style={styles.container}>
 
-            <View style={styles.thumbnailContainer}>
+            {invite.coverUrl && <View style={styles.thumbnailContainer}>
                 <Image
+                    source={{ uri: invite.coverUrl }}
                     style={styles.thumbnailImage}
                     contentFit="cover"
                 />
@@ -69,7 +77,7 @@ export default function InviteScreen() {
                     colors={['transparent', 'rgba(0, 0, 0, 0.4)', 'rgba(0, 0, 0, 0.6)']}
                     style={styles.gradient}
                 />
-            </View>
+            </View>}
 
             <ScrollView
                 style={{ flex: 1 }}
@@ -78,15 +86,21 @@ export default function InviteScreen() {
             >
 
                 {/* spacer to push card down */}
-                <View style={{ height: 300 }} />
+                <View style={{ height: invite.coverUrl ? 0 : 300 }} />
 
                 {/* Content Card */}
-                <View style={styles.contentCard}>
+                <View style={[
+                    styles.contentCard,
+                    invite.coverUrl && {
+                        borderTopLeftRadius: 32,
+                        borderTopRightRadius: 32,
+                    }
+                ]}>
                     {/* Sender Section */}
                     <View style={styles.senderSection}>
                         <View style={styles.senderAvatar}>
                             <Text style={styles.avatarText}>
-                                {inviteAlbum?.hostId.charAt(0).toUpperCase()}
+                                {invite.sender.charAt(0).toUpperCase()}
                             </Text>
                         </View>
                         <View style={styles.senderInfo}>
@@ -97,7 +111,7 @@ export default function InviteScreen() {
                 </View>
 
                 {/* Album Title */}
-                <Text style={styles.albumTitle}>{inviteAlbum.title}</Text>
+                <Text style={styles.albumTitle}>{invite.title}</Text>
 
                 {/* Album Details */}
                 <View style={styles.detailsContainer}>
@@ -121,19 +135,19 @@ export default function InviteScreen() {
                 </View>
 
                 {/* Description Section */}
-                {inviteAlbum.description && (
+                {invite.description && (
                     <View style={styles.descriptionSection}>
                         <Text style={styles.sectionTitle}>About this album</Text>
-                        <Text style={styles.descriptionText}>{inviteAlbum.description}</Text>
+                        <Text style={styles.descriptionText}>{invite.description}</Text>
                     </View>
                 )}
 
                 {/* Personal Message Section */}
-                {inviteAlbum.description && (
+                {invite.message && (
                     <View style={styles.messageSection}>
-                        <Text style={styles.sectionTitle}>Message from {inviteAlbum.hostId}</Text>
+                        <Text style={styles.sectionTitle}>Message from {invite.sender}</Text>
                         <View style={styles.messageBox}>
-                            <Text style={styles.messageText}>{ }</Text>
+                            <Text style={styles.messageText}>{invite.message}</Text>
                         </View>
                     </View>
                 )}
@@ -149,10 +163,10 @@ export default function InviteScreen() {
                         <Ionicons name="checkmark-circle" size={20} color="#09ADA9" />
                         <Text style={styles.permissionText}>Add your own memories</Text>
                     </View>
-                    <View style={styles.permissionItem}>
+                    {/* <View style={styles.permissionItem}>
                         <Ionicons name="checkmark-circle" size={20} color="#09ADA9" />
                         <Text style={styles.permissionText}>Comment and react</Text>
-                    </View>
+                    </View> */}
                     <View style={styles.permissionItem}>
                         <Ionicons name="checkmark-circle" size={20} color="#09ADA9" />
                         <Text style={styles.permissionText}>Download shared content</Text>
@@ -179,7 +193,7 @@ export default function InviteScreen() {
                     ) : (
                         <>
                             <Ionicons name="heart" size={20} color="white" />
-                            <Text style={styles.acceptButtonText}>Accept Invitation</Text>
+                            <Text style={styles.acceptButtonText}>{isAuthenticated ? 'Accept Invitation' : 'Sign in to accept'}</Text>
                         </>
                     )}
                 </TouchableOpacity>
@@ -214,8 +228,6 @@ const styles = StyleSheet.create({
     },
     contentCard: {
         backgroundColor: 'white',
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
         marginHorizontal: 24,
         paddingTop: 24,
         minHeight: '100%',

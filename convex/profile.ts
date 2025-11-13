@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 
 
 export const createProfile = mutation({
@@ -63,5 +63,17 @@ export const updateProfile = mutation({
 
         await ctx.db.patch(profileId, updates);
         return await ctx.db.get(profileId);
+    },
+});
+
+// --- Internal ---
+
+export const getProfileById = internalQuery({
+    args: { profileId: v.id('profiles') },
+    handler: async (ctx, { profileId }) => {
+        const profile = await ctx.db.get(profileId);
+        if (!profile) throw new Error('Profile not found');
+
+        return profile;
     },
 })

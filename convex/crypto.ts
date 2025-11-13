@@ -79,4 +79,4 @@ export const generateInviteCode = internalAction({
     args: {}, handler: async (ctx, args) => {
         return crypto.createHash('sha256').update(uuidv4()).digest('base64url');
     },
-})
+});
