@@ -2,7 +2,7 @@ import { InviteContent } from "@/types/Invites";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { action, internalMutation, internalQuery } from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation } from "./_generated/server";
 
 export const createInvite = action({
     args: {
@@ -34,7 +34,6 @@ export const createInvite = action({
             expiresAt,
             role: isHost ? role : 'member',
         });
-
     },
 });
 
@@ -90,6 +89,27 @@ export const openInvite = action({
         }
     },
 });
+
+export const acceptInvite = mutation({
+    args: {
+        inviteCodeId: v.id('inviteCodes'),
+        profileId: v.id('profiles'),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error('Not authenticated');
+
+        const invite = await ctx.db.get(args.inviteCodeId);
+        if (!invite) throw new Error('Invite code not found');
+
+        await ctx.db.insert('albumMembers', {
+            albumId: invite.albumId,
+            profileId: args.profileId,
+            role: invite.role,
+            joinedAt: Date.now(),
+        });
+    }
+})
 
 // --- Internal ---
 

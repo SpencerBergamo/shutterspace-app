@@ -1,11 +1,11 @@
 import { api } from "@/convex/_generated/api";
 import { InviteContent } from "@/types/Invites";
 import { Ionicons } from "@expo/vector-icons";
-import { useAction, useConvexAuth } from "convex/react";
+import { useAction, useConvexAuth, useMutation } from "convex/react";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,6 +20,7 @@ export default function InviteScreen() {
     const [invite, setInvite] = useState<InviteContent | null>(null);
 
     const openInvite = useAction(api.inviteCodes.openInvite);
+    const acceptInvite = useMutation(api.inviteCodes.acceptInvite);
 
     useEffect(() => {
         (async () => {
@@ -29,11 +30,24 @@ export default function InviteScreen() {
         })();
     }, [isAuthenticated, code]);
 
-    const acceptInvite = useCallback(async () => {
-        setIsAcceptingInvite(true);
+    const accept = useCallback(async () => {
+
+        if (isAuthenticated && invite) {
+            setIsAcceptingInvite(true);
+            try {
+                // await acceptInvite({
+                //     inviteCodeId: invite?._id,
+                //     profileId: user._id,
+                // })
+            } catch (e) {
+                setIsAcceptingInvite(false);
+                Alert.alert("Failed", "Something went wrong, please try again.");
+            }
+        }
+
     }, [isAuthenticated]);
 
-    const declineInvite = () => {
+    const decline = () => {
         Alert.alert(
             "Decline Invite",
             "Are you sure you want to decline this invitation?",
@@ -65,6 +79,9 @@ export default function InviteScreen() {
 
     return (
         <View style={styles.container}>
+            <Stack.Screen options={{
+                headerTitle: invite.title,
+            }} />
 
             {invite.coverUrl && <View style={styles.thumbnailContainer}>
                 <Image
@@ -178,14 +195,14 @@ export default function InviteScreen() {
             <BlurView intensity={80} tint="light" style={[styles.actionContainer, { paddingBottom: insets.bottom + 16 }]}>
                 <TouchableOpacity
                     style={styles.declineButton}
-                    onPress={declineInvite}
+                    onPress={decline}
                     disabled={isAcceptingInvite}
                 >
                     <Text style={styles.declineButtonText}>Decline</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.acceptButton, isAcceptingInvite && styles.acceptButtonDisabled]}
-                    onPress={acceptInvite}
+                    onPress={accept}
                     disabled={isAcceptingInvite}
                 >
                     {isAcceptingInvite ? (
