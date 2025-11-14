@@ -6,7 +6,7 @@ import { validateTitle } from "@/utils/validators";
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
+// import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 
 export default function NewAlbum() {
     const { theme } = useTheme();
@@ -79,57 +79,57 @@ export default function NewAlbum() {
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-            <KeyboardAwareScrollView style={{ flex: 1, padding: 16 }}>
-                <Text style={styles.inputLabel}>
-                    Album Title
-                </Text>
-                <TextInput
-                    ref={titleInputRef}
-                    autoFocus
-                    placeholder="What's this album for?"
-                    value={formData.title}
-                    maxLength={50}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                    spellCheck={false}
-                    textAlign="left"
-                    keyboardType="default"
-                    returnKeyType="next"
-                    selectionColor={theme.colors.primary}
-                    onChangeText={text => updateField('title', text)}
-                    onSubmitEditing={() => descriptionInputRef.current?.focus()}
-                    style={[theme.styles.textInput, { marginBottom: 16 }]} />
+            {/* <KeyboardAwareScrollView style={{ flex: 1, padding: 16 }}> */}
+            <Text style={styles.inputLabel}>
+                Album Title
+            </Text>
+            <TextInput
+                ref={titleInputRef}
+                autoFocus
+                placeholder="What's this album for?"
+                value={formData.title}
+                maxLength={50}
+                autoCapitalize="words"
+                autoCorrect={false}
+                spellCheck={false}
+                textAlign="left"
+                keyboardType="default"
+                returnKeyType="next"
+                selectionColor={theme.colors.primary}
+                onChangeText={text => updateField('title', text)}
+                onSubmitEditing={() => descriptionInputRef.current?.focus()}
+                style={[theme.styles.textInput, { marginBottom: 16 }]} />
 
-                <Text style={styles.inputLabel}>
-                    Description
-                </Text>
+            <Text style={styles.inputLabel}>
+                Description
+            </Text>
 
-                <TextInput
-                    ref={descriptionInputRef}
-                    placeholder="What should your members know about this album?"
-                    value={formData.description}
-                    multiline={true}
-                    maxLength={200}
-                    autoCapitalize="sentences"
-                    autoCorrect
-                    spellCheck
-                    textAlign="left"
-                    keyboardType="default"
-                    returnKeyType="done"
-                    selectionColor={theme.colors.primary}
-                    onChangeText={text => updateField('description', text)}
-                    onSubmitEditing={() => descriptionInputRef.current?.blur()}
-                    style={[theme.styles.textInput, { marginBottom: 32 }]} />
+            <TextInput
+                ref={descriptionInputRef}
+                placeholder="What should your members know about this album?"
+                value={formData.description}
+                multiline={true}
+                maxLength={200}
+                autoCapitalize="sentences"
+                autoCorrect
+                spellCheck
+                textAlign="left"
+                keyboardType="default"
+                returnKeyType="done"
+                selectionColor={theme.colors.primary}
+                onChangeText={text => updateField('description', text)}
+                onSubmitEditing={() => descriptionInputRef.current?.blur()}
+                style={[theme.styles.textInput, { marginBottom: 32 }]} />
 
-                <OpenInvitesField
-                    openInvites={isOpenInvites}
-                    onToggle={setIsOpenInvites} />
+            <OpenInvitesField
+                openInvites={isOpenInvites}
+                onToggle={setIsOpenInvites} />
 
-            </KeyboardAwareScrollView>
+            {/* </KeyboardAwareScrollView> */}
 
-            <KeyboardStickyView offset={{ closed: 0, opened: 30 }}>
-                {/* <FloatingActionButton icon="check" onPress={handleSubmit} disabled={!isFormValid} /> */}
-            </KeyboardStickyView>
+            {/* <KeyboardStickyView offset={{ closed: 0, opened: 30 }}> */}
+            {/* <FloatingActionButton icon="check" onPress={handleSubmit} disabled={!isFormValid} /> */}
+            {/* </KeyboardStickyView> */}
         </View >
     );
 }

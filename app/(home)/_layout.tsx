@@ -2,19 +2,13 @@ import { ProfileProvider } from "@/context/ProfileContext";
 import { useTheme } from "@/context/ThemeContext";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { router, Stack } from "expo-router";
-import { ArrowLeft, X } from "lucide-react-native";
+import { ArrowLeft } from "lucide-react-native";
 import { Pressable } from "react-native";
 
 function HomeLayout() {
     const { theme } = useTheme();
 
     const iconButton = theme.styles.iconButton;
-
-    const closeButton = () => (
-        <Pressable style={[iconButton]} onPress={() => router.back()}>
-            <X size={iconButton.width} color={iconButton.borderColor} />
-        </Pressable>
-    );
 
     const backButton = () => (
         <Pressable style={[iconButton]} onPress={() => router.back()} >
@@ -53,10 +47,10 @@ function HomeLayout() {
                 headerLeft: backButton,
             }} />
 
-            <Stack.Screen name="manual-asset-picker" options={{
+            {/* <Stack.Screen name="manual-asset-picker" options={{
                 presentation: 'modal',
                 headerShown: false,
-            }} />
+            }} /> */}
         </Stack>
     );
 }

@@ -2,33 +2,19 @@ import AlbumCard from "@/components/albums/AlbumCard";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
 import { useTheme } from "@/context/ThemeContext";
-import { api } from "@/convex/_generated/api";
 import { useAlbums } from "@/hooks/useAlbums";
 import getGridLayout from "@/utils/getGridLyout";
-import BottomSheetModal from "@gorhom/bottom-sheet";
-import { useQuery } from "convex/react";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { Plus } from "lucide-react-native";
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { FlatList, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
-    const { inviteCode } = useLocalSearchParams<{ inviteCode?: string }>();
     const { width } = useWindowDimensions();
     const { theme } = useTheme();
     const { albums } = useAlbums();
 
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 2, gap: 16, aspectRatio: 1 }), [width]);
-
-    // Only when inviteCode is provided
-    const inviteArgs = inviteCode ? { inviteCode } : "skip";
-    const inviteAlbum = useQuery(api.albums.getViaInviteCode, inviteArgs);
-    const inviteBottomSheetRef = useRef<BottomSheetModal>(null);
-    useEffect(() => {
-        if (inviteAlbum) {
-            inviteBottomSheetRef.current?.expand();
-        }
-    }, [inviteAlbum]);
 
     return (
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>

@@ -30,7 +30,7 @@ export const ProfileProvider = ({ children }: {
     if (!currentUser) return null;
 
     const [isLoading, setIsLoading] = useState(true);
-    const profile = useQuery(api.profile.getProfile, { fuid: currentUser.uid });
+    const profile = useQuery(api.profile.getProfile);
     const updateProfileMutation = useMutation(api.profile.updateProfile);
     const createProfileMutation = useMutation(api.profile.createProfile);
 

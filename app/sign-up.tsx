@@ -9,7 +9,7 @@ import { Eye, EyeOff } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+// import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -99,121 +99,121 @@ export default function SignUpScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 16 }}>
-            <KeyboardAwareScrollView
-                keyboardShouldPersistTaps="handled" >
-                <Text style={styles.title}>Welcome to Shutterspace!</Text>
-                <Text style={styles.subtitle}>Create an account to get started</Text>
+            {/* <KeyboardAwareScrollView
+                keyboardShouldPersistTaps="handled" > */}
+            <Text style={styles.title}>Welcome to Shutterspace!</Text>
+            <Text style={styles.subtitle}>Create an account to get started</Text>
 
-                {/* Email */}
+            {/* Email */}
+            <TextInput
+                ref={emailInputRef}
+                value={formData.email ?? ''}
+                autoFocus
+                placeholder="Email"
+                keyboardType="email-address"
+                returnKeyLabel="next"
+                returnKeyType="next"
+                autoCapitalize="none"
+                spellCheck={false}
+                onChangeText={text => setFormData(prev => ({ ...prev, email: text }))}
+                style={theme.styles.textInput}
+            />
+            {errors.email ? (
+                <View style={styles.errorTextView}>
+                    <Text style={{ color: theme.colors.danger }}>{errors.email}</Text>
+                </View>
+            ) : <View style={styles.space} />}
+
+
+            {/* Password */}
+            <View style={[theme.styles.textInput, { flexDirection: 'row', justifyContent: 'space-between' }]}>
                 <TextInput
-                    ref={emailInputRef}
-                    value={formData.email ?? ''}
-                    autoFocus
-                    placeholder="Email"
-                    keyboardType="email-address"
+                    ref={passwordInputRef}
+                    value={formData.password ?? ''}
+                    placeholder="Password"
+                    keyboardType="default"
+                    secureTextEntry={!isPasswordVisible}
                     returnKeyLabel="next"
                     returnKeyType="next"
                     autoCapitalize="none"
                     spellCheck={false}
-                    onChangeText={text => setFormData(prev => ({ ...prev, email: text }))}
-                    style={theme.styles.textInput}
+                    onChangeText={text => setFormData(prev => ({ ...prev, password: text }))}
+                    style={{ width: '80%', fontSize: 16 }}
                 />
-                {errors.email ? (
-                    <View style={styles.errorTextView}>
-                        <Text style={{ color: theme.colors.danger }}>{errors.email}</Text>
-                    </View>
-                ) : <View style={styles.space} />}
 
+                {isPasswordVisible ? (
+                    <Pressable onPress={() => { setIsPasswordVisible(false) }}>
+                        <Eye size={20} color={theme.colors.text} />
+                    </Pressable>
+                ) : (
+                    <Pressable onPress={() => { setIsPasswordVisible(true) }}>
+                        <EyeOff size={20} color={theme.colors.text} />
+                    </Pressable>
+                )}
 
-                {/* Password */}
-                <View style={[theme.styles.textInput, { flexDirection: 'row', justifyContent: 'space-between' }]}>
-                    <TextInput
-                        ref={passwordInputRef}
-                        value={formData.password ?? ''}
-                        placeholder="Password"
-                        keyboardType="default"
-                        secureTextEntry={!isPasswordVisible}
-                        returnKeyLabel="next"
-                        returnKeyType="next"
-                        autoCapitalize="none"
-                        spellCheck={false}
-                        onChangeText={text => setFormData(prev => ({ ...prev, password: text }))}
-                        style={{ width: '80%', fontSize: 16 }}
-                    />
-
-                    {isPasswordVisible ? (
-                        <Pressable onPress={() => { setIsPasswordVisible(false) }}>
-                            <Eye size={20} color={theme.colors.text} />
-                        </Pressable>
-                    ) : (
-                        <Pressable onPress={() => { setIsPasswordVisible(true) }}>
-                            <EyeOff size={20} color={theme.colors.text} />
-                        </Pressable>
-                    )}
-
+            </View>
+            {errors.password ? (
+                <View style={styles.errorTextView}>
+                    <Text style={{ color: theme.colors.danger }}>{errors.password}</Text>
                 </View>
-                {errors.password ? (
-                    <View style={styles.errorTextView}>
-                        <Text style={{ color: theme.colors.danger }}>{errors.password}</Text>
-                    </View>
-                ) : <View style={styles.space} />}
+            ) : <View style={styles.space} />}
 
-                <TouchableOpacity
-                    onPress={handleSignup}
-                    style={{ backgroundColor: theme.colors.primary, padding: 16, borderRadius: 8, marginTop: 16 }}>
-                    <Text style={styles.submitButtonText}>Create Account</Text>
+            <TouchableOpacity
+                onPress={handleSignup}
+                style={{ backgroundColor: theme.colors.primary, padding: 16, borderRadius: 8, marginTop: 16 }}>
+                <Text style={styles.submitButtonText}>Create Account</Text>
+            </TouchableOpacity>
+
+
+            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 21, alignItems: 'center' }} >
+                <View style={styles.divider} />
+                <Text style={{ color: theme.colors.onBackground }}>Or Continue With</Text>
+                <View style={styles.divider} />
+            </View>
+
+            {/* SSO Auth Buttons */}
+            <View style={styles.authContainer}>
+
+                <TouchableOpacity onPress={handleGoogleAuth} style={[
+                    styles.authButton, { backgroundColor: '#F2F2F2' }
+                ]} >
+                    <Image source={require('../assets/images/google-logo.png')}
+                        style={{ width: 20, height: 20 }}
+                        resizeMode='contain' />
+                    <Text style={{ fontSize: 17 }}>Continue with Google</Text>
                 </TouchableOpacity>
 
-
-                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 21, alignItems: 'center' }} >
-                    <View style={styles.divider} />
-                    <Text style={{ color: theme.colors.onBackground }}>Or Continue With</Text>
-                    <View style={styles.divider} />
-                </View>
-
-                {/* SSO Auth Buttons */}
-                <View style={styles.authContainer}>
-
-                    <TouchableOpacity onPress={handleGoogleAuth} style={[
-                        styles.authButton, { backgroundColor: '#F2F2F2' }
+                {Platform.OS === 'ios' && (
+                    <TouchableOpacity onPress={handleAppleAuth} style={[
+                        styles.authButton, { backgroundColor: 'black' }
                     ]} >
-                        <Image source={require('../assets/images/google-logo.png')}
+                        <Image source={require('../assets/images/apple-logo.png')}
                             style={{ width: 20, height: 20 }}
                             resizeMode='contain' />
-                        <Text style={{ fontSize: 17 }}>Continue with Google</Text>
+                        <Text style={{ fontSize: 17, color: 'white' }}>Continue with Apple</Text>
                     </TouchableOpacity>
+                )}
+            </View>
 
-                    {Platform.OS === 'ios' && (
-                        <TouchableOpacity onPress={handleAppleAuth} style={[
-                            styles.authButton, { backgroundColor: 'black' }
-                        ]} >
-                            <Image source={require('../assets/images/apple-logo.png')}
-                                style={{ width: 20, height: 20 }}
-                                resizeMode='contain' />
-                            <Text style={{ fontSize: 17, color: 'white' }}>Continue with Apple</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
+            {/* Terms of Service */}
+            <View style={styles.termsContainer}>
+                <Text style={[styles.termsText, { color: 'black' }]}>
+                    By continuing, you agree to our{' '}
+                    <Link href="" asChild>
+                        <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
+                            Terms of Service
+                        </Text>
+                    </Link>
+                    {' '}and{' '}
+                    <Link href="" asChild>
+                        <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
+                            Privacy Policy
+                        </Text>
+                    </Link>
+                </Text>
+            </View>
 
-                {/* Terms of Service */}
-                <View style={styles.termsContainer}>
-                    <Text style={[styles.termsText, { color: 'black' }]}>
-                        By continuing, you agree to our{' '}
-                        <Link href="" asChild>
-                            <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
-                                Terms of Service
-                            </Text>
-                        </Link>
-                        {' '}and{' '}
-                        <Link href="" asChild>
-                            <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
-                                Privacy Policy
-                            </Text>
-                        </Link>
-                    </Text>
-                </View>
-
-            </KeyboardAwareScrollView>
+            {/* </KeyboardAwareScrollView> */}
         </View>
     );
 }

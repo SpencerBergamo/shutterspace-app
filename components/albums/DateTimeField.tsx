@@ -3,7 +3,7 @@ import { formatDateRange } from "@/utils/dateFormatters";
 import { Calendar } from "lucide-react-native";
 import { useMemo } from "react";
 import { Modal, StyleSheet, Text, View } from "react-native";
-import DatePicker, { RangeOutput } from 'react-native-neat-date-picker';
+// import DatePicker, { RangeOutput } from 'react-native-neat-date-picker';
 
 interface DateTimeFieldProps {
     isPickerOpen: boolean;
@@ -15,7 +15,7 @@ interface DateTimeFieldProps {
 export default function DateTimeField({ dateRange, isPickerOpen, setDateRange, closePicker }: DateTimeFieldProps) {
     const { theme } = useTheme();
 
-    const handleConfirm = (range: RangeOutput) => {
+    const handleConfirm = (range: any) => {
         setDateRange({
             start: range.startDate,
             end: range.endDate,
@@ -68,7 +68,7 @@ export default function DateTimeField({ dateRange, isPickerOpen, setDateRange, c
                 style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
                 animationType="fade" >
 
-                <DatePicker
+                {/* <DatePicker
                     mode="range"
                     isVisible={true}
                     onCancel={closePicker}
@@ -86,7 +86,7 @@ export default function DateTimeField({ dateRange, isPickerOpen, setDateRange, c
                         selectedDateTextColor: 'white',
                         confirmButtonColor: theme.colors.primary,
                         weekDaysColor: theme.colors.primary,
-                    }} />
+                    }} /> */}
             </Modal>
         </View>
     )

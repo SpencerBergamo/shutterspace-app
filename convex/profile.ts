@@ -12,11 +12,11 @@ export const createProfile = mutation({
 })
 
 export const getProfile = query({
-    args: {
-        fuid: v.string(),
-    }, handler: async (ctx, { fuid }) => {
+    args: {}, handler: async (ctx, _args) => {
         const session = await ctx.auth.getUserIdentity();
         if (!session) throw new Error('Unauthorized');
+
+        const fuid = session.user_id as string;
 
         return await ctx.db.query('profiles')
             .withIndex('by_firebase_uid', q => q.eq('firebaseUID', fuid))

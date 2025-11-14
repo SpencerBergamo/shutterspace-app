@@ -1,10 +1,10 @@
 import { Modal, StyleSheet, TouchableWithoutFeedback, View } from "react-native";
-import DatePicker, { RangeOutput } from "react-native-neat-date-picker";
+// import DatePicker, { RangeOutput } from "react-native-neat-date-picker";
 
 interface DateRangePickerProps {
     open: boolean;
     onClose: () => void;
-    onConfirm: (range: RangeOutput) => void;
+    onConfirm: (range: any) => void;
 }
 
 export default function DateRangePickerModal({ open, onClose, onConfirm }: DateRangePickerProps) {
@@ -17,7 +17,7 @@ export default function DateRangePickerModal({ open, onClose, onConfirm }: DateR
             <TouchableWithoutFeedback onPress={onClose}>
                 <View style={styles.container}>
 
-                    <DatePicker
+                    {/* <DatePicker
                         isVisible={open}
                         mode='range'
                         withoutModal={true}
@@ -53,7 +53,7 @@ export default function DateRangePickerModal({ open, onClose, onConfirm }: DateR
                         }}
 
                         onCancel={onClose}
-                        onConfirm={onConfirm} />
+                        onConfirm={onConfirm} /> */}
                 </View>
             </TouchableWithoutFeedback>
         </Modal>
