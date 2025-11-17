@@ -69,7 +69,12 @@ export default function AlbumScreen() {
                     return (
                         <MediaTile
                             media={item}
-                            onPress={() => { }}
+                            onPress={() => {
+                                router.push({
+                                    pathname: '../viewer/[mediaId]',
+                                    params: { mediaId: item._id, albumId: albumId },
+                                });
+                            }}
                             onLongPress={() => { }}
                             onReady={() => {
                                 removeInFlightUpload(item._id);
