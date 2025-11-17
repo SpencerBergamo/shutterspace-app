@@ -111,10 +111,6 @@ export const useAlbums = (): UseAlbumsResult => {
         await deleteMutation({ albumId });
     }, [deleteMutation, profile._id]);
 
-    const getAlbumByInviteCode = useCallback(async (inviteCode: string) => {
-
-    }, []);
-
     return {
         albums: albums || [],
         isLoading: albums === undefined,

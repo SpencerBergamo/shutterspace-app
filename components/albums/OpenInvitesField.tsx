@@ -35,7 +35,7 @@ export default function OpenInvitesField({ openInvites, onToggle }: OpenInvitesF
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-start',

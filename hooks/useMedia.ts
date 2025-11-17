@@ -66,6 +66,8 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                     }))
                 })
             }
+
+            console.log(invalid.length);
         }
     }, [albumId, profileId]);
 

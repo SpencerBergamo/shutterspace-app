@@ -7,7 +7,7 @@ import { AlbumFormData, AlbumFormState } from "@/types/Album";
 import { validateDescription, validateTitle } from "@/utils/validators";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, Button, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Button, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 // import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 type UpdateStatus = 'idle' | 'saving' | 'success' | 'error';
@@ -79,71 +79,75 @@ export default function AlbumSettingsScreen() {
                 headerTitle: "Settings",
             }} />
 
-            {/* <KeyboardAwareScrollView style={styles.keyboardScrollView}> */}
-
-            {/* Album Thumbnail */}
-            <View style={{ width: '100%', padding: 16 }}>
-                <View style={{ width: '100%', height: 100, backgroundColor: theme.colors.secondary, borderRadius: 16, borderWidth: 2, borderColor: '#E5E5E5' }} />
-            </View>
-
-            {/* Album Title */}
-            <TextInput
-                ref={titleInputRef}
-                value={formData.title}
-                placeholder="Album Title"
-                placeholderTextColor="#999999"
-                maxLength={50}
-                autoCapitalize="words"
-                autoCorrect={false}
-                spellCheck={false}
-                textAlign="left"
-                keyboardType="default"
-                returnKeyType="next"
-                selectionColor={theme.colors.primary}
-                onChangeText={text => handleFieldChange('title', text)}
-                onSubmitEditing={() => descriptionInputRef.current?.focus()}
-                style={[theme.styles.textInput, { marginBottom: 8 }]} />
-
-            {/* Album Description */}
-            <TextInput
-                ref={descriptionInputRef}
-                value={formData.description}
-                placeholder="Feel free to share a little more about this album"
-                placeholderTextColor="#999999"
-                maxLength={300}
-                autoCapitalize="sentences"
-                autoCorrect
-                spellCheck
-                textAlign="left"
-                keyboardType="default"
-                returnKeyType="next"
-                selectionColor={theme.colors.primary}
-                onChangeText={text => handleFieldChange('description', text)}
-                onSubmitEditing={() => descriptionInputRef.current?.blur()}
-                style={[theme.styles.textInput, { marginBottom: 32 }]} />
-
-            {/* Open Invites */}
-            <OpenInvitesField
-                openInvites={formData.openInvites}
-                onToggle={value => setFormData({ ...formData, openInvites: value })} />
-
-            <TouchableOpacity onPress={handleSubmit} style={[styles.submitButton,
-            { backgroundColor: !formState.isFormValid ? 'grey' : theme.colors.primary },
-            ]} >
-                {updateStatus === 'saving' ? <ActivityIndicator size='small' color={theme.colors.secondary} /> : (
-                    <Text style={styles.submitButtonText}>Save Changes</Text>
-                )}
-            </TouchableOpacity>
-
-            {updateStatus === 'error' && (
-                <Text style={{ width: '100%', color: theme.colors.danger, textAlign: 'center', marginBottom: 16 }}>
-                    Something went wrong, please try again.
+            <ScrollView style={{ flex: 1, padding: 16 }}>
+                {/* Album Title */}
+                <Text style={styles.inputLabel}>
+                    Title
                 </Text>
-            )}
+                <TextInput
+                    ref={titleInputRef}
+                    value={formData.title}
+                    placeholder="Album Title"
+                    placeholderTextColor="#999999"
+                    maxLength={50}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    spellCheck={false}
+                    textAlign="left"
+                    keyboardType="default"
+                    returnKeyType="next"
+                    selectionColor={theme.colors.primary}
+                    onChangeText={text => handleFieldChange('title', text)}
+                    onSubmitEditing={() => descriptionInputRef.current?.focus()}
+                    style={[theme.styles.textInput, { marginBottom: 16 }]}
+                />
 
-            <Button title="Clear Cache" onPress={() => { console.log("Clear Cache Pressed") }} />
+                {/* Album Description */}
+                <Text style={styles.inputLabel}>
+                    Description
+                </Text>
+                <TextInput
+                    ref={descriptionInputRef}
+                    value={formData.description}
+                    placeholder="What should your members know?"
+                    placeholderTextColor="#999999"
+                    maxLength={300}
+                    autoCapitalize="sentences"
+                    autoCorrect
+                    spellCheck
+                    textAlign="left"
+                    keyboardType="default"
+                    returnKeyType="next"
+                    selectionColor={theme.colors.primary}
+                    onChangeText={text => handleFieldChange('description', text)}
+                    onSubmitEditing={() => descriptionInputRef.current?.blur()}
+                    style={[theme.styles.textInput, { marginBottom: 32 }]}
+                />
 
-            {/* </KeyboardAwareScrollView> */}
+                {/* Open Invites */}
+                <OpenInvitesField
+                    openInvites={formData.openInvites}
+                    onToggle={value => setFormData({ ...formData, openInvites: value })}
+                />
+
+
+                <TouchableOpacity onPress={handleSubmit} style={[styles.submitButton,
+                { backgroundColor: !formState.isFormValid ? 'grey' : theme.colors.primary },
+                ]} >
+                    {updateStatus === 'saving' ? <ActivityIndicator size='small' color={theme.colors.secondary} /> : (
+                        <Text style={styles.submitButtonText}>Save Changes</Text>
+                    )}
+                </TouchableOpacity>
+
+                {updateStatus === 'error' && (
+                    <Text style={{ width: '100%', color: theme.colors.danger, textAlign: 'center', marginBottom: 16 }}>
+                        Something went wrong, please try again.
+                    </Text>
+                )}
+
+                <Button title="Clear Cache" onPress={() => { console.log("Clear Cache Pressed") }} />
+            </ScrollView>
+
         </View>
     );
 
@@ -151,9 +155,12 @@ export default function AlbumSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-    keyboardScrollView: {
-        flex: 1,
-        padding: 16,
+
+
+    inputLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 8,
     },
 
     submitButton: {

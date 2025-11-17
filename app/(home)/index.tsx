@@ -25,7 +25,7 @@ export default function HomeScreen() {
                 numColumns={gridConfig.numColumns}
                 columnWrapperStyle={gridConfig.columnWrapperStyle}
                 contentContainerStyle={gridConfig.contentContainerStyle}
-                style={{ paddingHorizontal: 16 }}
+                style={{ padding: 16 }}
                 scrollEnabled={albums.length > 0}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     },
     emptyContainer: {
         flex: 1,
-        paddingTop: 12,
+        paddingTop: 16,
     },
     emptyCard: {
         borderRadius: 16,

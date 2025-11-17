@@ -1,16 +1,22 @@
 import { useTheme } from "@/context/ThemeContext";
-import { AuthFormData } from "@/types/Forms";
+import { validateEmail } from "@/utils/validators";
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from "@react-native-firebase/auth";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Link } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useRef, useState } from "react";
-import { Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Controller, useForm } from "react-hook-form";
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
 // import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { v4 as uuidv4 } from 'uuid';
 
+
+type SignInFormData = {
+    email: string;
+    password: string;
+}
 
 export default function SignInScreen() {
     const { theme } = useTheme();
@@ -19,14 +25,22 @@ export default function SignInScreen() {
     const passwordInputRef = useRef<TextInput>(null);
 
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-    const [formData, setFormData] = useState<AuthFormData>({
-        email: null,
-        password: null,
-    });
 
-    async function handleSignin() {
+    const {
+        control,
+        handleSubmit,
+        formState: { errors, isValid },
+    } = useForm<SignInFormData>({
+        mode: 'onChange',
+        defaultValues: {
+            email: '',
+            password: '',
+        }
+    })
+
+    async function handleSignin(data: SignInFormData) {
         try {
-            await auth.signInWithEmailAndPassword(formData.email!, formData.password!);
+            await auth.signInWithEmailAndPassword(data.email, data.password);
         } catch (e) {
             console.warn('Firebase Password Sgnup (FAIL)', e);
         }
@@ -74,107 +88,149 @@ export default function SignInScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 16 }}>
             {/* <KeyboardAwareScrollView> */}
+            <ScrollView style={{ flex: 1 }}>
 
-            <Text style={styles.title}>Welcome Back!</Text>
-            <Text style={styles.subtitle}>Let's get you back in</Text>
+                <Text style={styles.title}>Welcome Back!</Text>
+                <Text style={styles.subtitle}>Let's get you back in</Text>
 
-            {/* Email */}
-            <TextInput
-                ref={emailInputRef}
-                value={formData.email ?? ''}
-                autoFocus
-                placeholder="Email"
-                keyboardType="email-address"
-                returnKeyLabel="next"
-                returnKeyType="next"
-                autoCapitalize="none"
-                spellCheck={false}
-                onChangeText={text => setFormData(prev => ({ ...prev, email: text }))}
-                style={theme.styles.textInput}
-            />
-
-            {/* Password */}
-            <View style={[theme.styles.textInput, { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }]}>
-                <TextInput
-                    ref={passwordInputRef}
-                    value={formData.password ?? ''}
-                    placeholder="Password"
-                    keyboardType="default"
-                    secureTextEntry={!isPasswordVisible}
-                    returnKeyLabel="next"
-                    returnKeyType="next"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    onChangeText={text => setFormData(prev => ({ ...prev, password: text }))}
-                    style={{ width: '80%', fontSize: 16 }}
+                {/* Email */}
+                <Controller
+                    control={control}
+                    name="email"
+                    rules={{
+                        required: 'Email is required',
+                        validate: (value) => {
+                            const error = validateEmail(value);
+                            return error || true;
+                        },
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                        <TextInput
+                            ref={emailInputRef}
+                            value={value}
+                            autoFocus
+                            placeholder="Email"
+                            keyboardType="email-address"
+                            returnKeyLabel="next"
+                            returnKeyType="next"
+                            autoCapitalize="none"
+                            spellCheck={false}
+                            onChangeText={onChange}
+                            onBlur={onBlur}
+                            onSubmitEditing={() => passwordInputRef.current?.focus()}
+                            style={theme.styles.textInput}
+                        />
+                    )}
                 />
+                {errors.email ? (
+                    <View style={styles.errorTextView}>
+                        <Text style={{ color: theme.colors.danger }}>{errors.email.message}</Text>
+                    </View>
+                ) : <View style={styles.space} />}
 
-                {isPasswordVisible ? (
-                    <Pressable onPress={() => { setIsPasswordVisible(false) }}>
-                        <Eye size={20} color={theme.colors.text} />
-                    </Pressable>
-                ) : (
-                    <Pressable onPress={() => { setIsPasswordVisible(true) }}>
-                        <EyeOff size={20} color={theme.colors.text} />
-                    </Pressable>
-                )}
-            </View>
+                {/* Password */}
+                <Controller
+                    control={control}
+                    name="password"
+                    rules={{
+                        required: 'Password is required',
+                        validate: (value) => {
 
-            <TouchableOpacity
-                onPress={handleSignin}
-                style={{ backgroundColor: theme.colors.primary, padding: 16, borderRadius: 8, marginTop: 16 }}>
-                <Text style={styles.submitButtonText}>Sign In</Text>
-            </TouchableOpacity>
+                            return value.length > 0 ? true : 'Password is required';
+                        }
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                        <View style={[theme.styles.textInput, { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }]}>
+                            <TextInput
+                                ref={passwordInputRef}
+                                value={value}
+                                placeholder="Password"
+                                keyboardType="default"
+                                secureTextEntry={!isPasswordVisible}
+                                returnKeyLabel="next"
+                                returnKeyType="next"
+                                autoCapitalize="none"
+                                spellCheck={false}
+                                onChangeText={onChange}
+                                onBlur={onBlur}
+                                onSubmitEditing={handleSubmit(handleSignin)}
+                                style={{ width: '80%', fontSize: 16 }}
+                            />
 
-            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 21, alignItems: 'center' }} >
-                <View style={styles.divider} />
-                <Text style={{ color: theme.colors.onBackground }}>Or Continue With</Text>
-                <View style={styles.divider} />
-            </View>
+                            {isPasswordVisible ? (
+                                <Pressable onPress={() => { setIsPasswordVisible(false) }}>
+                                    <Eye size={20} color={theme.colors.text} />
+                                </Pressable>
+                            ) : (
+                                <Pressable onPress={() => { setIsPasswordVisible(true) }}>
+                                    <EyeOff size={20} color={theme.colors.text} />
+                                </Pressable>
+                            )}
+                        </View>
+                    )}
+                />
+                {errors.password ? (
+                    <View style={styles.errorTextView}>
+                        <Text style={{ color: theme.colors.danger }}>{errors.password.message}</Text>
+                    </View>
+                ) : <View style={styles.space} />}
 
-            {/* SSO Auth Buttons */}
-            <View style={styles.authContainer}>
-
-                <TouchableOpacity onPress={handleGoogleAuth} style={[
-                    styles.authButton, { backgroundColor: '#F2F2F2' }
-                ]} >
-                    <Image source={require('../assets/images/google-logo.png')}
-                        style={{ width: 20, height: 20 }}
-                        resizeMode='contain' />
-                    <Text style={{ fontSize: 17 }}>Continue with Google</Text>
+                <TouchableOpacity
+                    onPress={handleSubmit(handleSignin)}
+                    disabled={!isValid}
+                    style={{ backgroundColor: isValid ? theme.colors.primary : 'grey', padding: 16, borderRadius: 8, marginTop: 16 }}>
+                    <Text style={styles.submitButtonText}>Sign In</Text>
                 </TouchableOpacity>
 
-                {Platform.OS === 'ios' && (
-                    <TouchableOpacity onPress={handleAppleAuth} style={[
-                        styles.authButton, { backgroundColor: 'black' }
+                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 21, alignItems: 'center' }} >
+                    <View style={styles.divider} />
+                    <Text style={{ color: theme.colors.onBackground }}>Or Continue With</Text>
+                    <View style={styles.divider} />
+                </View>
+
+                {/* SSO Auth Buttons */}
+                <View style={styles.authContainer}>
+
+                    <TouchableOpacity onPress={handleGoogleAuth} style={[
+                        styles.authButton, { backgroundColor: '#F2F2F2' }
                     ]} >
-                        <Image source={require('../assets/images/apple-logo.png')}
+                        <Image source={require('../assets/images/google-logo.png')}
                             style={{ width: 20, height: 20 }}
                             resizeMode='contain' />
-                        <Text style={{ fontSize: 17, color: 'white' }}>Continue with Apple</Text>
+                        <Text style={{ fontSize: 17 }}>Continue with Google</Text>
                     </TouchableOpacity>
-                )}
-            </View>
 
-            {/* Terms of Service */}
-            <View style={styles.termsContainer}>
-                <Text style={[styles.termsText, { color: 'black' }]}>
-                    By continuing, you agree to our{' '}
-                    <Link href="" asChild>
-                        <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
-                            Terms of Service
-                        </Text>
-                    </Link>
-                    {' '}and{' '}
-                    <Link href="" asChild>
-                        <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
-                            Privacy Policy
-                        </Text>
-                    </Link>
-                </Text>
-            </View>
+                    {Platform.OS === 'ios' && (
+                        <TouchableOpacity onPress={handleAppleAuth} style={[
+                            styles.authButton, { backgroundColor: 'black' }
+                        ]} >
+                            <Image source={require('../assets/images/apple-logo.png')}
+                                style={{ width: 20, height: 20 }}
+                                resizeMode='contain' />
+                            <Text style={{ fontSize: 17, color: 'white' }}>Continue with Apple</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
 
-            {/* </KeyboardAwareScrollView> */}
+                {/* Terms of Service */}
+                <View style={styles.termsContainer}>
+                    <Text style={[styles.termsText, { color: 'black' }]}>
+                        By continuing, you agree to our{' '}
+                        <Link href="" asChild>
+                            <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
+                                Terms of Service
+                            </Text>
+                        </Link>
+                        {' '}and{' '}
+                        <Link href="" asChild>
+                            <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
+                                Privacy Policy
+                            </Text>
+                        </Link>
+                    </Text>
+                </View>
+
+            </ScrollView>
 
         </View>
     );
@@ -211,7 +267,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 
-    space: { height: 21 },
+    space: { height: 0 },
 
     divider: {
         flex: 1,

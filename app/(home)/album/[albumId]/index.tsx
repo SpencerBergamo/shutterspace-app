@@ -5,10 +5,11 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
 import getGridLayout from "@/utils/getGridLyout";
+import { Ionicons } from "@expo/vector-icons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { CircleEllipsis, Images, Plus } from "lucide-react-native";
+import { Images, Plus } from "lucide-react-native";
 import { useMemo, useRef } from "react";
-import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function AlbumScreen() {
     const { theme } = useTheme();
@@ -40,9 +41,9 @@ export default function AlbumScreen() {
             <Stack.Screen options={{
                 headerTitle: album.title,
                 headerRight: () => (
-                    <Pressable onPress={() => router.push(`/album/${albumId}/settings`)}>
-                        <CircleEllipsis size={24} color="black" />
-                    </Pressable>
+                    <TouchableOpacity onPress={() => router.push(`/album/${albumId}/settings`)}>
+                        <Ionicons name="ellipsis-horizontal" size={24} />
+                    </TouchableOpacity>
                 )
             }} />
             <FlatList
@@ -53,8 +54,6 @@ export default function AlbumScreen() {
                 columnWrapperStyle={gridConfig.columnWrapperStyle}
                 contentContainerStyle={gridConfig.contentContainerStyle}
                 style={{ padding: 2 }}
-                // ListHeaderComponent={renderHeader}
-
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Images size={48} color="#ccc" style={{ margin: 16 }} />

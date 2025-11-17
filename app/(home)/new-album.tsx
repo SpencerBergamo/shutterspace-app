@@ -5,7 +5,7 @@ import { AlbumFormData } from "@/types/Album";
 import { validateTitle } from "@/utils/validators";
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Button, StyleSheet, Text, TextInput, View } from "react-native";
 // import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 
 export default function NewAlbum() {
@@ -27,16 +27,6 @@ export default function NewAlbum() {
         title: { isValid: false, error: null as string | null },
     });
 
-    const resetForm = useCallback(() => {
-        setFormData({ title: '', description: '' });
-        setValidationState({ title: { isValid: false, error: null } });
-        setIsFormValid(false);
-
-        titleInputRef.current?.clear();
-        descriptionInputRef.current?.clear();
-        titleInputRef.current?.focus();
-    }, []);
-
     useEffect(() => {
         const titleError = validateTitle(formData.title ?? '');
 
@@ -47,11 +37,6 @@ export default function NewAlbum() {
 
         setIsFormValid(Object.values(validationState).every(field => field.isValid));
     }, [formData.title]);
-
-    // Clean Up
-    useEffect(() => {
-        return () => resetForm();
-    }, []);
 
     // -- State Updates --
     const updateField = (field: keyof AlbumFormData, value: string) => {
@@ -78,7 +63,7 @@ export default function NewAlbum() {
     }, [formData, isFormValid, createAlbum]);
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <View style={{ flex: 1, flexDirection: 'column', gap: 8, padding: 16, backgroundColor: theme.colors.background }}>
             {/* <KeyboardAwareScrollView style={{ flex: 1, padding: 16 }}> */}
             <Text style={styles.inputLabel}>
                 Album Title
@@ -119,45 +104,32 @@ export default function NewAlbum() {
                 selectionColor={theme.colors.primary}
                 onChangeText={text => updateField('description', text)}
                 onSubmitEditing={() => descriptionInputRef.current?.blur()}
-                style={[theme.styles.textInput, { marginBottom: 32 }]} />
+                style={theme.styles.textInput} />
 
             <OpenInvitesField
                 openInvites={isOpenInvites}
                 onToggle={setIsOpenInvites} />
 
-            {/* </KeyboardAwareScrollView> */}
+            {isLoading ? (<ActivityIndicator size="small" color={theme.colors.primary} />) : (<Button
+                title="Create Album"
+                onPress={handleSubmit}
+                disabled={!isFormValid}
+                color={theme.colors.primary}
 
-            {/* <KeyboardStickyView offset={{ closed: 0, opened: 30 }}> */}
-            {/* <FloatingActionButton icon="check" onPress={handleSubmit} disabled={!isFormValid} /> */}
-            {/* </KeyboardStickyView> */}
+            />)}
         </View >
     );
 }
 
 const styles = StyleSheet.create({
+    container: {
+
+    },
+
     inputLabel: {
         fontSize: 16,
         fontWeight: '600',
-        marginBottom: 8,
+        // marginBottom: 8,
     },
 
-    inputContainer: {
-        backgroundColor: '#e9ecef',
-        borderRadius: 16,
-        padding: 16,
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-    },
-
-    componentContainer: {
-        borderRadius: 16,
-        borderWidth: 1,
-        padding: 16,
-        elevation: 2,
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-        marginVertical: 16,
-    },
 })
