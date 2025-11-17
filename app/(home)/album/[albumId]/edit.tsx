@@ -1,10 +1,12 @@
+import OpenInvitesField from "@/components/albums/OpenInvitesField";
 import { useTheme } from "@/context/ThemeContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
-import { Stack, useLocalSearchParams } from "expo-router";
-import { useRef } from "react";
+import { usePreventRemove } from "@react-navigation/native";
+import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
+import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Button, Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 type FormData = {
@@ -14,6 +16,7 @@ type FormData = {
 
 export default function AlbumEditScreen() {
     const { theme } = useTheme();
+    const navigation = useNavigation();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbumById, updateAlbum } = useAlbums();
 
@@ -22,6 +25,7 @@ export default function AlbumEditScreen() {
 
     const titleInputRef = useRef<TextInput>(null);
     const descriptionInputRef = useRef<TextInput>(null);
+    const [isOpenInvites, setIsOpenInvites] = useState<boolean>(album.openInvites);
 
     const {
         control,
@@ -34,6 +38,14 @@ export default function AlbumEditScreen() {
             description: album.description,
         }
     });
+
+    usePreventRemove(isDirty, ({ data }) => {
+        Keyboard.dismiss();
+        Alert.alert("Unsaved Changes", "You have unsaved changes. Are you sure you want to leave?", [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Leave', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+        ]);
+    })
 
     const saveChanges = (data: FormData) => {
         try { } catch (e) {
@@ -124,10 +136,16 @@ export default function AlbumEditScreen() {
                     </View>
                 )}
 
+                <OpenInvitesField
+                    openInvites={isOpenInvites}
+                    onToggle={setIsOpenInvites}
+                />
+
                 {/* Save Changes Button */}
                 <Button
                     title="Save Changes"
-                    disabled={isDirty}
+                    disabled={!isDirty}
+                    color={theme.colors.primary}
                     onPress={handleSubmit(saveChanges)}
                 />
             </KeyboardAwareScrollView>

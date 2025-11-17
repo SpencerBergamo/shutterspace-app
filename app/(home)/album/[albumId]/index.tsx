@@ -244,6 +244,7 @@ export default function AlbumScreen() {
                                     <Ionicons name="people" size={14} color="white" />
                                     <Text style={styles.statText}>1</Text>
                                 </View>
+
                             </View>
                         </View>
                     </View>
@@ -499,12 +500,14 @@ const styles = StyleSheet.create({
         borderColor: '#E5E5E5',
     },
     thumbnailOverlay: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
         padding: 16,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
     overlayTitle: {
         fontSize: 20,
