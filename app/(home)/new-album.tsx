@@ -11,7 +11,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 export default function NewAlbum() {
     const { theme } = useTheme();
-    const { createAlbum, isLoading: isAlbumLoading } = useAlbums();
+    const { createAlbum } = useAlbums();
 
     const titleInputRef = useRef<TextInput>(null);
     const descriptionInputRef = useRef<TextInput>(null);

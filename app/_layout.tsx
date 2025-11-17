@@ -10,6 +10,7 @@
 import { ASSETS } from "@/constants/assets";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import useFirebaseAuth from "@/hooks/useFirebaseToken";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { ConvexProviderWithAuth, ConvexReactClient, useConvexAuth } from "convex/react";
 import { useFonts } from "expo-font";
@@ -17,7 +18,6 @@ import { SplashScreen, Stack } from "expo-router";
 import { useCallback, useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
-// import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 SplashScreen.preventAutoHideAsync();
@@ -79,17 +79,17 @@ export default function RootLayout() {
 
     return (
         <ConvexProviderWithAuth client={convex} useAuth={useFirebaseAuth}>
-            <KeyboardProvider>
-                <ThemeProvider>
-                    <SafeAreaProvider>
-                        {/* <KeyboardProvider> */}
-                        <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-                            <AppLayout />
-                        </GestureHandlerRootView>
-                        {/* </KeyboardProvider> */}
-                    </SafeAreaProvider>
-                </ThemeProvider>
-            </KeyboardProvider>
+            <ThemeProvider>
+                <SafeAreaProvider>
+                    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+                        <KeyboardProvider>
+                            <BottomSheetModalProvider>
+                                <AppLayout />
+                            </BottomSheetModalProvider>
+                        </KeyboardProvider>
+                    </GestureHandlerRootView>
+                </SafeAreaProvider>
+            </ThemeProvider>
         </ConvexProviderWithAuth>
     );
 }

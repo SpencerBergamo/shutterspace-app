@@ -89,9 +89,7 @@ export default function SignInScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 16 }}>
-            {/* <KeyboardAwareScrollView> */}
             <KeyboardAwareScrollView>
-
                 <Text style={styles.title}>Welcome Back!</Text>
                 <Text style={styles.subtitle}>Let's get you back in</Text>
 
@@ -231,9 +229,7 @@ export default function SignInScreen() {
                         </Link>
                     </Text>
                 </View>
-
             </KeyboardAwareScrollView>
-
         </View>
     );
 }

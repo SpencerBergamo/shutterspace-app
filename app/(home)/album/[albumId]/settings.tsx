@@ -7,8 +7,8 @@ import { AlbumFormData, AlbumFormState } from "@/types/Album";
 import { validateDescription, validateTitle } from "@/utils/validators";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, Button, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-// import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { ActivityIndicator, Button, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 type UpdateStatus = 'idle' | 'saving' | 'success' | 'error';
 
@@ -79,7 +79,8 @@ export default function AlbumSettingsScreen() {
                 headerTitle: "Settings",
             }} />
 
-            <ScrollView style={{ flex: 1, padding: 16 }}>
+            <KeyboardAwareScrollView style={{ flex: 1, padding: 16 }}>
+
                 {/* Album Title */}
                 <Text style={styles.inputLabel}>
                     Title
@@ -131,6 +132,7 @@ export default function AlbumSettingsScreen() {
                 />
 
 
+                {/* Save Changes Button */}
                 <TouchableOpacity onPress={handleSubmit} style={[styles.submitButton,
                 { backgroundColor: !formState.isFormValid ? 'grey' : theme.colors.primary },
                 ]} >
@@ -139,6 +141,7 @@ export default function AlbumSettingsScreen() {
                     )}
                 </TouchableOpacity>
 
+                {/* Error Message */}
                 {updateStatus === 'error' && (
                     <Text style={{ width: '100%', color: theme.colors.danger, textAlign: 'center', marginBottom: 16 }}>
                         Something went wrong, please try again.
@@ -146,7 +149,7 @@ export default function AlbumSettingsScreen() {
                 )}
 
                 <Button title="Clear Cache" onPress={() => { console.log("Clear Cache Pressed") }} />
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
         </View>
     );
