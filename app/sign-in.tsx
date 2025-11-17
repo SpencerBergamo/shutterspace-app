@@ -7,10 +7,12 @@ import { Link } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
-// import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { v4 as uuidv4 } from 'uuid';
+
+
 
 
 type SignInFormData = {
@@ -88,7 +90,7 @@ export default function SignInScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 16 }}>
             {/* <KeyboardAwareScrollView> */}
-            <ScrollView style={{ flex: 1 }}>
+            <KeyboardAwareScrollView>
 
                 <Text style={styles.title}>Welcome Back!</Text>
                 <Text style={styles.subtitle}>Let's get you back in</Text>
@@ -230,7 +232,7 @@ export default function SignInScreen() {
                     </Text>
                 </View>
 
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
         </View>
     );

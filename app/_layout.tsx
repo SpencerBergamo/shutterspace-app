@@ -16,6 +16,7 @@ import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { useCallback, useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 // import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -78,15 +79,17 @@ export default function RootLayout() {
 
     return (
         <ConvexProviderWithAuth client={convex} useAuth={useFirebaseAuth}>
-            <ThemeProvider>
-                <SafeAreaProvider>
-                    {/* <KeyboardProvider> */}
-                    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-                        <AppLayout />
-                    </GestureHandlerRootView>
-                    {/* </KeyboardProvider> */}
-                </SafeAreaProvider>
-            </ThemeProvider>
+            <KeyboardProvider>
+                <ThemeProvider>
+                    <SafeAreaProvider>
+                        {/* <KeyboardProvider> */}
+                        <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+                            <AppLayout />
+                        </GestureHandlerRootView>
+                        {/* </KeyboardProvider> */}
+                    </SafeAreaProvider>
+                </ThemeProvider>
+            </KeyboardProvider>
         </ConvexProviderWithAuth>
     );
 }
