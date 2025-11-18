@@ -1,3 +1,4 @@
+import AlbumDeletionAlert from "@/components/albums/AlbumDeletionAlert";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import MediaTile from "@/components/media/mediaTile";
 import { useProfile } from "@/context/ProfileContext";
@@ -38,12 +39,14 @@ export default function AlbumScreen() {
     const [isCreatingInvite, setIsCreatingInvite] = useState(false);
     const [isLeavingAlbum, setIsLeavingAlbum] = useState(false);
     const [isDeletingAlbum, setIsDeletingAlbum] = useState(false);
+    const [isCancelingDeletion, setIsCancelingDeletion] = useState(false);
 
     // Convex
     const createInvite = useAction(api.inviteCodes.createInvite);
     const inviteCode = useQuery(api.inviteCodes.getInviteCode, { albumId });
     const leaveAlbum = useMutation(api.albumMembers.leaveAlbum);
     const deleteAlbum = useMutation(api.albums.deleteAlbum);
+    const cancelDeletion = useMutation(api.albums.cancelAlbumDeletion);
 
     const handleSettingsPress = useCallback(() => {
         settingsModalRef.current?.present();
@@ -95,6 +98,27 @@ export default function AlbumScreen() {
         }
     }, []);
 
+    const handleCancelDeletion = useCallback(async () => {
+        setIsCancelingDeletion(true);
+        try {
+            await cancelDeletion({ albumId });
+            Alert.alert(
+                'Album Restored',
+                'Your album has been successfully restored and will not be deleted.',
+                [{ text: 'OK' }]
+            );
+        } catch (e) {
+            console.error("Failed to cancel deletion: ", e);
+            Alert.alert(
+                'Error',
+                'Failed to restore the album. Please try again.',
+                [{ text: 'OK' }]
+            );
+        } finally {
+            setIsCancelingDeletion(false);
+        }
+    }, [albumId, cancelDeletion]);
+
     const formattedDate = useMemo(() => {
         if (!album) return '';
         return new Date(album._creationTime).toLocaleDateString('en-US', {
@@ -118,26 +142,6 @@ export default function AlbumScreen() {
         </View>
     );
 
-    if (album.isDeleted) return (
-        <View
-            style={{ flex: 1, backgroundColor: theme.colors.background }}
-        >
-            <Stack.Screen options={{
-                headerTitle: album.title,
-            }} />
-
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                {album.hostId === profileId ? (
-                    <View style={{ flexDirection: 'column' }}>
-
-                    </View>
-                ) : (
-                    <View></View>
-                )}
-            </View>
-        </View>
-    );
-
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
 
@@ -150,6 +154,16 @@ export default function AlbumScreen() {
                     </TouchableOpacity>
                 )
             }} />
+
+            {/* Deletion Alert */}
+            {album.isDeleted && (
+                <AlbumDeletionAlert
+                    isHost={album.hostId === profileId}
+                    deletionDate={album.deletionScheduledAt ? new Date(album.deletionScheduledAt).toLocaleDateString() : "N/A"}
+                    isCancelingDeletion={isCancelingDeletion}
+                    handleCancelDeletion={handleCancelDeletion}
+                />
+            )}
 
             {/* Media Grid */}
             <FlatList

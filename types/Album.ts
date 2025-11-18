@@ -23,6 +23,8 @@ export interface Album {
     updatedAt: number;
     expiresAt?: number;
     isDeleted: boolean;
+    deletionScheduledAt?: number;
+    scheduledDeletionId?: Id<'_scheduled_functions'>;
 }
 
 export interface AlbumFormData {
