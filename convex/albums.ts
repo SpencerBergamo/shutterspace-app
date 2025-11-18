@@ -27,6 +27,33 @@ export const getUserAlbums = query({
     },
 });
 
+export const createAlbum = action({
+    args: {
+        title: v.string(),
+        description: v.optional(v.string()),
+        openInvites: v.boolean(),
+    },
+    handler: async (ctx, { title, description, openInvites }): Promise<Id<'albums'>> => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+
+        // create the alblum doc
+        const albumId = await ctx.runMutation(internal.albums.insert, { hostId: profile._id, title, description, openInvites });
+
+        // create an invite code entry
+        const code = await ctx.runAction(internal.crypto.generateInviteCode, { length: 10 });
+        await ctx.runMutation(internal.inviteCodes.insert, { albumId, code, createdBy: profile._id, role: 'member' });
+
+        // create album member entry: host
+        await ctx.runMutation(internal.albumMembers.addMember, {
+            albumId,
+            profileId: profile._id,
+            role: 'host',
+        });
+
+        return albumId;
+    }
+})
+
 export const joinViaInviteCode = mutation({
     args: {
         inviteCode: v.string(),
@@ -54,83 +81,53 @@ export const joinViaInviteCode = mutation({
     },
 });
 
-export const create = action({
-    args: {
-        title: v.string(),
-        description: v.optional(v.string()),
-        openInvites: v.boolean(),
-    },
-    handler: async (ctx, { title, description, openInvites }): Promise<Id<'albums'>> => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error("Not authenticated");
-        const profileId = identity.user_id as Id<'profiles'>;
+// export const createAlbum = mutation({
+//     args: {
+//         hostId: v.id('profiles'),
+//         title: v.string(),
+//         description: v.optional(v.string()),
+//         thumbnail: v.optional(v.id('media')),
+//         isDynamicThumbnail: v.boolean(),
+//         openInvites: v.boolean(),
+//         dateRange: v.optional(v.object({
+//             start: v.string(),
+//             end: v.optional(v.string()),
+//         })),
+//         location: v.optional(v.object({
+//             lat: v.number(),
+//             lng: v.number(),
+//             name: v.optional(v.string()),
+//             address: v.optional(v.string()),
+//         })),
+//         expiresAt: v.optional(v.number()),
+//     }, handler: async (ctx, args) => {
+//         const identity = await ctx.auth.getUserIdentity();
+//         if (!identity) throw new Error("Not authenticated");
 
-        // create the alblum doc
-        const albumId = await ctx.runMutation(internal.albums.insert, { hostId: profileId, title, description, openInvites });
+//         const albumId = await ctx.db.insert('albums', {
+//             hostId: args.hostId,
+//             title: args.title,
+//             description: args.description,
+//             thumbnail: args.thumbnail,
+//             isDynamicThumbnail: args.isDynamicThumbnail,
+//             openInvites: args.openInvites,
+//             dateRange: args.dateRange,
+//             location: args.location,
+//             updatedAt: Date.now(),
+//             expiresAt: args.expiresAt,
+//             isDeleted: false,
+//         });
 
-        // create an invite code entry
-        const code = await ctx.runAction(internal.crypto.generateInviteCode, { length: 10 });
-        await ctx.runMutation(internal.inviteCodes.insert, { albumId, code, createdBy: profileId, role: 'member' });
+//         await ctx.db.insert('albumMembers', {
+//             albumId,
+//             profileId: args.hostId,
+//             role: 'host',
+//             joinedAt: Date.now(),
+//         });
 
-        // create album member entry: host
-        await ctx.runMutation(internal.albumMembers.addMember, {
-            albumId,
-            profileId,
-            role: 'host',
-        });
-
-        return albumId;
-
-    }
-})
-
-export const createAlbum = mutation({
-    args: {
-        hostId: v.id('profiles'),
-        title: v.string(),
-        description: v.optional(v.string()),
-        thumbnail: v.optional(v.id('media')),
-        isDynamicThumbnail: v.boolean(),
-        openInvites: v.boolean(),
-        dateRange: v.optional(v.object({
-            start: v.string(),
-            end: v.optional(v.string()),
-        })),
-        location: v.optional(v.object({
-            lat: v.number(),
-            lng: v.number(),
-            name: v.optional(v.string()),
-            address: v.optional(v.string()),
-        })),
-        expiresAt: v.optional(v.number()),
-    }, handler: async (ctx, args) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error("Not authenticated");
-
-        const albumId = await ctx.db.insert('albums', {
-            hostId: args.hostId,
-            title: args.title,
-            description: args.description,
-            thumbnail: args.thumbnail,
-            isDynamicThumbnail: args.isDynamicThumbnail,
-            openInvites: args.openInvites,
-            dateRange: args.dateRange,
-            location: args.location,
-            updatedAt: Date.now(),
-            expiresAt: args.expiresAt,
-            isDeleted: false,
-        });
-
-        await ctx.db.insert('albumMembers', {
-            albumId,
-            profileId: args.hostId,
-            role: 'host',
-            joinedAt: Date.now(),
-        });
-
-        return albumId;
-    },
-});
+//         return albumId;
+//     },
+// });
 
 export const updateAlbum = mutation({
     args: {

@@ -1,19 +1,16 @@
 import { useTheme } from "@/context/ThemeContext";
 import { validateEmail } from "@/utils/validators";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from "@react-native-firebase/auth";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Link } from "expo-router";
-import { Eye, EyeOff } from "lucide-react-native";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { v4 as uuidv4 } from 'uuid';
-
-
-
 
 type SignInFormData = {
     email: string;
@@ -159,11 +156,11 @@ export default function SignInScreen() {
 
                             {isPasswordVisible ? (
                                 <Pressable onPress={() => { setIsPasswordVisible(false) }}>
-                                    <Eye size={20} color={theme.colors.text} />
+                                    <Ionicons name="eye-outline" size={20} color={theme.colors.text} />
                                 </Pressable>
                             ) : (
                                 <Pressable onPress={() => { setIsPasswordVisible(true) }}>
-                                    <EyeOff size={20} color={theme.colors.text} />
+                                    <Ionicons name="eye-off-outline" size={20} color={theme.colors.text} />
                                 </Pressable>
                             )}
                         </View>

@@ -11,11 +11,7 @@ export const createInvite = action({
     }, handler: async (ctx, { albumId }): Promise<string> => {
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) throw new Error('Not authenticated');
-
         const profileId = identity.user_id as Id<'profiles'>;
-
-        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-        if (!membership || membership !== 'host') throw new Error('Not the host of this album');
 
         const code = await ctx.runAction(internal.crypto.generateInviteCode, { length: 10 });
 
@@ -34,7 +30,7 @@ export const getInviteCode = query({
     args: { albumId: v.id('albums') },
     handler: async (ctx, { albumId }): Promise<string> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-        if (!membership || membership !== 'host') throw new Error('Not the host of this album');
+        if (!membership) throw new Error('Not a member of this album');
 
         const inviteCode = await ctx.db.query('inviteCodes')
             .withIndex('by_albumId', q => q.eq('albumId', albumId))
@@ -55,7 +51,7 @@ export const openInvite = action({
         const album = await ctx.runQuery(internal.albums.getAlbumById, { albumId: invite.albumId });
         if (!album || album.isDeleted) throw new Error('Album may have been deleted');
 
-        const profile = await ctx.runQuery(internal.profile.getProfileById, { profileId: invite.createdBy });
+        const profile = await ctx.runQuery(internal.profile.getPublicProfile, { profileId: invite.createdBy });
         if (!profile) throw new Error('Profile not found');
 
         let coverUrl: string | undefined;

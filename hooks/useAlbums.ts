@@ -2,7 +2,7 @@ import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Album, AlbumFormData, MemberRole } from "@/types/Album";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useCallback } from "react";
 
 interface UseAlbumsResult {
@@ -18,7 +18,7 @@ export const useAlbums = (): UseAlbumsResult => {
     const { profile } = useProfile();
 
     const albums = useQuery(api.albums.getUserAlbums, { profileId: profile._id });
-    const createMutation = useMutation(api.albums.createAlbum);
+    const createAlbumAction = useAction(api.albums.createAlbum);
     const updateMutation = useMutation(api.albums.updateAlbum);
     const deleteMutation = useMutation(api.albums.deleteAlbum);
 
@@ -33,43 +33,14 @@ export const useAlbums = (): UseAlbumsResult => {
 
     const createAlbum = useCallback(async (data: AlbumFormData): Promise<Id<'albums'>> => {
 
-        const isDynamicThumbnail: boolean = data.thumbnail ? true : false;
-
         const openInvites: boolean = data.openInvites ?? true;
 
-        const dateRange: {
-            start: string;
-            end?: string;
-        } | undefined = data.dateRange ? {
-            start: data.dateRange.start.toISOString(),
-            end: data.dateRange.end?.toISOString(),
-        } : undefined;
-
-        const location: {
-            lat: number;
-            lng: number;
-            name?: string;
-            address?: string;
-        } | undefined = data.location ? {
-            lat: data.location.lat,
-            lng: data.location.lng,
-            name: data.location?.name,
-            address: data.location?.address,
-        } : undefined;
-
-        const expiresAt: number | undefined = data.expiresAt ? data.expiresAt.getTime() : undefined;
-
-        return await createMutation({
-            hostId: profile._id,
+        return await createAlbumAction({
             title: data.title,
             description: data.description,
-            isDynamicThumbnail,
             openInvites,
-            dateRange,
-            location,
-            expiresAt,
         });
-    }, [createMutation, profile._id]);
+    }, [createAlbumAction]);
 
     const updateAlbum = useCallback(async (albumId: Id<'albums'>, data: AlbumFormData) => {
 

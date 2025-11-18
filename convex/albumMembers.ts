@@ -1,4 +1,6 @@
+import { MemberRole } from "@/types/Album";
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
 
@@ -6,18 +8,15 @@ import { internalMutation, mutation, query } from "./_generated/server";
 export const getMembership = query({
     args: {
         albumId: v.id("albums"),
-    }, handler: async (ctx, { albumId }) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error("Not Authenticated");
-
-        const profileId = identity.user_id as Id<'profiles'>;
+    }, handler: async (ctx, { albumId }): Promise<MemberRole> => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
 
         const membership = await ctx.db.query('albumMembers')
             .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
-                .eq('profileId', profileId))
+                .eq('profileId', profile._id))
             .first();
 
-        return membership?.role;
+        return membership?.role ?? 'not-a-member';
     }
 })
 

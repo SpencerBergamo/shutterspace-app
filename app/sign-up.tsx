@@ -1,15 +1,16 @@
 import { useTheme } from "@/context/ThemeContext";
+import { api } from "@/convex/_generated/api";
 import { validateEmail, validatePassword } from "@/utils/validators";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from "@react-native-firebase/auth";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { useMutation } from "convex/react";
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Link } from "expo-router";
-import { Eye, EyeOff } from "lucide-react-native";
 import { useRef, useState } from "react";
+import { Controller, useForm } from 'react-hook-form';
 import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
-// import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { Controller, useForm } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 
 type SignUpFormData = {
@@ -20,10 +21,16 @@ type SignUpFormData = {
 export default function SignUpScreen() {
     const { theme } = useTheme();
     const auth = getAuth();
+
+    // Refs
     const emailInputRef = useRef<TextInput>(null);
     const passwordInputRef = useRef<TextInput>(null);
 
+    // States
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+    // Convex
+    const createProfileMutation = useMutation(api.profile.createProfile);
 
     const {
         control,
@@ -39,7 +46,12 @@ export default function SignUpScreen() {
 
     async function handleSignup(data: SignUpFormData) {
         try {
-            await auth.createUserWithEmailAndPassword(data.email, data.password);
+            const user = await auth.createUserWithEmailAndPassword(data.email, data.password);
+
+            return await createProfileMutation({
+                nickname: user.user.displayName ?? data.email.split('@')[0],
+                authProvider: 'email',
+            });
         } catch (e) {
             console.warn('Firebase Password Signup (FAIL)', e);
         }
@@ -65,7 +77,11 @@ export default function SignUpScreen() {
             if (!response.identityToken) throw new Error('No identity token');
 
             const credential = AppleAuthProvider.credential(response.identityToken, nonce);
-            return signInWithCredential(getAuth(), credential);
+            await signInWithCredential(getAuth(), credential);
+
+            return await createProfileMutation({
+                authProvider: 'apple',
+            });
         } catch (e) {
             console.error('Apple Auth FAIL', e);
         }
@@ -78,7 +94,11 @@ export default function SignUpScreen() {
             if (!result.data?.idToken) throw new Error('No ID Token Found');
 
             const credential = GoogleAuthProvider.credential(result.data.idToken);
-            return signInWithCredential(getAuth(), credential);
+            await signInWithCredential(getAuth(), credential);
+
+            return await createProfileMutation({
+                authProvider: 'google',
+            });
         } catch (e) {
             console.error('Google auth FAIL', e);
         }
@@ -159,11 +179,11 @@ export default function SignUpScreen() {
 
                             {isPasswordVisible ? (
                                 <Pressable onPress={() => { setIsPasswordVisible(false) }}>
-                                    <Eye size={20} color={theme.colors.text} />
+                                    <Ionicons name="eye-outline" size={20} color={theme.colors.text} />
                                 </Pressable>
                             ) : (
                                 <Pressable onPress={() => { setIsPasswordVisible(true) }}>
-                                    <EyeOff size={20} color={theme.colors.text} />
+                                    <Ionicons name="eye-off-outline" size={20} color={theme.colors.text} />
                                 </Pressable>
                             )}
                         </View>
