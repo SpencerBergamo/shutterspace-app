@@ -6,7 +6,7 @@ import { usePreventRemove } from "@react-navigation/native";
 import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Alert, Button, Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Button, Keyboard, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 type FormData = {
@@ -23,9 +23,13 @@ export default function AlbumEditScreen() {
     const album = getAlbumById(albumId);
     if (!album) return null;
 
+    // Refs
     const titleInputRef = useRef<TextInput>(null);
     const descriptionInputRef = useRef<TextInput>(null);
+
+    // State
     const [isOpenInvites, setIsOpenInvites] = useState<boolean>(album.openInvites);
+    const [isSaving, setIsSaving] = useState<boolean>(false);
 
     const {
         control,
@@ -47,9 +51,14 @@ export default function AlbumEditScreen() {
         ]);
     })
 
-    const saveChanges = (data: FormData) => {
-        try { } catch (e) {
+    const saveChanges = async (data: FormData) => {
+        setIsSaving(true);
+        try {
+            await updateAlbum(albumId, data);
+        } catch (e) {
             console.error("Failed to save changes: ", e);
+        } finally {
+            setIsSaving(false);
         }
     }
 
@@ -142,17 +151,13 @@ export default function AlbumEditScreen() {
                 />
 
                 {/* Save Changes Button */}
-                <Button
+                {isSaving ? <ActivityIndicator size="small" color={theme.colors.primary} /> : <Button
                     title="Save Changes"
                     disabled={!isDirty}
                     color={theme.colors.primary}
                     onPress={handleSubmit(saveChanges)}
-                />
+                />}
             </KeyboardAwareScrollView>
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {},
-})
