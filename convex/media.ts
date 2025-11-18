@@ -1,100 +1,84 @@
-import { MediaIdentifier } from "@/types/Media";
 import { v } from "convex/values";
+import { MediaIdentifier } from "../types/Media";
 import { api, internal } from "./_generated/api";
 import { action, internalMutation, mutation, query } from "./_generated/server";
 
-export const uploadMedia = action({
+export const prepareUpload = action({
     args: {
         albumId: v.id('albums'),
-        profileId: v.id('profiles'),
-        files: v.array(v.object({
-            uri: v.string(),
-            filename: v.string(),
-            assetId: v.string(),
-            type: v.union(v.literal('image'), v.literal('video')),
-            mimeType: v.string(),
-            duration: v.optional(v.number()),
-            width: v.optional(v.number()),
-            height: v.optional(v.number()),
-            size: v.optional(v.number()),
-            dateTaken: v.optional(v.string()),
-            location: v.optional(v.object({
-                lat: v.number(),
-                lng: v.number(),
-                name: v.optional(v.string()),
-                address: v.optional(v.string()),
-            })),
+        assetId: v.string(),
+        filename: v.string(),
+        type: v.union(v.literal('image'), v.literal('video')),
+        width: v.optional(v.number()),
+        height: v.optional(v.number()),
+        duration: v.optional(v.number()),
+        size: v.optional(v.number()),
+        dateTaken: v.optional(v.string()),
+        location: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number(),
+            name: v.optional(v.string()),
+            address: v.optional(v.string()),
         })),
-    }, handler: async (ctx, { albumId, profileId, files }) => {
-        const membership = await ctx.runQuery(api.albums.getMembership, {
+        isLast: v.boolean(),
+    }, handler: async (ctx, { albumId, assetId, filename, type, width, height, duration, size, dateTaken, location, isLast = false }): Promise<string> => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
+
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        let uploadUrl: string | undefined;
+        let identifier: MediaIdentifier | undefined;
+
+        if (type === 'image') {
+            const response = await ctx.runAction(internal.cloudflare.requestImageUploadURL, { filename });
+
+            uploadUrl = response.result.uploadURL;
+            identifier = {
+                type: 'image',
+                imageId: response.result.id,
+                width: width ?? 0,
+                height: height ?? 0,
+            }
+
+        } else if (type === 'video') {
+            const response = await ctx.runAction(internal.cloudflare.requestVideoUploadURL, { filename });
+
+            uploadUrl = response.result.uploadURL;
+            identifier = {
+                type: 'video',
+                videoUid: response.result.uid,
+                duration: duration ?? 0,
+                width: width ?? undefined,
+                height: height ?? undefined,
+            }
+
+        } else {
+            throw new Error("invalid media type");
+        }
+
+        if (!uploadUrl) throw new Error('uploadMedia media.ts: no uploadUrl');
+        if (!identifier) throw new Error("uploadMedia media.ts: no identifier");
+
+        const mediaId = await ctx.runMutation(internal.media.createMedia, {
             albumId,
-            profileId,
+            uploaderId: profile._id,
+            assetId,
+            filename,
+            identifier,
+            size,
+            dateTaken,
+            location,
+            status: type === 'video' ? 'pending' : 'ready',
         });
 
-        if (!membership) throw new Error('You are not a member of this album');
-
-        for (const file of files) {
-            let uploadUrl: string | undefined;
-            let identifier: MediaIdentifier | undefined;
-
-            if (file.type === 'image') {
-                const response = await ctx.runAction(internal.cloudflare.requestImageUploadURL, {
-                    filename: file.filename,
-                });
-
-                uploadUrl = response.uploadURL;
-                identifier = {
-                    type: 'image',
-                    imageId: response.id,
-                    width: file.width ?? 0,
-                    height: file.height ?? 0,
-                }
-
-            } else if (file.type === 'video') {
-                const response = await ctx.runAction(internal.cloudflare.requestVideoUploadURL, {
-                    filename: file.filename,
-                });
-
-                uploadUrl = response.uploadURL;
-                identifier = {
-                    type: 'video',
-                    videoUid: response.uid,
-                    duration: file.duration ?? 0,
-                    width: file.width ?? 0,
-                    height: file.height ?? 0,
-                }
-            }
-
-            if (!uploadUrl || !identifier) throw new Error('Failed to get upload URL or cloudflare ID');
-
-            const mediaId = await ctx.runMutation(internal.media.createMedia, {
+        if (isLast) {
+            await ctx.runMutation(internal.albums.updateThumbnail, {
                 albumId,
-                uploaderId: profileId,
-                assetId: file.assetId,
-                filename: file.filename,
-                identifier: identifier,
-                size: file.size ?? 0,
-                dateTaken: file.dateTaken ?? undefined,
-                location: file.location ?? undefined,
-                status: file.type === 'video' ? 'pending' : 'ready',
-            });
-
-            await ctx.runAction(internal.crypto.uploadFile, {
-                uploadURL: uploadUrl,
-                uri: file.uri,
-                filename: file.filename,
-                mimeType: file.mimeType,
-            });
-
-            const isLast = file === files.at(-1);
-
-            if (isLast) {
-                await ctx.runMutation(internal.albums.updateThumbnail, {
-                    albumId,
-                    thumbnail: mediaId,
-                });
-            }
+                thumbnail: mediaId,
+            })
         }
+
+        return uploadUrl;
     }
 });
 

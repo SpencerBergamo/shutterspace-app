@@ -3,6 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Media } from "@/types/Media";
 import { validateAssets } from "@/utils/validateAssets";
+import axios from "axios";
 import { useAction, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useState } from "react";
@@ -11,19 +12,27 @@ interface UseMediaResult {
     media: Media[];
     selectAndUploadAssets: () => Promise<void>;
     removeInFlightUpload: (uri: string) => void;
+    preparingUploads: boolean;
     inFlightUploads: Record<string, string>;
+    uploadErrors: Record<string, string>;
 }
 
 export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
     const { profileId } = useProfile();
 
-    const uploadMedia = useAction(api.media.uploadMedia);
+    const prepareUpload = useAction(api.media.prepareUpload);
     const media = useQuery(api.media.getMediaForAlbum, { albumId, profileId }) ?? [];
 
+    const [preparingUploads, setPreparingUploads] = useState<boolean>(false);
     const [inFlightUploads, setInFlightUploads] = useState<Record<string, string>>({});
+    const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
 
     const addInFlightUpload = useCallback(({ assetId, uri }: { assetId: string, uri: string }) => {
         setInFlightUploads(prev => ({ ...prev, [assetId]: uri }));
+    }, [albumId]);
+
+    const updateInFlightUploadStatus = useCallback((assetId: string, status: 'pending' | 'ready' | 'error') => {
+        setInFlightUploads(prev => ({ ...prev, [assetId]: status }));
     }, [albumId]);
 
     const removeInFlightUpload = useCallback((assetId: string) => {
@@ -41,41 +50,66 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
             videoMaxDuration: 60,
         });
 
-        if (response.assets && response.assets.length > 0) {
+        if (response.canceled || !response.assets || response.assets.length === 0) return;
+        setPreparingUploads(true);
+
+        try {
             const { invalid, valid } = validateAssets(response.assets);
 
             if (valid.length > 0) {
                 for (const asset of valid) {
-                    addInFlightUpload({ assetId: asset.assetId, uri: asset.uri });
-                }
+                    const isLast = asset === valid.at(-1);
 
-                await uploadMedia({
-                    albumId,
-                    profileId,
-                    files: valid.map(asset => ({
-                        uri: asset.uri,
+                    addInFlightUpload({ assetId: asset.assetId, uri: asset.uri });
+
+                    const uploadUrl: string = await prepareUpload({
+                        albumId,
                         assetId: asset.assetId,
                         filename: asset.filename,
                         type: asset.type,
-                        mimeType: asset.mimeType,
-                        duration: asset.duration ?? undefined,
                         width: asset.width,
                         height: asset.height,
+                        duration: asset.duration ?? undefined,
                         size: asset.fileSize,
                         dateTaken: asset.exif?.DateTimeOriginal,
-                    }))
-                })
+                        location: undefined,
+                        isLast,
+                    });
+
+                    const form = new FormData();
+                    form.append('file', {
+                        uri: asset.uri,
+                        name: asset.filename,
+                        type: asset.mimeType,
+                    } as any);
+                    const response = await axios.post(uploadUrl, form);
+                    if (!response.data || response.status !== 200) {
+                        updateInFlightUploadStatus(asset.assetId, 'error');
+                        console.error("useMedia: uploadAssets failed", response.data);
+                        continue;
+                    }
+                }
             }
 
-            console.log(invalid.length);
+            if (invalid.length > 0) {
+                for (const asset of invalid) {
+                    updateInFlightUploadStatus(asset.assetId, 'error');
+                    setUploadErrors(prev => ({ ...prev, [asset.assetId]: 'Invalid asset' }));
+                    console.error("useMedia: uploadAssets failed", 'Invalid asset');
+                }
+            }
+        } catch (e) {
+            console.error("useMedia: uploadAssets failed", e);
         }
-    }, [albumId, profileId]);
+    }, [albumId]);
 
     return {
         media,
         selectAndUploadAssets,
-        inFlightUploads,
         removeInFlightUpload,
+        preparingUploads,
+        inFlightUploads,
+        uploadErrors,
     }
 }
 

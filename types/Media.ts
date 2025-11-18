@@ -31,3 +31,9 @@ export type MediaIdentifier = {
     width?: number;
     height?: number;
 }
+
+
+export interface PrepareUploadResult {
+    uploadUrl: string;
+    identifier: MediaIdentifier;
+};

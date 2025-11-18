@@ -42,10 +42,7 @@ export const requestImageURL = action({
     }, handler: async (ctx, { albumId, profileId, imageId }): Promise<string> => {
         const identity = await ctx.auth.getUserIdentity();
 
-        const membership = await ctx.runQuery(api.albums.getMembership, {
-            albumId,
-            profileId,
-        });
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
 
         if (!membership || !identity) throw new Error('Unauthorized');
 
@@ -103,10 +100,7 @@ export const requestVideoThumbnailURL = action({
     },
     handler: async (ctx, { albumId, profileId, videoUID }): Promise<string> => {
         const identity = await ctx.auth.getUserIdentity();
-        const membership = await ctx.runQuery(api.albums.getMembership, {
-            albumId,
-            profileId,
-        });
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
 
         if (!membership || !identity) throw new Error('Unauthorized');
 
@@ -124,10 +118,7 @@ export const requestVideoPlaybackURL = action({
     },
     handler: async (ctx, { albumId, profileId, videoUID }): Promise<string> => {
         const identity = await ctx.auth.getUserIdentity();
-        const membership = await ctx.runQuery(api.albums.getMembership, {
-            albumId,
-            profileId,
-        });
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
 
         if (!membership || !identity) throw new Error('Unauthorized');
 
