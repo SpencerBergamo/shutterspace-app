@@ -1,21 +1,7 @@
 import { v } from "convex/values";
+import { api, internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
-import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-
-export const getMembership = query({
-    args: {
-        albumId: v.id('albums'),
-        profileId: v.id('profiles'),
-    }, handler: async (ctx, { albumId, profileId }) => {
-        const membership = await ctx.db
-            .query('albumMembers')
-            .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
-                .eq('profileId', profileId))
-            .unique();
-
-        return membership?.role;
-    }
-});
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 
 export const getUserAlbums = query({
     args: {
@@ -67,6 +53,36 @@ export const joinViaInviteCode = mutation({
 
     },
 });
+
+export const create = action({
+    args: {
+        title: v.string(),
+        description: v.optional(v.string()),
+        openInvites: v.boolean(),
+    },
+    handler: async (ctx, { title, description, openInvites }): Promise<Id<'albums'>> => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Not authenticated");
+        const profileId = identity.user_id as Id<'profiles'>;
+
+        // create the alblum doc
+        const albumId = await ctx.runMutation(internal.albums.insert, { hostId: profileId, title, description, openInvites });
+
+        // create an invite code entry
+        const code = await ctx.runAction(internal.crypto.generateInviteCode, { length: 10 });
+        await ctx.runMutation(internal.inviteCodes.insert, { albumId, code, createdBy: profileId, role: 'member' });
+
+        // create album member entry: host
+        await ctx.runMutation(internal.albumMembers.addMember, {
+            albumId,
+            profileId,
+            role: 'host',
+        });
+
+        return albumId;
+
+    }
+})
 
 export const createAlbum = mutation({
     args: {
@@ -174,14 +190,66 @@ export const updateAlbum = mutation({
 });
 
 export const deleteAlbum = mutation({
-    args: {
-        albumId: v.id('albums'),
-    }, handler: async (ctx, { albumId }) => {
-        await ctx.db.delete(albumId);
-    },
-});
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership !== 'host') throw new Error('Not the host of this album');
+
+        const duration = 1000 * 60 * 60 * 24 * 30; // 30 days
+        const id = await ctx.scheduler.runAfter(duration, internal.albums.scheduledDeletion, { albumId });
+
+        await ctx.db.patch(albumId, {
+            isDeleted: true,
+            deletionScheduledAt: Date.now() + duration,
+            scheduledDeletionId: id,
+        });
+
+        return { success: true, scheduledDeletion }
+    }
+})
+
+export const cancelAlbumDeletion = mutation({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership !== 'host') throw new Error('Not the host of this album');
+
+        const album = await ctx.db.get(albumId);
+        if (!album || !album.scheduledDeletionId) throw new Error('Album not found');
+
+        await ctx.db.system.get(album.scheduledDeletionId);
+
+        await ctx.scheduler.cancel(album.scheduledDeletionId);
+
+        await ctx.db.patch(albumId, {
+            isDeleted: false,
+            deletionScheduledAt: undefined,
+            scheduledDeletionId: undefined,
+        });
+    }
+})
 
 // --- Internal ---
+export const insert = internalMutation({
+    args: {
+        hostId: v.id('profiles'),
+        title: v.string(),
+        description: v.optional(v.string()),
+        openInvites: v.boolean(),
+    },
+    handler: async (ctx, args): Promise<Id<'albums'>> => {
+        return await ctx.db.insert('albums', {
+            hostId: args.hostId,
+            title: args.title,
+            description: args.description,
+            openInvites: args.openInvites,
+            updatedAt: Date.now(),
+            isDynamicThumbnail: true,
+            isDeleted: false,
+        });
+    },
+})
+
 export const getAlbumById = internalQuery({
     args: { albumId: v.id('albums') },
     handler: async (ctx, { albumId }) => {
@@ -200,3 +268,10 @@ export const updateThumbnail = internalMutation({
         await ctx.db.patch(albumId, { thumbnail });
     }
 });
+
+export const scheduledDeletion = internalMutation({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        await ctx.db.delete(albumId);
+    }
+})

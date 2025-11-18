@@ -46,11 +46,6 @@ function HomeLayout() {
                 headerTitle: 'Edit Profile',
                 headerLeft: backButton,
             }} />
-
-            {/* <Stack.Screen name="manual-asset-picker" options={{
-                presentation: 'modal',
-                headerShown: false,
-            }} /> */}
         </Stack>
     );
 }

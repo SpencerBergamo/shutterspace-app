@@ -1,15 +1,65 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
+import { internalMutation, mutation, query } from "./_generated/server";
 
-export const isMember = query({
+
+export const getMembership = query({
+    args: {
+        albumId: v.id("albums"),
+    }, handler: async (ctx, { albumId }) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Not Authenticated");
+
+        const profileId = identity.user_id as Id<'profiles'>;
+
+        const membership = await ctx.db.query('albumMembers')
+            .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
+                .eq('profileId', profileId))
+            .first();
+
+        return membership?.role;
+    }
+})
+
+export const addMember = internalMutation({
     args: {
         albumId: v.id("albums"),
         profileId: v.id("profiles"),
-    }, handler: async (ctx, { albumId, profileId }) => {
-        const member = await ctx.db.query("albumMembers")
-            .withIndex("by_album_profileId", q => q.eq("albumId", albumId).eq("profileId", profileId))
+        role: v.union(
+            v.literal('host'),
+            v.literal('member'),
+            v.literal('moderator'),
+        ),
+    }, handler: async (ctx, { albumId, profileId, role }) => {
+        return await ctx.db.insert('albumMembers', {
+            albumId,
+            profileId,
+            role,
+            joinedAt: Date.now(),
+        });
+    }
+})
+
+export const leaveAlbum = mutation({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Not Authenticated");
+        const profileId = identity.user_id as Id<'profiles'>;
+
+        const membership = await ctx.db.query('albumMembers')
+            .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
+                .eq('profileId', profileId))
             .first();
 
-        return !!member;
+        if (!membership) throw new Error("You are not a member of this album");
+        await ctx.db.delete(membership._id);
     }
-});
+})
+
+export const removeMember = mutation({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+
+    }
+})

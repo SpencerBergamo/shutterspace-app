@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import { internalQuery, mutation, query } from "./_generated/server";
 
-
 export const createProfile = mutation({
     args: {
         firebaseUID: v.string(),

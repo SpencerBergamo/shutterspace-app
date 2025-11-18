@@ -1,5 +1,6 @@
 import FloatingActionButton from "@/components/FloatingActionButton";
 import MediaTile from "@/components/media/mediaTile";
+import { useProfile } from "@/context/ProfileContext";
 import { useTheme } from "@/context/ThemeContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -8,7 +9,7 @@ import { useMedia } from "@/hooks/useMedia";
 import getGridLayout from "@/utils/getGridLyout";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { useAction } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Images, Plus } from "lucide-react-native";
@@ -16,19 +17,33 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert, FlatList, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function AlbumScreen() {
+
+    // Layout
     const { theme } = useTheme();
     const { width } = useWindowDimensions();
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 3, gap: 2, aspectRatio: 1 }), [width]);
 
+    // Data
+    const { profileId } = useProfile();
     const { getAlbumById } = useAlbums();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const album = getAlbumById(albumId);
     const { media, selectAndUploadAssets, inFlightUploads, removeInFlightUpload, } = useMedia(albumId);
+    ``
+    // Refs
     const flatListRef = useRef<FlatList>(null);
-
     const settingsModalRef = useRef<BottomSheetModal>(null);
+
+    // States
     const [isCreatingInvite, setIsCreatingInvite] = useState(false);
+    const [isLeavingAlbum, setIsLeavingAlbum] = useState(false);
+    const [isDeletingAlbum, setIsDeletingAlbum] = useState(false);
+
+    // Convex
     const createInvite = useAction(api.inviteCodes.createInvite);
+    const inviteCode = useQuery(api.inviteCodes.getInviteCode, { albumId });
+    const leaveAlbum = useMutation(api.albumMembers.leaveAlbum);
+    const deleteAlbum = useMutation(api.albums.deleteAlbum);
 
     const handleSettingsPress = useCallback(() => {
         settingsModalRef.current?.present();
@@ -39,22 +54,10 @@ export default function AlbumScreen() {
 
         setIsCreatingInvite(true);
         try {
-            const inviteId = await createInvite({
-                albumId: album._id,
-                createdBy: album.hostId,
-                role: 'member',
-            });
-
-            // Generate shareable link - you'll need to update this with your actual domain
-            const inviteCode = inviteId; // In production, you'd fetch the actual code
-            const shareUrl = `shutterspace://invite/${inviteCode}`;
-
             await Share.share({
                 message: `Join my album "${album.title}" on ShutterSpace!`,
-                url: shareUrl,
+                url: `https://shutterspace.app/invite/${inviteCode}`,
             });
-
-            settingsModalRef.current?.dismiss();
         } catch (e) {
             console.error("Failed to get the invite code", e);
             Alert.alert('Error', 'Failed to create invite link. Please try again.');
@@ -63,60 +66,33 @@ export default function AlbumScreen() {
         }
     }, [album, createInvite, isCreatingInvite]);
 
-    const handleShareAlbum = useCallback(async () => {
-        if (!album) return;
-
-        try {
-            await Share.share({
-                message: `Check out my album "${album.title}" on ShutterSpace!`,
-            });
-        } catch (error) {
-            console.error('Error sharing:', error);
-        }
-    }, [album]);
-
     const handleViewMembers = useCallback(() => {
         settingsModalRef.current?.dismiss();
-        // Navigate to members view - you can implement this route later
-        Alert.alert('Members', 'Member management coming soon!');
     }, []);
 
-    const handleLeaveAlbum = useCallback(() => {
-        Alert.alert(
-            'Leave Album',
-            'Are you sure you want to leave this album? You won\'t be able to access it unless you\'re invited again.',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Leave',
-                    style: 'destructive',
-                    onPress: () => {
-                        settingsModalRef.current?.dismiss();
-                        // Implement leave logic
-                        router.back();
-                    },
-                },
-            ]
-        );
-    }, []);
+    const handleLeaveAlbum = useCallback(async () => {
+        setIsLeavingAlbum(true);
+        try {
+            await leaveAlbum({ albumId });
+            settingsModalRef.current?.dismiss();
+            router.back();
+        } catch (e) {
+            console.error("Failed to leave album: ", e);
+        } finally {
+            setIsLeavingAlbum(false);
+        }
+    }, [albumId]);
 
-    const handleDeleteAlbum = useCallback(() => {
-        Alert.alert(
-            'Delete Album',
-            'Are you sure you want to delete this album? This action cannot be undone and all photos will be removed.',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: () => {
-                        settingsModalRef.current?.dismiss();
-                        // Implement delete logic
-                        router.back();
-                    },
-                },
-            ]
-        );
+    const handleDeleteAlbum = useCallback(async () => {
+        setIsDeletingAlbum(true);
+        try {
+            await deleteAlbum({ albumId });
+            settingsModalRef.current?.dismiss();
+        } catch (e) {
+            console.error("Failed to delete album: ", e);
+        } finally {
+            setIsDeletingAlbum(false);
+        }
     }, []);
 
     const formattedDate = useMemo(() => {
@@ -138,6 +114,26 @@ export default function AlbumScreen() {
                 <Text>
                     This album may have been deleted or is not available.
                 </Text>
+            </View>
+        </View>
+    );
+
+    if (album.isDeleted) return (
+        <View
+            style={{ flex: 1, backgroundColor: theme.colors.background }}
+        >
+            <Stack.Screen options={{
+                headerTitle: album.title,
+            }} />
+
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                {album.hostId === profileId ? (
+                    <View style={{ flexDirection: 'column' }}>
+
+                    </View>
+                ) : (
+                    <View></View>
+                )}
             </View>
         </View>
     );
@@ -337,20 +333,6 @@ export default function AlbumScreen() {
                             </View>
                             <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
                         </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.settingsOption}
-                            onPress={handleShareAlbum}
-                        >
-                            <View style={[styles.optionIcon, { backgroundColor: '#E8F9F5' }]}>
-                                <Ionicons name="share-social" size={20} color="#16A085" />
-                            </View>
-                            <View style={styles.optionContent}>
-                                <Text style={styles.optionTitle}>Share Album</Text>
-                                <Text style={styles.optionSubtitle}>Tell others about this album</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
-                        </TouchableOpacity>
                     </View>
 
                     {/* Manage Section */}
@@ -397,29 +379,59 @@ export default function AlbumScreen() {
                         <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>Danger Zone</Text>
 
                         {/* Show Leave or Delete based on user role */}
-                        {album.hostId !== album.hostId ? ( // Replace with actual user ID check
+                        {album.hostId !== profileId ? ( // Replace with actual user ID check
                             <TouchableOpacity
                                 style={[styles.settingsOption, styles.dangerOption]}
-                                onPress={handleLeaveAlbum}
+                                onPress={() => {
+                                    Alert.alert(
+                                        'Leave Album',
+                                        'Are you sure you want to leave this album? You won\'t be able to access it unless you\'re invited again.',
+                                        [
+                                            { text: 'Cancel', style: 'cancel' },
+                                            {
+                                                text: 'Leave',
+                                                style: 'destructive',
+                                                onPress: handleLeaveAlbum,
+                                            },
+                                        ]
+                                    );
+                                }}
                             >
                                 <View style={[styles.optionIcon, { backgroundColor: '#FFE5E5' }]}>
                                     <Ionicons name="exit-outline" size={20} color="#FF3B30" />
                                 </View>
                                 <View style={styles.optionContent}>
-                                    <Text style={[styles.optionTitle, { color: '#FF3B30' }]}>Leave Album</Text>
+                                    <Text style={[styles.optionTitle, { color: '#FF3B30' }]}>
+                                        {isLeavingAlbum ? 'Leaving Album...' : 'Leave Album'}
+                                    </Text>
                                     <Text style={styles.optionSubtitle}>Remove yourself from this album</Text>
                                 </View>
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity
                                 style={[styles.settingsOption, styles.dangerOption]}
-                                onPress={handleDeleteAlbum}
+                                onPress={() => {
+                                    Alert.alert(
+                                        'Delete Album',
+                                        'Are you sure you want to delete this album? This action cannot be undone and all photos will be removed.',
+                                        [
+                                            { text: 'Cancel', style: 'cancel' },
+                                            {
+                                                text: 'Delete',
+                                                style: 'destructive',
+                                                onPress: handleDeleteAlbum,
+                                            },
+                                        ]
+                                    );
+                                }}
                             >
                                 <View style={[styles.optionIcon, { backgroundColor: '#FFE5E5' }]}>
                                     <Ionicons name="trash-outline" size={20} color="#FF3B30" />
                                 </View>
                                 <View style={styles.optionContent}>
-                                    <Text style={[styles.optionTitle, { color: '#FF3B30' }]}>Delete Album</Text>
+                                    <Text style={[styles.optionTitle, { color: '#FF3B30' }]}>
+                                        {isDeletingAlbum ? 'Deleting Album...' : 'Delete Album'}
+                                    </Text>
                                     <Text style={styles.optionSubtitle}>Permanently delete this album</Text>
                                 </View>
                             </TouchableOpacity>

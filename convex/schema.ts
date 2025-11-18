@@ -51,6 +51,8 @@ export default defineSchema({
         updatedAt: v.number(),
         expiresAt: v.optional(v.number()),
         isDeleted: v.boolean(),
+        deletionScheduledAt: v.optional(v.number()),
+        scheduledDeletionId: v.optional(v.id('_scheduled_functions')),
     }).index('by_hostId', ['hostId'])
         .index('by_updatedAt', ['updatedAt'])
         .index('by_dateRange', ['dateRange'])
@@ -74,12 +76,12 @@ export default defineSchema({
         code: v.string(), // 6-character alphanumeric code
         albumId: v.id('albums'),
         createdBy: v.id('profiles'),
-        expiresAt: v.number(),
         role: v.union(
             v.literal('member'),
             v.literal('moderator'),
         ),
-    }).index('by_code', ['code']),
+    }).index('by_code', ['code'])
+        .index('by_albumId', ['albumId']),
 
     media: defineTable({
         albumId: v.id("albums"),

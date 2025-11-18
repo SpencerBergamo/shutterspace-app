@@ -4,7 +4,6 @@ export interface Invite {
     code: string;
     albumId: Id<'albums'>;
     createdBy: Id<'profiles'>;
-    expiresAt: number;
     role: 'member' | 'moderator';
 }
 
@@ -13,7 +12,7 @@ export interface InviteCode extends Invite {
     _creationTime: number;
 }
 
-export interface InviteContent extends InviteCode {
+export interface Invitation extends InviteCode {
     sender: string;
     avatarUrl?: string;
     title: string;

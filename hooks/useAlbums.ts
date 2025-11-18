@@ -28,10 +28,7 @@ export const useAlbums = (): UseAlbumsResult => {
     }, [albums]);
 
     const getMemberRole = useCallback(async (albumId: Id<'albums'>): Promise<MemberRole> => {
-        return useQuery(api.albums.getMembership, {
-            albumId,
-            profileId: profile._id,
-        }) || 'not-a-member';
+        return useQuery(api.albumMembers.getMembership, { albumId }) || 'not-a-member';
     }, [profile._id]);
 
     const createAlbum = useCallback(async (data: AlbumFormData): Promise<Id<'albums'>> => {

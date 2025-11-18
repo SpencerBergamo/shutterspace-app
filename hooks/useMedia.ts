@@ -71,7 +71,6 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
         }
     }, [albumId, profileId]);
 
-
     return {
         media,
         selectAndUploadAssets,

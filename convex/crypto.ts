@@ -3,7 +3,6 @@
 import axios from 'axios';
 import { v } from 'convex/values';
 import crypto from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
 import { action, internalAction } from './_generated/server';
 
 /**
@@ -76,7 +75,19 @@ export const uploadFile = internalAction({
 });
 
 export const generateInviteCode = internalAction({
-    args: {}, handler: async (ctx, args) => {
-        return crypto.createHash('sha256').update(uuidv4()).digest('base64url');
+    args: {
+        length: v.number(),
+    }, handler: async (ctx, { length }): Promise<string> => {
+        const abs = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+        const bytes = new Uint8Array(length);
+        crypto.getRandomValues(bytes);
+
+        let code = '';
+        for (let i = 0; i < length; i++) {
+            code += abs[bytes[i] % abs.length];
+        }
+
+        return code;
     },
 });

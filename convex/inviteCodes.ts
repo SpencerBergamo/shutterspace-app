@@ -1,45 +1,54 @@
-import { InviteContent } from "@/types/Invites";
+import { Invitation } from "@/types/Invites";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { action, internalMutation, internalQuery, mutation } from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+
 
 export const createInvite = action({
     args: {
         albumId: v.id('albums'),
-        createdBy: v.id('profiles'),
-        role: v.union(
-            v.literal('member'),
-            v.literal('moderator'),
-        ),
-    }, handler: async (ctx, { albumId, createdBy, role }): Promise<Id<'inviteCodes'>> => {
+    }, handler: async (ctx, { albumId }): Promise<string> => {
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) throw new Error('Not authenticated');
 
-        const membership = await ctx.runQuery(api.albums.getMembership, {
-            albumId: albumId,
-            profileId: createdBy,
-        });
-        if (!membership) throw new Error('You are not a member of this album');
+        const profileId = identity.user_id as Id<'profiles'>;
 
-        const isHost = membership === 'host';
-        const expiresAt = Date.now() + 1000 * 60 * 60 * 24 * 3; // 3 days
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership !== 'host') throw new Error('Not the host of this album');
 
-        const code = await ctx.runAction(internal.crypto.generateInviteCode, {});
+        const code = await ctx.runAction(internal.crypto.generateInviteCode, { length: 10 });
 
-        return await ctx.runMutation(internal.inviteCodes.create, {
+        await ctx.runMutation(internal.inviteCodes.insert, {
             code,
             albumId,
-            createdBy,
-            expiresAt,
-            role: isHost ? role : 'member',
+            createdBy: profileId,
+            role: 'member',
         });
+
+        return code;
     },
 });
 
+export const getInviteCode = query({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }): Promise<string> => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership !== 'host') throw new Error('Not the host of this album');
+
+        const inviteCode = await ctx.db.query('inviteCodes')
+            .withIndex('by_albumId', q => q.eq('albumId', albumId))
+            .first();
+
+        if (!inviteCode) throw new Error('No invite code found');
+
+        return inviteCode.code;
+    }
+})
+
 export const openInvite = action({
     args: { code: v.string() },
-    handler: async (ctx, { code }): Promise<InviteContent> => {
+    handler: async (ctx, { code }): Promise<Invitation> => {
         const invite = await ctx.runQuery(internal.inviteCodes.getInvite, { code });
         if (!invite) throw new Error('Invalid invite code');
 
@@ -57,13 +66,11 @@ export const openInvite = action({
                 if (type === 'image') {
                     coverUrl = await ctx.runAction(internal.cloudflare.imageDeliveryURL, {
                         imageId: media.identifier.imageId,
-                        expires: invite.expiresAt,
                     });
                 } else if (type === 'video') {
                     const videoUID = media.identifier.videoUid;
                     const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, {
                         videoUID: videoUID,
-                        expires: invite.expiresAt,
                     });
                     coverUrl = `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${videoUID}/thumbnails/thumbnail.jpg?token=${token}`;
                 }
@@ -76,7 +83,6 @@ export const openInvite = action({
             code: invite.code,
             albumId: invite.albumId,
             createdBy: invite.createdBy,
-            expiresAt: invite.expiresAt,
             role: invite.role,
             sender: profile.nickname,
             avatarUrl: undefined,
@@ -112,39 +118,25 @@ export const acceptInvite = mutation({
 
 // --- Internal ---
 
-export const create = internalMutation({
+export const insert = internalMutation({
     args: {
         code: v.string(),
         albumId: v.id('albums'),
         createdBy: v.id('profiles'),
-        expiresAt: v.number(),
         role: v.union(
             v.literal('member'),
             v.literal('moderator'),
         ),
-    }, handler: async (ctx, { code, albumId, createdBy, expiresAt, role }): Promise<Id<'inviteCodes'>> => {
+    }, handler: async (ctx, { code, albumId, createdBy, role }): Promise<Id<'inviteCodes'>> => {
         return await ctx.db.insert('inviteCodes', {
             code,
             albumId,
             createdBy,
-            expiresAt,
             role,
         });
     },
 });
 
-export const expire = internalMutation({
-    args: {
-        inviteCodeId: v.id('inviteCodes'),
-    },
-    handler: async (ctx, args) => {
-
-        await ctx.db.patch(args.inviteCodeId, {
-            expiresAt: 0,
-            code: 'expired',
-        });
-    },
-});
 
 export const getInvite = internalQuery({
     args: { code: v.string() },
@@ -152,7 +144,6 @@ export const getInvite = internalQuery({
         const invite = await ctx.db.query('inviteCodes')
             .withIndex('by_code', q => q.eq('code', code))
             .first();
-        if (!invite || invite.expiresAt < Date.now()) throw new Error('Invite code has expired');
 
         return invite;
     },
