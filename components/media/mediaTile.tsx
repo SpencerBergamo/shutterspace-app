@@ -1,104 +1,82 @@
-import { useProfile } from "@/context/ProfileContext";
-import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import useRemoteUri from "@/hooks/useRemoteUri";
 import { Media } from "@/types/Media";
-import { useAction } from "convex/react";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from 'expo-image';
-import { CloudAlert, Play } from "lucide-react-native";
+import { Play } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface MediaTileProps {
     media: Media;
+    itemSize: number;
     onPress: (mediaId: Id<'media'>) => void;
     onLongPress: (mediaId: Id<'media'>) => void;
     onReady: (mediaId: Id<'media'>) => void;
-    onError: (mediaId: Id<'media'>) => void;
-    inFlightURI?: string;
+    retry: (mediaId: Id<'media'>) => void;
+    placeholderUri?: string;
 }
 
-type ImageStatus = 'loading' | 'ready' | 'error';
-
-export default function MediaTile({ media, onPress, onLongPress, onReady, onError, inFlightURI }: MediaTileProps) {
-    const { profileId } = useProfile();
-    const requestImageURL = useAction(api.cloudflare.requestImageURL);
-    const requestVideoThumbnailURL = useAction(api.cloudflare.requestVideoThumbnailURL);
+export default function MediaTile({ media, itemSize, onPress, onLongPress, onReady, retry, placeholderUri }: MediaTileProps) {
+    const { fetchUri } = useRemoteUri();
 
     const mediaId = media._id;
     const mediaStatus = media.status;
     const type = media.identifier.type;
-    const [renderState, setRenderState] = useState<ImageStatus>('loading');
-    const [uri, setUri] = useState<string | undefined>(inFlightURI);
+    const [uri, setUri] = useState<string | undefined>();
 
     useEffect(() => {
         (async () => {
-            switch (mediaStatus) {
-                case 'error':
-                    setRenderState('error');
-                    break;
-
-                case 'ready':
-                    try {
-                        const localUri = await Image.getCachePathAsync(mediaId);
-                        if (localUri) {
-                            setUri(localUri);
-                            setRenderState('ready');
-                            return;
-                        }
-
-                        const cloudflareId = type === 'video' ? media.identifier.videoUid : media.identifier.imageId;
-                        const albumId = media.albumId;
-                        let requestUrl: string | undefined;
-
-                        if (type === 'image') {
-                            requestUrl = await requestImageURL({ albumId, profileId, imageId: cloudflareId });
-                        } else if (type === 'video') {
-                            requestUrl = await requestVideoThumbnailURL({ albumId, profileId, videoUID: cloudflareId });
-                        }
-
-                        setUri(requestUrl);
-                    } catch (e) {
-                        setRenderState('error');
-                        onError(mediaId);
-                    }
-                default: return;
-            }
+            const response = await fetchUri({ media, videoPlayback: false });
+            setUri(response);
         })();
-
     }, [media, mediaStatus]);
 
-    return (
-        <Pressable style={styles.container} onPress={() => onPress(mediaId)} onLongPress={() => onLongPress(mediaId)}>
-            <Image
-                key={mediaId}
-                source={{ uri, cacheKey: mediaId }}
-                style={{ width: '100%', height: '100%' }}
-                contentFit="cover"
-                cachePolicy={'memory-disk'}
-                placeholder={inFlightURI}
-                onDisplay={() => {
-                    setRenderState('ready');
-                    onReady(mediaId);
-                }}
-                onError={() => {
-                    onError(mediaId);
-                }}
-            />
+    if (media.status === 'error') {
+        return (
+            <TouchableOpacity style={{ width: itemSize, height: itemSize, marginBottom: 2, justifyContent: 'center', alignItems: 'center' }}>
+                <Ionicons name="alert-circle-outline" size={24} color="red" />
+            </TouchableOpacity>
+        )
+    }
 
-            {type === 'video' && (
+    return (
+        <TouchableOpacity
+            style={{ width: itemSize, height: itemSize, marginBottom: 2 }}
+            onPress={() => onPress(mediaId)}
+            onLongPress={() => onLongPress(mediaId)}
+        >
+            {!uri && placeholderUri && (
+                <Image
+                    source={{ uri: placeholderUri }}
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="cover"
+                />
+            )}
+
+
+            {uri && (
+                <Image
+                    source={{ uri, cacheKey: mediaId }}
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="cover"
+                    cachePolicy={'memory-disk'}
+                    onDisplay={() => {
+                        onReady(mediaId);
+                    }}
+                    onError={(e) => {
+                        console.error("Rendering tile failed: ", e);
+                    }}
+                />
+            )}
+
+
+            {uri && type === 'video' && (
                 <View style={styles.playIconPosition}>
                     <Play size={24} color="white" />
                 </View>
             )}
-
-            {renderState === 'loading' && (
-                <ActivityIndicator size="small" color="white" />
-            )}
-
-            {renderState === 'error' && (
-                <CloudAlert size={24} color="red" />
-            )}
-        </Pressable>
+        </TouchableOpacity>
     );
 };
 

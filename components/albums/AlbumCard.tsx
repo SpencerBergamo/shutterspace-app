@@ -1,6 +1,9 @@
+import { api } from '@/convex/_generated/api';
+import useRemoteUri from '@/hooks/useRemoteUri';
 import { Album } from '@/types/Album';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@react-navigation/native';
+import { useQuery } from 'convex/react';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -14,18 +17,20 @@ interface AlbumCardProps {
 }
 
 export default function AlbumCard({ album, width, height }: AlbumCardProps) {
-
-    const [thumbnail, setThumbnail] = useState<string | null>(null);
     const theme = useTheme();
+    const mediaThumbnail = useQuery(api.media.getMedia, album.thumbnail ? { mediaId: album.thumbnail } : 'skip');
+    const { fetchUri } = useRemoteUri();
+
+    const [uri, setUri] = useState<string | undefined>();
 
     useEffect(() => {
         (async () => {
-            if (album.thumbnail) {
-                const localUri = await Image.getCachePathAsync(album.thumbnail);
-                setThumbnail(localUri);
+            if (mediaThumbnail) {
+                const response = await fetchUri({ media: mediaThumbnail, videoPlayback: false });
+                setUri(response);
             }
         })();
-    }, [album]);
+    }, [album, mediaThumbnail]);
 
     return (
         <TouchableOpacity
@@ -33,15 +38,22 @@ export default function AlbumCard({ album, width, height }: AlbumCardProps) {
             onPress={() => router.push(`album/${album._id}`)}
         >
             <View style={styles.albumThumbnailContainer}>
-                {thumbnail ? (
+                {!mediaThumbnail && (
+                    <View style={[styles.albumThumbnail, styles.placeholderThumbnail, { backgroundColor: theme.colors.border }]}>
+                        <Ionicons name="image-outline" size={64} color={theme.colors.text} />
+                    </View>
+                )}
+
+                {mediaThumbnail && uri ? (
                     <Image
-                        source={{ uri: album.thumbnail }}
+                        source={{ uri, cacheKey: mediaThumbnail._id }}
                         style={styles.albumThumbnail}
                         contentFit="cover"
+                        cachePolicy={'memory-disk'}
                     />
                 ) : (
                     <View style={[styles.albumThumbnail, styles.placeholderThumbnail, { backgroundColor: theme.colors.border }]}>
-                        <Ionicons name="image-outline" size={64} color={theme.colors.text} />
+                        <Ionicons name="alert-circle-outline" size={64} color={theme.colors.text} />
                     </View>
                 )}
             </View>
@@ -79,8 +91,10 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         marginBottom: 4,
+        paddingHorizontal: 8,
     },
     albumDate: {
         fontSize: 12,
+        paddingHorizontal: 8,
     },
 });

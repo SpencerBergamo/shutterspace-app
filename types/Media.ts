@@ -5,6 +5,7 @@ export type Media = {
     _creationTime: number;
     albumId: Id<'albums'>;
     createdBy: Id<'profiles'>;
+    assetId: string;
     filename: string;
     identifier: MediaIdentifier;
     size?: number;

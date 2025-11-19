@@ -152,13 +152,20 @@ export const getMediaForAlbum = query({
     }
 });
 
-export const getMediaById = query({
+export const getMedia = query({
     args: {
-        mediaId: v.id('media'),
-    }, handler: async (ctx, { mediaId }) => {
-        return await ctx.db.get(mediaId);
+        mediaId: v.id('media')
+    },
+    handler: async (ctx, { mediaId }) => {
+        const media = await ctx.db.get(mediaId);
+        if (!media) throw new Error('Media not found');
+
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId: media.albumId });
+        if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
+
+        return media;
     }
-});
+})
 
 
 export const deleteMedia = mutation({

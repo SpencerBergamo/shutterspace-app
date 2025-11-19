@@ -56,10 +56,12 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
         try {
             const { invalid, valid } = validateAssets(response.assets);
 
+            console.log(`${valid.length} valid assets`);
             if (valid.length > 0) {
                 for (const asset of valid) {
                     const isLast = asset === valid.at(-1);
 
+                    console.log(`${valid.indexOf(asset)} added to inFlightUploads`);
                     addInFlightUpload({ assetId: asset.assetId, uri: asset.uri });
 
                     const uploadUrl: string = await prepareUpload({
@@ -76,6 +78,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                         isLast,
                     });
 
+                    console.log(`${valid.indexOf(asset)} uploading to Cloudflare`);
                     const form = new FormData();
                     form.append('file', {
                         uri: asset.uri,
@@ -83,6 +86,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                         type: asset.mimeType,
                     } as any);
                     const response = await axios.post(uploadUrl, form);
+                    console.log(`${valid.indexOf(asset)} Cloudflare response: `, response.data);
                     if (!response.data || response.status !== 200) {
                         updateInFlightUploadStatus(asset.assetId, 'error');
                         console.error("useMedia: uploadAssets failed", response.data);
@@ -91,6 +95,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                 }
             }
 
+            console.log(`${invalid.length} invalid assets`);
             if (invalid.length > 0) {
                 for (const asset of invalid) {
                     updateInFlightUploadStatus(asset.assetId, 'error');
@@ -100,6 +105,8 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
             }
         } catch (e) {
             console.error("useMedia: uploadAssets failed", e);
+        } finally {
+            setPreparingUploads(false);
         }
     }, [albumId]);
 

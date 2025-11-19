@@ -10,8 +10,9 @@ const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const UPLOAD_BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}`;
 const DELIVERY_BASE_URL = `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com`;
 
+
 // ------------------------------------------------------------
-// Cloudflare Images
+// UploadURLs
 // ------------------------------------------------------------
 
 export const requestImageUploadURL = internalAction({
@@ -34,44 +35,6 @@ export const requestImageUploadURL = internalAction({
     }
 });
 
-export const requestImageURL = action({
-    args: {
-        albumId: v.id('albums'),
-        profileId: v.id('profiles'),
-        imageId: v.string(), // image_id
-    }, handler: async (ctx, { albumId, profileId, imageId }): Promise<string> => {
-        const identity = await ctx.auth.getUserIdentity();
-
-        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-
-        if (!membership || !identity) throw new Error('Unauthorized');
-
-        return await ctx.runAction(internal.cloudflare.imageDeliveryURL, { imageId });
-    }
-});
-
-export const imageDeliveryURL = internalAction({
-    args: {
-        imageId: v.string(),
-        expires: v.optional(v.number()),
-    },
-    handler: async (_ctx, { imageId, expires }): Promise<string> => {
-        const sigKey = process.env.CLOUDFLARE_IMAGE_SIG_TOKEN;
-        const accountHash = process.env.CLOUDFLARE_ACCOUNT_HASH;
-
-        const expiry = expires ?? Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
-
-        const path = `/${accountHash}/${imageId}/public?exp=${expiry}`;
-
-        const sig = crypto.createHmac('sha256', sigKey).update(path).digest('hex');
-
-        return `https://imagedelivery.net${path}&sig=${sig}`;
-    }
-});
-
-// ------------------------------------------------------------
-// Cloudflare Streams
-// ------------------------------------------------------------
 export const requestVideoUploadURL = internalAction({
     args: {
         filename: v.string(),
@@ -92,39 +55,73 @@ export const requestVideoUploadURL = internalAction({
     }
 });
 
+// ------------------------------------------------------------
+// Cloudflare Delivery URLs/Tokens
+// ------------------------------------------------------------
+
+export const requestImageURL = action({
+    args: {
+        albumId: v.id('albums'),
+        imageId: v.string(), // image_id
+    }, handler: async (ctx, { albumId, imageId }): Promise<string> => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
+
+        return await ctx.runAction(internal.cloudflare.imageDeliveryURL, { imageId });
+    }
+});
+
 export const requestVideoThumbnailURL = action({
     args: {
         albumId: v.id('albums'),
-        profileId: v.id('profiles'),
         videoUID: v.string(),
     },
-    handler: async (ctx, { albumId, profileId, videoUID }): Promise<string> => {
-        const identity = await ctx.auth.getUserIdentity();
+    handler: async (ctx, { albumId, videoUID }): Promise<string> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-
-        if (!membership || !identity) throw new Error('Unauthorized');
+        if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
 
         const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, { videoUID });
 
         return `${DELIVERY_BASE_URL}/${videoUID}/thumbnails/thumbnail.jpg?token=${token}`;
     }
-})
+});
 
 export const requestVideoPlaybackURL = action({
     args: {
         albumId: v.id('albums'),
-        profileId: v.id('profiles'),
         videoUID: v.string(),
     },
-    handler: async (ctx, { albumId, profileId, videoUID }): Promise<string> => {
-        const identity = await ctx.auth.getUserIdentity();
+    handler: async (ctx, { albumId, videoUID }): Promise<string> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-
-        if (!membership || !identity) throw new Error('Unauthorized');
+        if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
 
         const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, { videoUID });
 
         return `${DELIVERY_BASE_URL}/${token}/manifest/video.mp4`;
+    }
+});
+
+
+// ------------------------------------------------------------
+// Internal Actions
+// ------------------------------------------------------------
+
+export const imageDeliveryURL = internalAction({
+    args: {
+        imageId: v.string(),
+        expires: v.optional(v.number()),
+    },
+    handler: async (_ctx, { imageId, expires }): Promise<string> => {
+        const sigKey = process.env.CLOUDFLARE_IMAGE_SIG_TOKEN;
+        const accountHash = process.env.CLOUDFLARE_ACCOUNT_HASH;
+
+        const expiry = expires ?? Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
+
+        const path = `/${accountHash}/${imageId}/public?exp=${expiry}`;
+
+        const sig = crypto.createHmac('sha256', sigKey).update(path).digest('hex');
+
+        return `https://imagedelivery.net${path}&sig=${sig}`;
     }
 });
 

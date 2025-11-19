@@ -7,7 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useMedia } from "@/hooks/useMedia";
-import getGridLayout from "@/utils/getGridLyout";
+import { Media } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useAction, useMutation, useQuery } from "convex/react";
@@ -15,14 +15,21 @@ import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Images, Plus } from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Alert, FlatList, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { Alert, Dimensions, FlatList, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const NUM_COLUMNS = 3;
+const GAP = 2;
+
 
 export default function AlbumScreen() {
 
     // Layout
     const { theme } = useTheme();
     const { width } = useWindowDimensions();
-    const gridConfig = useMemo(() => getGridLayout({ width, columns: 3, gap: 2, aspectRatio: 1 }), [width]);
+    const itemSize: number = useMemo(() => {
+        return (SCREEN_WIDTH - (GAP * 2)) / NUM_COLUMNS;
+    }, [width]);
 
     // Data
     const { profileId } = useProfile();
@@ -30,7 +37,7 @@ export default function AlbumScreen() {
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const album = getAlbumById(albumId);
     const { media, selectAndUploadAssets, inFlightUploads, removeInFlightUpload, } = useMedia(albumId);
-    ``
+
     // Refs
     const flatListRef = useRef<FlatList>(null);
     const settingsModalRef = useRef<BottomSheetModal>(null);
@@ -128,6 +135,27 @@ export default function AlbumScreen() {
         });
     }, [album]);
 
+    const renderMedia = useCallback(({ item }: { item: Media }) => {
+        const inFlightUri: string | undefined = inFlightUploads[item.assetId] ?? undefined;
+
+        return <MediaTile
+            media={item}
+            itemSize={itemSize}
+            onPress={() => {
+                router.push({
+                    pathname: '../viewer/[mediaId]',
+                    params: { mediaId: item._id, albumId: albumId },
+                })
+            }}
+            onLongPress={() => { }}
+            onReady={() => {
+                removeInFlightUpload(item.assetId);
+            }}
+            retry={() => { }}
+            placeholderUri={inFlightUri}
+        />
+    }, [media, inFlightUploads, removeInFlightUpload]);
+
     if (!album) return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <Stack.Screen options={{
@@ -169,11 +197,10 @@ export default function AlbumScreen() {
             <FlatList
                 ref={flatListRef}
                 data={media}
-                keyExtractor={(item) => item._id}
-                numColumns={gridConfig.numColumns}
-                columnWrapperStyle={gridConfig.columnWrapperStyle}
-                contentContainerStyle={gridConfig.contentContainerStyle}
-                style={{ padding: 2 }}
+                keyExtractor={(item: Media) => item._id}
+                numColumns={NUM_COLUMNS}
+                columnWrapperStyle={{ gap: GAP }}
+                contentContainerStyle={{ padding: 0 }}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Images size={48} color="#ccc" style={{ margin: 16 }} />
@@ -182,27 +209,7 @@ export default function AlbumScreen() {
                         <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
                     </View>
                 }
-                renderItem={({ item }) => {
-                    const inFlightURI = inFlightUploads[item.assetId];
-
-                    return (
-                        <MediaTile
-                            media={item}
-                            onPress={() => {
-                                router.push({
-                                    pathname: '../viewer/[mediaId]',
-                                    params: { mediaId: item._id, albumId: albumId },
-                                });
-                            }}
-                            onLongPress={() => { }}
-                            onReady={() => {
-                                removeInFlightUpload(item._id);
-                            }}
-                            onError={() => { }}
-                            inFlightURI={inFlightURI}
-                        />
-                    );
-                }}
+                renderItem={renderMedia}
             />
 
             {/* Floating Action Button */}
