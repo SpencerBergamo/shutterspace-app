@@ -9,9 +9,9 @@
 
 import { ASSETS } from "@/constants/assets";
 import useFirebaseAuth from "@/hooks/useFirebaseToken";
+import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { useTheme } from "@react-navigation/native";
 import { ConvexProviderWithAuth, ConvexReactClient, useConvexAuth } from "convex/react";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
@@ -24,24 +24,23 @@ SplashScreen.preventAutoHideAsync();
 
 function AppLayout() {
     const { isLoading, isAuthenticated } = useConvexAuth();
-    const theme = useTheme();
 
-    if (isLoading) return null;
+    if (isLoading) {
+        console.log('⏳ Auth still loading');
+        return null;
+    }
 
     return (
         <Stack screenOptions={{
             headerShown: true,
             headerBackButtonDisplayMode: 'minimal',
             headerShadowVisible: false,
-            headerStyle: {
-                backgroundColor: theme.colors.background,
-            },
         }}>
             <Stack.Protected guard={isAuthenticated} >
                 <Stack.Screen name="(home)" options={{ headerShown: false }} />
             </Stack.Protected>
 
-            <Stack.Protected guard={!isAuthenticated}>
+            <Stack.Protected guard={!isAuthenticated} >
                 <Stack.Screen name="welcome" options={{ headerShown: false }} />
                 <Stack.Screen name="sign-in" options={{
                     headerTitle: ''
@@ -56,11 +55,11 @@ function AppLayout() {
     );
 }
 
-export default function RootLayout() {
+const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL! as string, {
+    unsavedChangesWarning: false,
+});
 
-    const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL! as string, {
-        unsavedChangesWarning: false,
-    });
+export default function RootLayout() {
 
     useEffect(() => {
         GoogleSignin.configure({
@@ -82,9 +81,12 @@ export default function RootLayout() {
             <SafeAreaProvider>
                 <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
                     <KeyboardProvider>
-                        <BottomSheetModalProvider>
-                            <AppLayout />
-                        </BottomSheetModalProvider>
+                        <ActionSheetProvider>
+
+                            <BottomSheetModalProvider>
+                                <AppLayout />
+                            </BottomSheetModalProvider>
+                        </ActionSheetProvider>
                     </KeyboardProvider>
                 </GestureHandlerRootView>
             </SafeAreaProvider>

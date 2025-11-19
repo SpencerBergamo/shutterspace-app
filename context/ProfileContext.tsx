@@ -16,7 +16,6 @@ import { ActivityIndicator, View } from "react-native";
 interface ProfileContextType {
     profile: Profile;
     profileId: Id<'profiles'>;
-    updateProfile: (nickname?: string, base64?: string) => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -28,11 +27,11 @@ export const ProfileProvider = ({ children }: {
     const auth = getAuth();
     const currentUser = auth.currentUser;
     if (!currentUser) return null;
-
     const [isLoading, setIsLoading] = useState(true);
     const profile = useQuery(api.profile.getProfile);
     const createProfile = useMutation(api.profile.createProfile);
-    const updateProfileMutation = useMutation(api.profile.updateProfile);
+
+    console.log(!!profile, !!currentUser);
 
     const createNewProfile = useCallback(async () => {
         setIsLoading(true);
@@ -61,24 +60,16 @@ export const ProfileProvider = ({ children }: {
 
     useEffect(() => {
         if (profile === null) {
-            createNewProfile();
+            setIsLoading(true);
         }
+
+        setIsLoading(false);
     }, [profile, currentUser, createNewProfile]);
-
-    const updateProfile = async (nickname?: string, base64?: string) => {
-        if (!profile) return;
-
-        await updateProfileMutation({
-            profileId: profile._id,
-            nickname: nickname,
-            base64: base64,
-        });
-    }
 
     if (isLoading || !profile) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="white" />
+                <ActivityIndicator size="large" color="black" />
             </View>
         );
     }
@@ -86,7 +77,6 @@ export const ProfileProvider = ({ children }: {
     return <ProfileContext.Provider value={{
         profile,
         profileId: profile._id,
-        updateProfile,
     }}>
         {children}
     </ProfileContext.Provider>;

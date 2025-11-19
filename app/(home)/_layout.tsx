@@ -1,16 +1,13 @@
 import { ProfileProvider } from "@/context/ProfileContext";
-import { ActionSheetProvider } from "@expo/react-native-action-sheet";
-import { useTheme } from "@react-navigation/native";
+// import { useTheme } from "@react-navigation/native";
 import { Stack } from "expo-router";
 
 function HomeLayout() {
-    const theme = useTheme();
     return (
         <Stack screenOptions={{
             headerBackButtonDisplayMode: 'minimal',
             headerShadowVisible: false,
             headerStyle: {
-                backgroundColor: theme.colors.background,
             }
         }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -43,9 +40,7 @@ function HomeLayout() {
 export default function Layout() {
     return (
         <ProfileProvider>
-            <ActionSheetProvider>
-                <HomeLayout />
-            </ActionSheetProvider>
+            <HomeLayout />
         </ProfileProvider>
     );
 }
