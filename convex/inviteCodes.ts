@@ -1,4 +1,5 @@
 import { Invitation } from "@/types/Invites";
+import { MediaIdentifier } from "@/types/Media";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
@@ -42,63 +43,49 @@ export const getInviteCode = query({
     }
 })
 
-export const openInvite = action({
+export const openInvite = query({
     args: { code: v.string() },
     handler: async (ctx, { code }): Promise<Invitation> => {
-        const invite = await ctx.runQuery(internal.inviteCodes.getInvite, { code });
+        const invite = await ctx.db.query('inviteCodes')
+            .withIndex('by_code', q => q.eq('code', code))
+            .first();
         if (!invite) throw new Error('Invalid invite code');
 
-        const album = await ctx.runQuery(internal.albums.getAlbumById, { albumId: invite.albumId });
-        if (!album || album.isDeleted) throw new Error('Album may have been deleted');
+        const album = await ctx.db.get(invite.albumId);
+        if (!album || album.isDeleted) throw new Error('Album not found or deleted');
 
-        const profile = await ctx.runQuery(internal.profile.getPublicProfile, { profileId: invite.createdBy });
-        if (!profile) throw new Error('Profile not found');
+        const sender = await ctx.db.get(invite.createdBy);
+        if (!sender) throw new Error('Sender\'s profile not found');
 
-        let coverUrl: string | undefined;
+        let albumCover: MediaIdentifier | undefined;
         if (album.thumbnail) {
-            const media = await ctx.runQuery(api.media.getMediaById, { mediaId: album.thumbnail });
-            if (media) {
-                const type = media.identifier.type;
-                if (type === 'image') {
-                    coverUrl = await ctx.runAction(internal.cloudflare.imageDeliveryURL, {
-                        imageId: media.identifier.imageId,
-                    });
-                } else if (type === 'video') {
-                    const videoUID = media.identifier.videoUid;
-                    const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, {
-                        videoUID: videoUID,
-                    });
-                    coverUrl = `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com/${videoUID}/thumbnails/thumbnail.jpg?token=${token}`;
-                }
-            }
+            const media = await ctx.db.get(album.thumbnail);
+            albumCover = media?.identifier ?? undefined;
         }
 
         return {
-            _id: invite._id,
-            _creationTime: invite._creationTime,
-            code: invite.code,
-            albumId: invite.albumId,
-            createdBy: invite.createdBy,
-            role: invite.role,
-            sender: profile.nickname,
+            sender: sender.nickname,
             avatarUrl: undefined,
             title: album.title,
             description: album.description,
-            coverUrl: coverUrl,
+            cover: albumCover,
+            role: invite.role,
             dateRange: album.dateRange,
             location: album.location,
             message: undefined,
         }
-    },
-});
+    }
+})
 
 export const acceptInvite = mutation({
     args: {
-        inviteCodeId: v.id('inviteCodes'),
+        code: v.string(),
     },
-    handler: async (ctx, args) => {
-        const invite = await ctx.db.get(args.inviteCodeId);
-        if (!invite) throw new Error('Invite code not found');
+    handler: async (ctx, { code }) => {
+        const invite = await ctx.db.query('inviteCodes')
+            .withIndex('by_code', q => q.eq('code', code))
+            .first();
+        if (!invite) throw new Error('Invalid invite code');
 
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new Error('Profile not found');

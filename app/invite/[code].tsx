@@ -1,7 +1,6 @@
 import { api } from "@/convex/_generated/api";
-import { Invitation } from "@/types/Invites";
 import { Ionicons } from "@expo/vector-icons";
-import { useAction, useConvexAuth, useMutation } from "convex/react";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -11,41 +10,51 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacit
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function InviteScreen() {
+
+    // Layout & Params
     const insets = useSafeAreaInsets();
     const { code } = useLocalSearchParams<{ code: string }>();
     const { isAuthenticated } = useConvexAuth();
 
+    // Convex
+    const invitation = useQuery(api.inviteCodes.openInvite, { code });
+    const acceptInvite = useMutation(api.inviteCodes.acceptInvite);
+    const requestAlbumCoverUrl = useAction(api.cloudflare.requestAlbumCoverURL);
+
+    // States
     const [isLoading, setIsLoading] = useState(true);
     const [isAcceptingInvite, setIsAcceptingInvite] = useState(false);
-    const [invite, setInvite] = useState<Invitation | null>(null);
-
-    const openInvite = useAction(api.inviteCodes.openInvite);
-    const acceptInvite = useMutation(api.inviteCodes.acceptInvite);
+    const [coverUrl, setCoverUrl] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         (async () => {
-            const invite = await openInvite({ code });
-            setIsLoading(false);
-            setInvite(invite);
+            try {
+                if (invitation && invitation.cover) {
+                    const url = await requestAlbumCoverUrl({ identifier: invitation.cover });
+                    setCoverUrl(url);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setIsLoading(false);
+            }
         })();
-    }, [isAuthenticated, code]);
+    }, [isAuthenticated, code, invitation, requestAlbumCoverUrl]);
 
     const accept = useCallback(async () => {
 
-        if (isAuthenticated && invite) {
+        if (isAuthenticated && invitation) {
             setIsAcceptingInvite(true);
             try {
-                // await acceptInvite({
-                //     inviteCodeId: invite?._id,
-                //     profileId: user._id,
-                // })
+                await acceptInvite({ code });
             } catch (e) {
-                setIsAcceptingInvite(false);
                 Alert.alert("Failed", "Something went wrong, please try again.");
+            } finally {
+                setIsAcceptingInvite(false);
             }
         }
 
-    }, [isAuthenticated]);
+    }, [isAuthenticated, invitation]);
 
     const decline = () => {
         Alert.alert(
@@ -72,7 +81,7 @@ export default function InviteScreen() {
         )
     };
 
-    if (!invite) {
+    if (!invitation) {
         router.replace('/');
         return null;
     }
@@ -80,12 +89,12 @@ export default function InviteScreen() {
     return (
         <View style={styles.container}>
             <Stack.Screen options={{
-                headerTitle: invite.title,
+                headerTitle: invitation.title,
             }} />
 
-            {invite.coverUrl && <View style={styles.thumbnailContainer}>
+            {coverUrl && <View style={styles.thumbnailContainer}>
                 <Image
-                    source={{ uri: invite.coverUrl }}
+                    source={{ uri: coverUrl }}
                     style={styles.thumbnailImage}
                     contentFit="cover"
                 />
@@ -103,12 +112,12 @@ export default function InviteScreen() {
             >
 
                 {/* spacer to push card down */}
-                <View style={{ height: invite.coverUrl ? 0 : 300 }} />
+                <View style={{ height: coverUrl ? 0 : 300 }} />
 
                 {/* Content Card */}
                 <View style={[
                     styles.contentCard,
-                    invite.coverUrl && {
+                    coverUrl && {
                         borderTopLeftRadius: 32,
                         borderTopRightRadius: 32,
                     }
@@ -117,18 +126,18 @@ export default function InviteScreen() {
                     <View style={styles.senderSection}>
                         <View style={styles.senderAvatar}>
                             <Text style={styles.avatarText}>
-                                {invite.sender.charAt(0).toUpperCase()}
+                                {invitation.sender.charAt(0).toUpperCase()}
                             </Text>
                         </View>
                         <View style={styles.senderInfo}>
-                            <Text style={styles.senderLabel}>You're invited by</Text>
+                            <Text style={styles.senderLabel}>You're invitationd by</Text>
                             <Text style={styles.senderName}></Text>
                         </View>
                     </View>
                 </View>
 
                 {/* Album Title */}
-                <Text style={styles.albumTitle}>{invite.title}</Text>
+                <Text style={styles.albumTitle}>{invitation.title}</Text>
 
                 {/* Album Details */}
                 <View style={styles.detailsContainer}>
@@ -152,19 +161,19 @@ export default function InviteScreen() {
                 </View>
 
                 {/* Description Section */}
-                {invite.description && (
+                {invitation.description && (
                     <View style={styles.descriptionSection}>
                         <Text style={styles.sectionTitle}>About this album</Text>
-                        <Text style={styles.descriptionText}>{invite.description}</Text>
+                        <Text style={styles.descriptionText}>{invitation.description}</Text>
                     </View>
                 )}
 
                 {/* Personal Message Section */}
-                {invite.message && (
+                {invitation.message && (
                     <View style={styles.messageSection}>
-                        <Text style={styles.sectionTitle}>Message from {invite.sender}</Text>
+                        <Text style={styles.sectionTitle}>Message from {invitation.sender}</Text>
                         <View style={styles.messageBox}>
-                            <Text style={styles.messageText}>{invite.message}</Text>
+                            <Text style={styles.messageText}>{invitation.message}</Text>
                         </View>
                     </View>
                 )}

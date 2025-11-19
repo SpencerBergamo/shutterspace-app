@@ -152,22 +152,6 @@ export const getMediaForAlbum = query({
     }
 });
 
-export const getMedia = query({
-    args: {
-        mediaId: v.id('media')
-    },
-    handler: async (ctx, { mediaId }) => {
-        const media = await ctx.db.get(mediaId);
-        if (!media) throw new Error('Media not found');
-
-        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId: media.albumId });
-        if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
-
-        return media;
-    }
-})
-
-
 export const deleteMedia = mutation({
     args: {
         mediaId: v.id("media"),
@@ -203,26 +187,4 @@ export const updateMediaVideoStatus = internalMutation({
 
         await ctx.db.patch(media._id, { status });
     },
-})
-
-export const updateMediaUploadStatusByVideoUid = mutation({
-    args: {
-        videoUid: v.string(),
-        status: v.union(
-            v.literal('pending'),
-            v.literal('ready'),
-            v.literal('error'),
-        ),
-    }, handler: async (ctx, { videoUid, status }) => {
-        const media = await ctx.db.query('media')
-            .withIndex('by_videoUid', q => q.eq('identifier.videoUid', videoUid))
-            .first();
-
-        if (!media) {
-            console.log("Media not found for videoUid: ", videoUid);
-            return;
-        }
-
-        await ctx.db.patch(media._id, { status: status });
-    }
 })

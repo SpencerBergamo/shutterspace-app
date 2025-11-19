@@ -1,3 +1,4 @@
+import { Media } from "@/types/Media";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
@@ -80,54 +81,6 @@ export const joinViaInviteCode = mutation({
 
     },
 });
-
-// export const createAlbum = mutation({
-//     args: {
-//         hostId: v.id('profiles'),
-//         title: v.string(),
-//         description: v.optional(v.string()),
-//         thumbnail: v.optional(v.id('media')),
-//         isDynamicThumbnail: v.boolean(),
-//         openInvites: v.boolean(),
-//         dateRange: v.optional(v.object({
-//             start: v.string(),
-//             end: v.optional(v.string()),
-//         })),
-//         location: v.optional(v.object({
-//             lat: v.number(),
-//             lng: v.number(),
-//             name: v.optional(v.string()),
-//             address: v.optional(v.string()),
-//         })),
-//         expiresAt: v.optional(v.number()),
-//     }, handler: async (ctx, args) => {
-//         const identity = await ctx.auth.getUserIdentity();
-//         if (!identity) throw new Error("Not authenticated");
-
-//         const albumId = await ctx.db.insert('albums', {
-//             hostId: args.hostId,
-//             title: args.title,
-//             description: args.description,
-//             thumbnail: args.thumbnail,
-//             isDynamicThumbnail: args.isDynamicThumbnail,
-//             openInvites: args.openInvites,
-//             dateRange: args.dateRange,
-//             location: args.location,
-//             updatedAt: Date.now(),
-//             expiresAt: args.expiresAt,
-//             isDeleted: false,
-//         });
-
-//         await ctx.db.insert('albumMembers', {
-//             albumId,
-//             profileId: args.hostId,
-//             role: 'host',
-//             joinedAt: Date.now(),
-//         });
-
-//         return albumId;
-//     },
-// });
 
 export const updateAlbum = mutation({
     args: {
@@ -223,6 +176,21 @@ export const cancelAlbumDeletion = mutation({
             deletionScheduledAt: undefined,
             scheduledDeletionId: undefined,
         });
+    }
+})
+
+// Public Album Cover Query
+export const getAlbumCover = query({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }): Promise<Media | undefined> => {
+        const album = await ctx.db.get(albumId);
+        if (!album) throw new Error('Album not found');
+
+        if (album.thumbnail) {
+            return await ctx.db.get(album.thumbnail) ?? undefined;
+        }
+
+        return undefined;
     }
 })
 

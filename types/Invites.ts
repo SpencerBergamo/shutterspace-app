@@ -1,23 +1,24 @@
 import { Id } from "@/convex/_generated/dataModel";
+import { MediaIdentifier } from "./Media";
 
-export interface Invite {
+export type InviteRole = 'member' | 'moderator';
+
+export interface InviteCode {
+    _id: Id<'inviteCodes'>;
+    _creationTime: number;
     code: string;
     albumId: Id<'albums'>;
     createdBy: Id<'profiles'>;
-    role: 'member' | 'moderator';
+    role: InviteRole;
 }
 
-export interface InviteCode extends Invite {
-    _id: Id<'inviteCodes'>;
-    _creationTime: number;
-}
-
-export interface Invitation extends InviteCode {
+export interface Invitation {
     sender: string;
     avatarUrl?: string;
     title: string;
     description?: string;
-    coverUrl?: string;
+    cover: MediaIdentifier | undefined;
+    role: InviteRole;
     dateRange?: { start: string, end?: string };
     location?: {
         lat: number;

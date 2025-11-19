@@ -18,19 +18,19 @@ interface AlbumCardProps {
 
 export default function AlbumCard({ album, width, height }: AlbumCardProps) {
     const theme = useTheme();
-    const mediaThumbnail = useQuery(api.media.getMedia, album.thumbnail ? { mediaId: album.thumbnail } : 'skip');
+    const albumCover = useQuery(api.albums.getAlbumCover, { albumId: album._id });
     const { fetchUri } = useRemoteUri();
 
     const [uri, setUri] = useState<string | undefined>();
 
     useEffect(() => {
         (async () => {
-            if (mediaThumbnail) {
-                const response = await fetchUri({ media: mediaThumbnail, videoPlayback: false });
+            if (albumCover) {
+                const response = await fetchUri({ media: albumCover, videoPlayback: false });
                 setUri(response);
             }
         })();
-    }, [album, mediaThumbnail]);
+    }, [album, albumCover, fetchUri]);
 
     return (
         <TouchableOpacity
@@ -38,15 +38,15 @@ export default function AlbumCard({ album, width, height }: AlbumCardProps) {
             onPress={() => router.push(`album/${album._id}`)}
         >
             <View style={styles.albumThumbnailContainer}>
-                {!mediaThumbnail && (
+                {!albumCover && (
                     <View style={[styles.albumThumbnail, styles.placeholderThumbnail, { backgroundColor: theme.colors.border }]}>
                         <Ionicons name="image-outline" size={64} color={theme.colors.text} />
                     </View>
                 )}
 
-                {mediaThumbnail && uri ? (
+                {albumCover && uri ? (
                     <Image
-                        source={{ uri, cacheKey: mediaThumbnail._id }}
+                        source={{ uri, cacheKey: albumCover._id }}
                         style={styles.albumThumbnail}
                         contentFit="cover"
                         cachePolicy={'memory-disk'}
