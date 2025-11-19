@@ -1,4 +1,4 @@
-import { useTheme } from "@/context/ThemeContext";
+import { useTheme } from "@react-navigation/native";
 import { KeyRound } from "lucide-react-native";
 import { StyleSheet, Switch, Text, View } from "react-native";
 
@@ -8,7 +8,7 @@ interface OpenInvitesFieldProps {
 }
 
 export default function OpenInvitesField({ openInvites, onToggle }: OpenInvitesFieldProps) {
-    const { theme } = useTheme();
+    const theme = useTheme();
 
     return (
         <View style={styles.container}>
@@ -35,7 +35,6 @@ export default function OpenInvitesField({ openInvites, onToggle }: OpenInvitesF
 
 const styles = StyleSheet.create({
     container: {
-
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-start',

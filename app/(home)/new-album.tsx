@@ -1,8 +1,9 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
-import { useTheme } from "@/context/ThemeContext";
+import useAppStyles from "@/constants/appStyles";
 import { useAlbums } from "@/hooks/useAlbums";
 import { AlbumFormData } from "@/types/Album";
 import { validateTitle } from "@/utils/validators";
+import { useTheme } from "@react-navigation/native";
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Button, StyleSheet, Text, TextInput, View } from "react-native";
@@ -10,7 +11,8 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 // import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 
 export default function NewAlbum() {
-    const { theme } = useTheme();
+    const theme = useTheme();
+    const appStyles = useAppStyles();
     const { createAlbum } = useAlbums();
 
     const titleInputRef = useRef<TextInput>(null);
@@ -84,7 +86,7 @@ export default function NewAlbum() {
                     selectionColor={theme.colors.primary}
                     onChangeText={text => updateField('title', text)}
                     onSubmitEditing={() => descriptionInputRef.current?.focus()}
-                    style={[theme.styles.textInput, { marginBottom: 16 }]} />
+                    style={[appStyles.textInput, { marginBottom: 16 }]} />
 
                 <Text style={styles.inputLabel}>
                     Description
@@ -105,7 +107,7 @@ export default function NewAlbum() {
                     selectionColor={theme.colors.primary}
                     onChangeText={text => updateField('description', text)}
                     onSubmitEditing={() => descriptionInputRef.current?.blur()}
-                    style={[theme.styles.textInput, { marginBottom: 16 }]} />
+                    style={[appStyles.textInput, { marginBottom: 16 }]} />
 
                 <OpenInvitesField
                     openInvites={isOpenInvites}

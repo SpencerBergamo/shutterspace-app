@@ -3,9 +3,9 @@ import { Link, router } from "expo-router";
 import { GalleryVerticalEnd, Mail, QrCode, SmilePlus } from 'lucide-react-native';
 import { Dimensions, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { useTheme } from '@/context/ThemeContext';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { useTheme } from '@react-navigation/native';
 import { useRef, useState } from 'react';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,7 +37,7 @@ const onboardingSlides: OnboardingSlide[] = [
 ];
 
 export default function WelcomeScreen() {
-    const { theme } = useTheme();
+    const theme = useTheme();
 
     const [currentSlide, setCurrentSlide] = useState<number>(0);
     const scrollViewRef = useRef<ScrollView>(null);

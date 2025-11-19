@@ -1,8 +1,9 @@
-import { useTheme } from "@/context/ThemeContext";
+import useAppStyles from "@/constants/appStyles";
 import { validateEmail } from "@/utils/validators";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from "@react-native-firebase/auth";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { useTheme } from "@react-navigation/native";
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Link } from "expo-router";
 import { useRef, useState } from "react";
@@ -18,7 +19,8 @@ type SignInFormData = {
 }
 
 export default function SignInScreen() {
-    const { theme } = useTheme();
+    const theme = useTheme();
+    const appStyles = useAppStyles();
     const auth = getAuth();
     const emailInputRef = useRef<TextInput>(null);
     const passwordInputRef = useRef<TextInput>(null);
@@ -115,13 +117,13 @@ export default function SignInScreen() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => passwordInputRef.current?.focus()}
-                            style={theme.styles.textInput}
+                            style={appStyles.textInput}
                         />
                     )}
                 />
                 {errors.email ? (
                     <View style={styles.errorTextView}>
-                        <Text style={{ color: theme.colors.danger }}>{errors.email.message}</Text>
+                        <Text style={{ color: "#FF3B30" }}>{errors.email.message}</Text>
                     </View>
                 ) : <View style={styles.space} />}
 
@@ -137,7 +139,7 @@ export default function SignInScreen() {
                         }
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
-                        <View style={[theme.styles.textInput, { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }]}>
+                        <View style={[appStyles.textInput, { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }]}>
                             <TextInput
                                 ref={passwordInputRef}
                                 value={value}
@@ -168,7 +170,7 @@ export default function SignInScreen() {
                 />
                 {errors.password ? (
                     <View style={styles.errorTextView}>
-                        <Text style={{ color: theme.colors.danger }}>{errors.password.message}</Text>
+                        <Text style={{ color: "#FF3B30" }}>{errors.password.message}</Text>
                     </View>
                 ) : <View style={styles.space} />}
 
@@ -181,7 +183,7 @@ export default function SignInScreen() {
 
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 21, alignItems: 'center' }} >
                     <View style={styles.divider} />
-                    <Text style={{ color: theme.colors.onBackground }}>Or Continue With</Text>
+                    <Text style={{ color: theme.colors.text }}>Or Continue With</Text>
                     <View style={styles.divider} />
                 </View>
 

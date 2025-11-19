@@ -1,17 +1,17 @@
 import AlbumCard from "@/components/albums/AlbumCard";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
-import { useTheme } from "@/context/ThemeContext";
 import { useAlbums } from "@/hooks/useAlbums";
 import getGridLayout from "@/utils/getGridLyout";
+import { useTheme } from "@react-navigation/native";
 import { router } from "expo-router";
 import { Plus } from "lucide-react-native";
 import { useMemo } from "react";
 import { FlatList, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
+    const theme = useTheme();
     const { width } = useWindowDimensions();
-    const { theme } = useTheme();
     const { albums } = useAlbums();
 
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 2, gap: 16, aspectRatio: 1 }), [width]);
@@ -29,14 +29,14 @@ export default function HomeScreen() {
                 scrollEnabled={albums.length > 0}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <View style={[styles.emptyCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                        <View style={[styles.emptyCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
                             <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
                                 Welcome to Shutterspace!
                             </Text>
-                            <Text style={[styles.emptySubtitle, { color: theme.colors.caption }]}>
+                            <Text style={[styles.emptySubtitle, { color: theme.colors.text }]}>
                                 You don't have any albums yet.
                             </Text>
-                            <Text style={[styles.emptyDescription, { color: theme.colors.caption }]}>
+                            <Text style={[styles.emptyDescription, { color: theme.colors.text }]}>
                                 Create your first album to start sharing photos with friends and family.
                             </Text>
                             <View style={[styles.ctaContainer, { backgroundColor: theme.colors.background }]}>

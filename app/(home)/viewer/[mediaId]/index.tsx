@@ -79,7 +79,6 @@ export default function MediaViewerScreen() {
         try {
             const playbackUrl = await requestVideoPlaybackURL({
                 albumId,
-                profileId,
                 videoUID
             });
 

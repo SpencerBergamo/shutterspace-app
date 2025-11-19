@@ -1,21 +1,10 @@
 import { ProfileProvider } from "@/context/ProfileContext";
-import { useTheme } from "@/context/ThemeContext";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
-import { router, Stack } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
-import { Pressable } from "react-native";
+import { useTheme } from "@react-navigation/native";
+import { Stack } from "expo-router";
 
 function HomeLayout() {
-    const { theme } = useTheme();
-
-    const iconButton = theme.styles.iconButton;
-
-    const backButton = () => (
-        <Pressable style={[iconButton]} onPress={() => router.back()} >
-            <ArrowLeft size={iconButton.width} color={iconButton.borderColor} />
-        </Pressable>
-    );
-
+    const theme = useTheme();
     return (
         <Stack screenOptions={{
             headerBackButtonDisplayMode: 'minimal',
@@ -44,7 +33,7 @@ function HomeLayout() {
 
             <Stack.Screen name="(profile)/edit" options={{
                 headerTitle: 'Edit Profile',
-                headerLeft: backButton,
+                headerBackButtonDisplayMode: 'minimal',
             }} />
         </Stack>
     );

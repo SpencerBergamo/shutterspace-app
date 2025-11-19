@@ -1,5 +1,5 @@
 import { api } from "@/convex/_generated/api";
-import { InviteContent } from "@/types/Invites";
+import { Invitation } from "@/types/Invites";
 import { Ionicons } from "@expo/vector-icons";
 import { useAction, useConvexAuth, useMutation } from "convex/react";
 import { BlurView } from "expo-blur";
@@ -17,7 +17,7 @@ export default function InviteScreen() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [isAcceptingInvite, setIsAcceptingInvite] = useState(false);
-    const [invite, setInvite] = useState<InviteContent | null>(null);
+    const [invite, setInvite] = useState<Invitation | null>(null);
 
     const openInvite = useAction(api.inviteCodes.openInvite);
     const acceptInvite = useMutation(api.inviteCodes.acceptInvite);

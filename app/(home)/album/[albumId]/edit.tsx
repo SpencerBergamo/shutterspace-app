@@ -1,8 +1,8 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
-import { useTheme } from "@/context/ThemeContext";
+import useAppStyles from "@/constants/appStyles";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
-import { usePreventRemove } from "@react-navigation/native";
+import { usePreventRemove, useTheme } from "@react-navigation/native";
 import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -15,7 +15,8 @@ type FormData = {
 }
 
 export default function AlbumEditScreen() {
-    const { theme } = useTheme();
+    const theme = useTheme();
+    const appStyles = useAppStyles();
     const navigation = useNavigation();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbumById, updateAlbum } = useAlbums();
@@ -98,7 +99,7 @@ export default function AlbumEditScreen() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => titleInputRef.current?.focus()}
-                            style={[theme.styles.textInput, { marginBottom: 16 }]}
+                            style={[appStyles.textInput, { marginBottom: 16 }]}
                         />
                     )}
                 />
@@ -135,7 +136,7 @@ export default function AlbumEditScreen() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => descriptionInputRef.current?.blur()}
-                            style={[theme.styles.textInput, { marginBottom: 16 }]}
+                            style={[appStyles.textInput, { marginBottom: 16 }]}
                         />
                     )}
                 />

@@ -2,7 +2,6 @@ import AlbumDeletionAlert from "@/components/albums/AlbumDeletionAlert";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import MediaTile from "@/components/media/mediaTile";
 import { useProfile } from "@/context/ProfileContext";
-import { useTheme } from "@/context/ThemeContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
@@ -10,6 +9,7 @@ import { useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { useTheme } from "@react-navigation/native";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
@@ -25,7 +25,7 @@ const GAP = 2;
 export default function AlbumScreen() {
 
     // Layout
-    const { theme } = useTheme();
+    const theme = useTheme();
     const { width } = useWindowDimensions();
     const itemSize: number = useMemo(() => {
         return (SCREEN_WIDTH - (GAP * 2)) / NUM_COLUMNS;

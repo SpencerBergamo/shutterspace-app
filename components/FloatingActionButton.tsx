@@ -1,4 +1,4 @@
-import { useTheme } from "@/context/ThemeContext";
+import { useTheme } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
@@ -75,7 +75,7 @@ export default function FloatingActionButton({
     dialItems,
     disabled
 }: FloatingActionButtonProps) {
-    const { theme } = useTheme();
+    const theme = useTheme();
     const [isOpen, setIsOpen] = useState(false);
     const overlayOpacity = useSharedValue(0);
 

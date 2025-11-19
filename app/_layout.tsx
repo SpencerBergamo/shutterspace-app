@@ -8,10 +8,10 @@
  */
 
 import { ASSETS } from "@/constants/assets";
-import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import useFirebaseAuth from "@/hooks/useFirebaseToken";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { useTheme } from "@react-navigation/native";
 import { ConvexProviderWithAuth, ConvexReactClient, useConvexAuth } from "convex/react";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
@@ -24,7 +24,7 @@ SplashScreen.preventAutoHideAsync();
 
 function AppLayout() {
     const { isLoading, isAuthenticated } = useConvexAuth();
-    const { theme } = useTheme();
+    const theme = useTheme();
 
     if (isLoading) return null;
 
@@ -79,17 +79,15 @@ export default function RootLayout() {
 
     return (
         <ConvexProviderWithAuth client={convex} useAuth={useFirebaseAuth}>
-            <ThemeProvider>
-                <SafeAreaProvider>
-                    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-                        <KeyboardProvider>
-                            <BottomSheetModalProvider>
-                                <AppLayout />
-                            </BottomSheetModalProvider>
-                        </KeyboardProvider>
-                    </GestureHandlerRootView>
-                </SafeAreaProvider>
-            </ThemeProvider>
+            <SafeAreaProvider>
+                <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+                    <KeyboardProvider>
+                        <BottomSheetModalProvider>
+                            <AppLayout />
+                        </BottomSheetModalProvider>
+                    </KeyboardProvider>
+                </GestureHandlerRootView>
+            </SafeAreaProvider>
         </ConvexProviderWithAuth>
     );
 }

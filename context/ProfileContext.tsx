@@ -3,7 +3,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Profile } from "@/types/Profile";
 import { getAuth } from "@react-native-firebase/auth";
 import { useMutation, useQuery } from "convex/react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 /** createProfileMutation flow
@@ -31,27 +31,39 @@ export const ProfileProvider = ({ children }: {
 
     const [isLoading, setIsLoading] = useState(true);
     const profile = useQuery(api.profile.getProfile);
+    const createProfile = useMutation(api.profile.createProfile);
     const updateProfileMutation = useMutation(api.profile.updateProfile);
-    const createProfileMutation = useMutation(api.profile.createProfile);
 
-    useEffect(() => {
-        if (!currentUser) return;
+    const createNewProfile = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            let provider: 'email' | 'google' | 'apple';
+            const data = currentUser.providerData[0];
 
-        if (profile === null && currentUser) {
-            setIsLoading(true);
-            createProfileMutation({
-                firebaseUID: currentUser.uid,
-                email: currentUser.email ?? 'private',
-                nickname: currentUser.displayName ?? 'new user',
-                avatarUrl: currentUser.photoURL ?? undefined,
-            }).catch(e => {
-                console.error('Creating Profile (FAILED)', e);
-                auth.signOut();
-            });
-        } else if (profile !== undefined) {
+            if (data.providerId === 'google.com') {
+                provider = 'google';
+            } else if (data.providerId === 'apple.com') {
+                provider = 'apple';
+            } else {
+                provider = 'email';
+            }
+
+            await createProfile({
+                nickname: currentUser.displayName ?? undefined,
+                authProvider: provider,
+            })
+        } catch (e) {
+            console.error("failed to create new profile", e);
+        } finally {
             setIsLoading(false);
         }
-    }, [profile, currentUser, createProfileMutation]);
+    }, [createProfile]);
+
+    useEffect(() => {
+        if (profile === null) {
+            createNewProfile();
+        }
+    }, [profile, currentUser, createNewProfile]);
 
     const updateProfile = async (nickname?: string, base64?: string) => {
         if (!profile) return;
