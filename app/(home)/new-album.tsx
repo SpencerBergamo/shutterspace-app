@@ -1,128 +1,161 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
 import useAppStyles from "@/constants/appStyles";
 import { useAlbums } from "@/hooks/useAlbums";
-import { AlbumFormData } from "@/types/Album";
-import { validateTitle } from "@/utils/validators";
-import { useTheme } from "@react-navigation/native";
-import { router } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { usePreventRemove, useTheme } from "@react-navigation/native";
+import { useNavigation } from "expo-router";
+import { useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { ActivityIndicator, Alert, Button, Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-// import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
+
+type FormData = {
+    title: string;
+    description: string | undefined;
+    openInvites: boolean;
+}
 
 export default function NewAlbum() {
     const theme = useTheme();
     const appStyles = useAppStyles();
     const { createAlbum } = useAlbums();
+    const navigation = useNavigation();
 
     const titleInputRef = useRef<TextInput>(null);
     const descriptionInputRef = useRef<TextInput>(null);
 
     // -- State Management --
     const [isLoading, setIsLoading] = useState(false);
-    const [isFormValid, setIsFormValid] = useState(false);
     const [isOpenInvites, setIsOpenInvites] = useState(true);
-    const [formData, setFormData] = useState<AlbumFormData>({
-        title: '',
-        description: '',
+
+    const {
+        control,
+        handleSubmit,
+        formState: { errors, isDirty },
+    } = useForm<FormData>({
+        mode: 'onChange',
+        defaultValues: {
+            title: '',
+            description: '',
+            openInvites: true,
+        }
     });
-    const [validationState, setValidationState] = useState({
-        title: { isValid: false, error: null as string | null },
+
+    usePreventRemove(isDirty, ({ data }) => {
+        Keyboard.dismiss();
+        Alert.alert("Unsaved Changes", "You have unsaved changes. Are you sure you want to leave?", [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Leave', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+        ]);
     });
 
-    useEffect(() => {
-        const titleError = validateTitle(formData.title ?? '');
-
-        setValidationState(prev => ({
-            ...prev,
-            title: { isValid: !titleError, error: titleError },
-        }));
-
-        setIsFormValid(Object.values(validationState).every(field => field.isValid));
-    }, [formData.title]);
-
-    // -- State Updates --
-    const updateField = (field: keyof AlbumFormData, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value,
-        }));
-    };
-
-    // -- Event Handlers --
-    const handleSubmit = useCallback(async () => {
-        if (!isFormValid) return;
-
+    const handleCreate = async (data: FormData) => {
+        setIsLoading(true);
         try {
-            setIsLoading(true);
-            const albumId = await createAlbum(formData);
-            router.replace(`/album/${albumId}`);
+            await createAlbum(data);
         } catch (e) {
             console.error("Failed to create album", e);
         } finally {
             setIsLoading(false);
         }
 
-    }, [formData, isFormValid, createAlbum]);
+        return (
+            <View style={{ flex: 1, padding: 16, backgroundColor: theme.colors.background }}>
+                <KeyboardAwareScrollView>
+                    <Text style={styles.inputLabel}>
+                        Album Title
+                    </Text>
 
-    return (
-        <View style={{ flex: 1, padding: 16, backgroundColor: theme.colors.background }}>
-            <KeyboardAwareScrollView>
-                <Text style={styles.inputLabel}>
-                    Album Title
-                </Text>
-                <TextInput
-                    ref={titleInputRef}
-                    autoFocus
-                    placeholder="What's this album for?"
-                    value={formData.title}
-                    maxLength={50}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                    spellCheck={false}
-                    textAlign="left"
-                    keyboardType="default"
-                    returnKeyType="next"
-                    selectionColor={theme.colors.primary}
-                    onChangeText={text => updateField('title', text)}
-                    onSubmitEditing={() => descriptionInputRef.current?.focus()}
-                    style={[appStyles.textInput, { marginBottom: 16 }]} />
+                    <Controller
+                        control={control}
+                        name="title"
+                        rules={{
+                            required: "Title is required",
+                            validate: (value) => {
+                                return value.length > 0;
+                            }
+                        }}
+                        render={({ field: { onChange, onBlur, value } }) => (
+                            <TextInput
+                                ref={titleInputRef}
+                                autoFocus
+                                placeholder="What's this album for?"
+                                value={value}
+                                maxLength={50}
+                                autoCapitalize="words"
+                                autoCorrect={false}
+                                spellCheck={false}
+                                textAlign="left"
+                                keyboardType="default"
+                                returnKeyType="next"
+                                selectionColor={theme.colors.primary}
+                                onChangeText={onChange}
+                                onBlur={onBlur}
+                                onSubmitEditing={() => descriptionInputRef.current?.focus()}
+                                style={[appStyles.textInput, { marginBottom: 16 }]} />
+                        )}
+                    />
+                    {errors.title && (
+                        <View style={{}}>
+                            <Text>{errors.title.message}</Text>
+                        </View>
+                    )}
 
-                <Text style={styles.inputLabel}>
-                    Description
-                </Text>
+                    <Text style={styles.inputLabel}>
+                        Description
+                    </Text>
+                    <Controller
+                        control={control}
+                        name="description"
+                        rules={{
+                            required: false,
+                            validate: (value) => {
+                                if (value && value.length > 300) {
+                                    return false;
+                                }
 
-                <TextInput
-                    ref={descriptionInputRef}
-                    placeholder="What should your members know about this album?"
-                    value={formData.description}
-                    multiline={true}
-                    maxLength={200}
-                    autoCapitalize="sentences"
-                    autoCorrect
-                    spellCheck
-                    textAlign="left"
-                    keyboardType="default"
-                    returnKeyType="done"
-                    selectionColor={theme.colors.primary}
-                    onChangeText={text => updateField('description', text)}
-                    onSubmitEditing={() => descriptionInputRef.current?.blur()}
-                    style={[appStyles.textInput, { marginBottom: 16 }]} />
+                                return true;
+                            }
+                        }}
+                        render={({ field: { onChange, onBlur, value } }) => (
+                            <TextInput
+                                ref={descriptionInputRef}
+                                placeholder="What should your members know about this album?"
+                                value={value}
+                                multiline={true}
+                                maxLength={200}
+                                autoCapitalize="sentences"
+                                autoCorrect
+                                spellCheck={false}
+                                textAlign="left"
+                                keyboardType="default"
+                                returnKeyType="done"
+                                selectionColor={theme.colors.primary}
+                                onChangeText={onChange}
+                                onBlur={onBlur}
+                                onSubmitEditing={() => descriptionInputRef.current?.blur()}
+                                style={[appStyles.textInput, { marginBottom: 16 }]} />
+                        )}
+                    />
+                    {errors.description && (
+                        <View style={{}}>
+                            <Text>{errors.description.message}</Text>
+                        </View>
+                    )}
 
-                <OpenInvitesField
-                    openInvites={isOpenInvites}
-                    onToggle={setIsOpenInvites} />
+                    <OpenInvitesField
+                        openInvites={isOpenInvites}
+                        onToggle={setIsOpenInvites} />
 
-                {isLoading ? (<ActivityIndicator size="small" color={theme.colors.primary} />) : (<Button
-                    title="Create Album"
-                    onPress={handleSubmit}
-                    disabled={!isFormValid}
-                    color={theme.colors.primary}
-
-                />)}
-            </KeyboardAwareScrollView>
-        </View >
-    );
+                    {isLoading ? (<ActivityIndicator size="small" color={theme.colors.primary} />) : (<Button
+                        title="Create Album"
+                        onPress={handleSubmit(handleCreate)}
+                        disabled={!isDirty}
+                        color={theme.colors.primary}
+                    />)}
+                </KeyboardAwareScrollView>
+            </View >
+        );
+    }
 }
 
 const styles = StyleSheet.create({
@@ -132,6 +165,4 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
 
-
-
-})
+});

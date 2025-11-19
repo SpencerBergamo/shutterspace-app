@@ -1,5 +1,6 @@
 import { Profile } from "@/types/Profile";
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 import { internalQuery, mutation, query } from "./_generated/server";
 
 export const createProfile = mutation({
@@ -46,11 +47,13 @@ export const getProfile = query({
 
 export const updateProfile = mutation({
     args: {
-        profileId: v.id('profiles'),
         nickname: v.optional(v.string()),
-        base64: v.optional(v.string()),
-    }, handler: async (ctx, { profileId, nickname, base64 }) => {
+    }, handler: async (ctx, { nickname }) => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
 
+        await ctx.db.patch(profile._id, {
+            nickname: nickname,
+        });
     },
 });
 
