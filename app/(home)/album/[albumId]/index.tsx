@@ -223,6 +223,7 @@ export default function AlbumScreen() {
                 ref={settingsModalRef}
                 snapPoints={['85%']}
                 enablePanDownToClose
+                backgroundStyle={{ backgroundColor: theme.colors.background }}
                 backdropComponent={(props) => (
                     <BottomSheetBackdrop
                         {...props}
@@ -234,7 +235,7 @@ export default function AlbumScreen() {
                 )}
             >
                 <BottomSheetScrollView
-                    contentContainerStyle={styles.modalContent}
+                    contentContainerStyle={[styles.modalContent, {}]}
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Album Header with Thumbnail */}
@@ -488,7 +489,8 @@ const styles = StyleSheet.create({
         padding: 20
     },
     infoSection: {
-        backgroundColor: '#F9F9F9',
+        // backgroundColor: '#F9F9F9',
+        backgroundColor: 'white',
         borderRadius: 12,
         padding: 12,
         marginBottom: 24,
@@ -523,11 +525,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         backgroundColor: '#FFFFFF',
         marginBottom: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
     },
     optionIcon: {
         width: 40,

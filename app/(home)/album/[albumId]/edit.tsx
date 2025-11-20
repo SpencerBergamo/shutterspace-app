@@ -35,6 +35,7 @@ export default function AlbumEditScreen() {
     const {
         control,
         handleSubmit,
+        reset,
         formState: { errors, isDirty },
     } = useForm<FormData>({
         mode: 'onChange',
@@ -56,6 +57,7 @@ export default function AlbumEditScreen() {
         setIsSaving(true);
         try {
             await updateAlbum(albumId, data);
+            reset(data); // Reset form state with the saved values
         } catch (e) {
             console.error("Failed to save changes: ", e);
         } finally {
@@ -70,7 +72,11 @@ export default function AlbumEditScreen() {
                 headerTitle: `Edit ${album.title}`
             }} />
 
-            <KeyboardAwareScrollView>
+            <KeyboardAwareScrollView
+                contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+                keyboardShouldPersistTaps="handled"
+                enableOnAndroid={true}
+            >
 
                 {/* Album Title */}
                 <Controller

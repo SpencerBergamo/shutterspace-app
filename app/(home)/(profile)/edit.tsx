@@ -5,7 +5,7 @@ import { useNavigation, usePreventRemove, useTheme } from '@react-navigation/nat
 import { useMutation } from 'convex/react';
 import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { ActivityIndicator, Alert, Button, Keyboard, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Button, Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 type ProfileFormData = {
@@ -28,6 +28,7 @@ export default function EditProfileScreen() {
     const {
         control,
         handleSubmit,
+        reset,
         formState: { errors, isDirty },
     } = useForm<ProfileFormData>({
         mode: 'onChange',
@@ -48,6 +49,7 @@ export default function EditProfileScreen() {
         setIsSaving(true);
         try {
             await updateProfile({ nickname: data.nickname });
+            reset(data);
         } catch (e) {
             console.error("Failed to save changes: ", e);
         } finally {
@@ -57,7 +59,10 @@ export default function EditProfileScreen() {
 
     return (
         <View style={{ flex: 1, padding: 16, alignContent: 'center', backgroundColor: theme.colors.background }}>
-            <KeyboardAwareScrollView>
+            <KeyboardAwareScrollView
+                contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+                keyboardShouldPersistTaps="handled"
+            >
 
                 {/* Nickname */}
                 <Controller
@@ -95,8 +100,8 @@ export default function EditProfileScreen() {
                     )}
                 />
                 {errors.nickname && (
-                    <View style={{}}>
-                        <Text>{errors.nickname.message}</Text>
+                    <View style={styles.errorTextView}>
+                        <Text style={{ color: "#FF3B30" }}>{errors.nickname.message}</Text>
                     </View>
                 )}
 
@@ -112,3 +117,12 @@ export default function EditProfileScreen() {
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    errorTextView: {
+        flex: 1,
+        height: 21,
+        justifyContent: 'center',
+        paddingHorizontal: 8,
+    },
+})
