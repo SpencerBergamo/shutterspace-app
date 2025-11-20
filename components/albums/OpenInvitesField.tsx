@@ -1,3 +1,4 @@
+import useAppStyles from "@/hooks/useAppStyles";
 import { useTheme } from "@react-navigation/native";
 import { KeyRound } from "lucide-react-native";
 import { StyleSheet, Switch, Text, View } from "react-native";
@@ -9,6 +10,7 @@ interface OpenInvitesFieldProps {
 
 export default function OpenInvitesField({ openInvites, onToggle }: OpenInvitesFieldProps) {
     const theme = useTheme();
+    const appStyles = useAppStyles();
 
     return (
         <View style={styles.container}>
@@ -28,7 +30,7 @@ export default function OpenInvitesField({ openInvites, onToggle }: OpenInvitesF
             <Switch
                 value={openInvites}
                 onValueChange={onToggle}
-                trackColor={{ true: theme.colors.primary }} />
+                trackColor={{ true: appStyles.colorScheme.primary }} />
         </View>
     );
 }

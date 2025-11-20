@@ -6,11 +6,11 @@ import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
+import useAppStyles from "@/hooks/useAppStyles";
 import { useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { useTheme } from "@react-navigation/native";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Images, Plus } from "lucide-react-native";
@@ -25,7 +25,7 @@ const GAP = 2;
 export default function AlbumScreen() {
 
     // Layout
-    const theme = useTheme();
+    const appStyles = useAppStyles();
     const { width } = useWindowDimensions();
     const itemSize: number = useMemo(() => {
         return (SCREEN_WIDTH - (GAP * 2)) / NUM_COLUMNS;
@@ -157,7 +157,7 @@ export default function AlbumScreen() {
     }, [media, inFlightUploads, removeInFlightUpload]);
 
     if (!album) return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <View style={{ flex: 1, backgroundColor: appStyles.colorScheme.background }}>
             <Stack.Screen options={{
                 headerTitle: 'Album Not Found',
             }} />
@@ -171,7 +171,7 @@ export default function AlbumScreen() {
     );
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <View style={{ flex: 1, backgroundColor: appStyles.colorScheme.background }}>
 
             {/* Header */}
             <Stack.Screen options={{
@@ -223,7 +223,7 @@ export default function AlbumScreen() {
                 ref={settingsModalRef}
                 snapPoints={['85%']}
                 enablePanDownToClose
-                backgroundStyle={{ backgroundColor: theme.colors.background }}
+                backgroundStyle={{ backgroundColor: appStyles.colorScheme.background }}
                 backdropComponent={(props) => (
                     <BottomSheetBackdrop
                         {...props}

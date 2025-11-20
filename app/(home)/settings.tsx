@@ -3,7 +3,6 @@ import { useProfile } from '@/context/ProfileContext';
 import useAppStyles from '@/hooks/useAppStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { getAuth } from '@react-native-firebase/auth';
-import { useTheme } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -12,7 +11,6 @@ import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } 
 
 export default function ProfileSettings() {
     const auth = getAuth();
-    const theme = useTheme();
     const appStyles = useAppStyles();
     const { profile } = useProfile();
 
@@ -57,7 +55,7 @@ export default function ProfileSettings() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <View style={{ flex: 1, backgroundColor: appStyles.colorScheme.background }}>
             <ScrollView
                 style={{ flex: 1, paddingHorizontal: 14 }}
                 showsVerticalScrollIndicator={false}
