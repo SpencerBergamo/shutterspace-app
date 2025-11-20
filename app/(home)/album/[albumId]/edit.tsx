@@ -75,7 +75,6 @@ export default function AlbumEditScreen() {
             <KeyboardAwareScrollView
                 contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
                 keyboardShouldPersistTaps="handled"
-                enableOnAndroid={true}
             >
 
                 {/* Album Title */}

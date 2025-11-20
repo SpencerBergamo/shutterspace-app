@@ -14,6 +14,7 @@ export default defineSchema({
         nickname: v.string(),
         avatarKey: v.optional(v.string()), // R2 key for public avatars: 'avatars/{profile._id}.jpg'
         ssoAvatarUrl: v.optional(v.string()), // URL for SSO avatars
+        shareCode: v.optional(v.string()),
     }).index('by_firebase_uid', ['firebaseUID']),
 
     friendships: defineTable({

@@ -2,7 +2,7 @@ import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Media } from "@/types/Media";
-import { validateAssets } from "@/utils/validateAssets";
+import { validateAssets } from "@/utils/mediaHelper";
 import axios from "axios";
 import { useAction, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';

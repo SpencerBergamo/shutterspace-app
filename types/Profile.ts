@@ -6,7 +6,8 @@ export interface Profile {
     joined: number;
     authProvider: "email" | "google" | "apple";
     email: string;
+    nickname: string;
     avatarKey?: string;
     ssoAvatarUrl?: string;
-    nickname: string;
+    shareCode?: string;
 }
