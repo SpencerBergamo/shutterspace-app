@@ -16,6 +16,7 @@ import { ActivityIndicator, View } from "react-native";
 interface ProfileContextType {
     profile: Profile;
     profileId: Id<'profiles'>;
+    isLoading: boolean;
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -24,10 +25,15 @@ export const ProfileProvider = ({ children }: {
     children: React.ReactNode;
 }) => {
 
+    // Get Auth
     const auth = getAuth();
     const currentUser = auth.currentUser;
     if (!currentUser) return null;
+
+    // State
     const [isLoading, setIsLoading] = useState(true);
+
+    // Convex
     const profile = useQuery(api.profile.getProfile);
     const createProfile = useMutation(api.profile.createProfile);
 
@@ -75,6 +81,7 @@ export const ProfileProvider = ({ children }: {
     return <ProfileContext.Provider value={{
         profile,
         profileId: profile._id,
+        isLoading,
     }}>
         {children}
     </ProfileContext.Provider>;

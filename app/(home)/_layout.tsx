@@ -1,10 +1,23 @@
-import { ProfileProvider } from "@/context/ProfileContext";
+import { FriendsProvider, useFriends } from "@/context/FriendsContext";
+import { ProfileProvider, useProfile } from "@/context/ProfileContext";
 import useAppStyles from "@/hooks/useAppStyles";
 // import { useTheme } from "@react-navigation/native";
 import { Stack } from "expo-router";
+import { ActivityIndicator, View } from "react-native";
 
 function HomeLayout() {
     const appStyles = useAppStyles();
+
+    const { isLoading: profileLoading } = useProfile();
+    const { isLoading: friendsLoading } = useFriends();
+
+    if (profileLoading || friendsLoading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={appStyles.colorScheme.text} />
+            </View>
+        )
+    }
 
     return (
         <Stack screenOptions={{
@@ -44,7 +57,9 @@ function HomeLayout() {
 export default function Layout() {
     return (
         <ProfileProvider>
-            <HomeLayout />
+            <FriendsProvider>
+                <HomeLayout />
+            </FriendsProvider>
         </ProfileProvider>
     );
 }

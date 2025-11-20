@@ -15,20 +15,23 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { ConvexProviderWithAuth, ConvexReactClient, useConvexAuth } from "convex/react";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 SplashScreen.preventAutoHideAsync();
 
-function AppLayout() {
+function AppLayout({ onAuthReady }: { onAuthReady: () => void }) {
     const { isLoading, isAuthenticated } = useConvexAuth();
 
-    if (isLoading) {
-        console.log('⏳ Auth still loading');
-        return null;
-    }
+    useEffect(() => {
+        if (!isLoading) {
+            onAuthReady();
+        }
+    }, [isLoading, onAuthReady]);
+
+    if (isLoading) return null;
 
     return (
         <Stack screenOptions={{
@@ -61,6 +64,9 @@ const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL! as stri
 
 export default function RootLayout() {
 
+    const [fontsLoaded, fontError] = useFonts(ASSETS.fonts);
+    const [authReady, setAuthReady] = useState(false);
+
     useEffect(() => {
         GoogleSignin.configure({
             webClientId: "772964121786-k7bm9fjhhac6mh5koi0nojd0tf7k3kaf.apps.googleusercontent.com",
@@ -69,10 +75,11 @@ export default function RootLayout() {
         })
     }, []);
 
-    const [fontsLoaded, fontError] = useFonts(ASSETS.fonts);
     const onLayoutRootView = useCallback(async () => {
-        if (fontsLoaded) await SplashScreen.hideAsync();
-    }, [fontsLoaded]);
+        if (fontsLoaded && authReady) {
+            await SplashScreen.hideAsync();
+        }
+    }, [fontsLoaded, authReady]);
 
     if (!fontsLoaded && !fontError) return null;
 
@@ -82,9 +89,8 @@ export default function RootLayout() {
                 <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
                     <KeyboardProvider>
                         <ActionSheetProvider>
-
                             <BottomSheetModalProvider>
-                                <AppLayout />
+                                <AppLayout onAuthReady={() => setAuthReady(true)} />
                             </BottomSheetModalProvider>
                         </ActionSheetProvider>
                     </KeyboardProvider>

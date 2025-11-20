@@ -13,6 +13,7 @@ import type * as albums from "../albums.js";
 import type * as cloudflare from "../cloudflare.js";
 import type * as comment from "../comment.js";
 import type * as crypto from "../crypto.js";
+import type * as friendships from "../friendships.js";
 import type * as http from "../http.js";
 import type * as inviteCodes from "../inviteCodes.js";
 import type * as media from "../media.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   cloudflare: typeof cloudflare;
   comment: typeof comment;
   crypto: typeof crypto;
+  friendships: typeof friendships;
   http: typeof http;
   inviteCodes: typeof inviteCodes;
   media: typeof media;

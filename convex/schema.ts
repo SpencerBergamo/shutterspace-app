@@ -18,7 +18,7 @@ export default defineSchema({
     }).index('by_firebase_uid', ['firebaseUID']),
 
     friendships: defineTable({
-        userId: v.id('profiles'),
+        profileId: v.id('profiles'),
         friendId: v.id('profiles'),
         status: v.union(
             v.literal('pending'),
@@ -27,10 +27,8 @@ export default defineSchema({
         ),
         createdAt: v.number(),
         updatedAt: v.number(),
-    }).index('by_userId', ['userId'])
-        .index('by_user_and_status', ['userId', 'friendId', 'status'])
-        .index('by_pair', ['userId', 'friendId'])
-        .index('by_pair_reverse', ['friendId', 'userId']),
+    }).index('by_profileId', ['profileId'])
+        .index('by_pair', ['profileId', 'friendId']),
 
     albums: defineTable({
         hostId: v.id("profiles"),
