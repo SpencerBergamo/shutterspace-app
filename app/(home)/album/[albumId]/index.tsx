@@ -485,8 +485,7 @@ const styles = StyleSheet.create({
 
     // Modal Styles
     modalContent: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
+        padding: 20
     },
     infoSection: {
         backgroundColor: '#F9F9F9',
