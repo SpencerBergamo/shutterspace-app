@@ -79,6 +79,38 @@ export default function ProfileSettings() {
                     </TouchableOpacity>
                 </View>
 
+                {/* Account Management */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Management</Text>
+
+                    <TouchableOpacity style={styles.settingsOption}  >
+                        <View style={[styles.optionIcon, { backgroundColor: '#F5F5F5' }]}>
+                            <Ionicons name="share-outline" size={20} color="#8E8E93" />
+                        </View>
+                        <View style={styles.optionContent}>
+                            <Text style={styles.optionTitle}>Share</Text>
+                            <Text style={styles.optionSubtitle}>Share your profile link</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.settingsOption}
+                        onPress={() => router.push('./manage-friends')}
+                    >
+                        <View style={[styles.optionIcon, { backgroundColor: '#F5F5F5' }]}>
+                            <Ionicons name="person-outline" size={20} color="#8E8E93" />
+                        </View>
+                        <View style={styles.optionContent}>
+                            <Text style={styles.optionTitle}>Friends</Text>
+                            <Text style={styles.optionSubtitle}>Manage your friendships</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+                    </TouchableOpacity>
+                </View>
+
+
+
+
                 {/* Support & Feedback Section */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Support & Feedback</Text>

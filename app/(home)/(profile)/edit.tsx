@@ -58,7 +58,7 @@ export default function EditProfileScreen() {
     }
 
     return (
-        <View style={{ flex: 1, padding: 16, alignContent: 'center', backgroundColor: theme.colors.background }}>
+        <View style={{ flex: 1, padding: 16, alignContent: 'center', backgroundColor: appStyles.colorScheme.background }}>
             <KeyboardAwareScrollView
                 contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
                 keyboardShouldPersistTaps="handled"

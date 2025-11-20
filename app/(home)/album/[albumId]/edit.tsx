@@ -66,7 +66,7 @@ export default function AlbumEditScreen() {
     }
 
     return (
-        <View style={{ flex: 1, padding: 16, backgroundColor: theme.colors.background }}>
+        <View style={{ flex: 1, padding: 16, backgroundColor: appStyles.colorScheme.background }}>
             <Stack.Screen options={{
                 headerBackButtonDisplayMode: 'minimal',
                 headerTitle: `Edit ${album.title}`

@@ -49,6 +49,10 @@ function HomeLayout() {
                 headerTitle: 'Edit Profile',
                 headerBackButtonDisplayMode: 'minimal',
             }} />
+
+            <Stack.Screen name="manage-friends" options={{
+                headerTitle: 'My Friends',
+            }} />
         </Stack>
     );
 }
