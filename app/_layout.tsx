@@ -15,7 +15,7 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { ConvexProviderWithAuth, ConvexReactClient, useConvexAuth } from "convex/react";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -75,9 +75,9 @@ export default function RootLayout() {
         })
     }, []);
 
-    const onLayoutRootView = useCallback(async () => {
+    useEffect(() => {
         if (fontsLoaded && authReady) {
-            await SplashScreen.hideAsync();
+            SplashScreen.hideAsync();
         }
     }, [fontsLoaded, authReady]);
 
@@ -86,7 +86,7 @@ export default function RootLayout() {
     return (
         <ConvexProviderWithAuth client={convex} useAuth={useFirebaseAuth}>
             <SafeAreaProvider>
-                <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+                <GestureHandlerRootView style={{ flex: 1 }}>
                     <KeyboardProvider>
                         <ActionSheetProvider>
                             <BottomSheetModalProvider>
