@@ -1,3 +1,4 @@
+import useAppStyles from "@/hooks/useAppStyles";
 import { useTheme } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
@@ -76,6 +77,7 @@ export default function FloatingActionButton({
     disabled
 }: FloatingActionButtonProps) {
     const theme = useTheme();
+    const appStyles = useAppStyles();
     const [isOpen, setIsOpen] = useState(false);
     const overlayOpacity = useSharedValue(0);
 
@@ -147,7 +149,7 @@ export default function FloatingActionButton({
                     style={[
                         styles.mainButton,
                         disabled && styles.disabled,
-                        { backgroundColor: theme.colors.primary }
+                        { backgroundColor: appStyles.colorScheme.primary }
                     ]}
                 >
                     {render()}

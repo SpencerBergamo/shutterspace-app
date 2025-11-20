@@ -1,4 +1,4 @@
-import AlbumCard from "@/components/albums/AlbumCard";
+import AlbumCard from "@/components/albums/AlbumCover";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
 import { useAlbums } from "@/hooks/useAlbums";
@@ -52,7 +52,7 @@ export default function HomeScreen() {
                     <AlbumCard
                         album={item}
                         width={gridConfig.tileWidth}
-                        height={gridConfig.tileHeight} />
+                    />
                 )}
             />
 

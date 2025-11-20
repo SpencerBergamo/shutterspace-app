@@ -1,13 +1,16 @@
 import { ProfileProvider } from "@/context/ProfileContext";
+import { useTheme } from "@react-navigation/native";
 // import { useTheme } from "@react-navigation/native";
 import { Stack } from "expo-router";
 
 function HomeLayout() {
+    const theme = useTheme();
     return (
         <Stack screenOptions={{
             headerBackButtonDisplayMode: 'minimal',
             headerShadowVisible: false,
             headerStyle: {
+                backgroundColor: theme.colors.background,
             }
         }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />

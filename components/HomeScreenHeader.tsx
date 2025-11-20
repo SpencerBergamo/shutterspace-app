@@ -1,5 +1,6 @@
 import { ASSETS } from "@/constants/assets";
 import { useProfile } from "@/context/ProfileContext";
+import useAppStyles from "@/hooks/useAppStyles";
 import { useTheme } from "@react-navigation/native";
 import * as Haptics from 'expo-haptics';
 import { Image } from "expo-image";
@@ -10,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function HomeScreenHeader() {
     const { profile } = useProfile();
     const theme = useTheme();
+    const appStyles = useAppStyles();
     const { top } = useSafeAreaInsets();
 
     const handleAvatarPress = () => {
@@ -30,7 +32,7 @@ export default function HomeScreenHeader() {
                 <TouchableOpacity
                     style={[
                         styles.avatarContainer,
-                        { backgroundColor: theme.colors.primary }
+                        { backgroundColor: appStyles.colorScheme.accent }
                     ]}
                     onPress={handleAvatarPress}
                     activeOpacity={0.8} >

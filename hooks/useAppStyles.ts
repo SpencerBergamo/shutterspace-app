@@ -42,7 +42,7 @@ export const darkColors: ColorScheme = {
 }
 
 interface UseAppStylesResult {
-    colors: ColorScheme;
+    colorScheme: ColorScheme;
     textInput: StyleProp<ViewStyle>;
 }
 
@@ -68,7 +68,7 @@ export default function useAppStyles(): UseAppStylesResult {
     }
 
     return {
-        colors: colors ?? lightColors,
+        colorScheme: colors ?? lightColors,
         textInput,
     }
 }

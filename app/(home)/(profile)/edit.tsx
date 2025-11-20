@@ -1,6 +1,6 @@
-import useAppStyles from '@/constants/appStyles';
 import { useProfile } from '@/context/ProfileContext';
 import { api } from '@/convex/_generated/api';
+import useAppStyles from '@/hooks/useAppStyles';
 import { useNavigation, usePreventRemove, useTheme } from '@react-navigation/native';
 import { useMutation } from 'convex/react';
 import React, { useRef, useState } from 'react';

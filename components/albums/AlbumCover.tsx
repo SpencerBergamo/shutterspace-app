@@ -1,36 +1,23 @@
 import { api } from '@/convex/_generated/api';
-import useRemoteUri from '@/hooks/useRemoteUri';
+import useSignedUrls from '@/hooks/useSignedUrls';
 import { Album } from '@/types/Album';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@react-navigation/native';
 import { useQuery } from 'convex/react';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
 interface AlbumCardProps {
     album: Album;
     width: number;
-    height: number;
 }
 
-export default function AlbumCard({ album, width, height }: AlbumCardProps) {
+export default function AlbumCover({ album, width }: AlbumCardProps) {
     const theme = useTheme();
     const albumCover = useQuery(api.albums.getAlbumCover, { albumId: album._id });
-    const { fetchUri } = useRemoteUri();
-
-    const [uri, setUri] = useState<string | undefined>();
-
-    useEffect(() => {
-        (async () => {
-            if (albumCover) {
-                const response = await fetchUri({ media: albumCover, videoPlayback: false });
-                setUri(response);
-            }
-        })();
-    }, [album, albumCover, fetchUri]);
+    const uri = useSignedUrls({ media: albumCover ?? undefined });
 
     return (
         <TouchableOpacity

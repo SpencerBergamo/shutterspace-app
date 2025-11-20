@@ -1,6 +1,6 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
-import useAppStyles from "@/constants/appStyles";
 import { useAlbums } from "@/hooks/useAlbums";
+import useAppStyles from "@/hooks/useAppStyles";
 import { usePreventRemove, useTheme } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import { useRef, useState } from "react";

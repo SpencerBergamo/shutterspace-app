@@ -1,4 +1,5 @@
 import AlbumDeletionAlert from "@/components/albums/AlbumDeletionAlert";
+import AlbumInfoCard from "@/components/albums/AlbumInfoCard";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import MediaTile from "@/components/media/mediaTile";
 import { useProfile } from "@/context/ProfileContext";
@@ -11,7 +12,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useTheme } from "@react-navigation/native";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { Image } from "expo-image";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Images, Plus } from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -238,33 +238,10 @@ export default function AlbumScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Album Header with Thumbnail */}
-                    <View style={styles.modalHeader}>
-                        {album.thumbnail ? (
-                            <Image
-                                source={{ uri: 'placeholder' }} // You'll need to fetch the actual image URL
-                                style={styles.thumbnailImage}
-                                contentFit="cover"
-                            />
-                        ) : (
-                            <View style={styles.thumbnailPlaceholder}>
-                                <Images size={48} color="#999999" />
-                            </View>
-                        )}
-                        <View style={styles.thumbnailOverlay}>
-                            <Text style={styles.overlayTitle} numberOfLines={2}>{album.title}</Text>
-                            <View style={styles.overlayStats}>
-                                <View style={styles.statBadge}>
-                                    <Ionicons name="images" size={14} color="white" />
-                                    <Text style={styles.statText}>{media.length}</Text>
-                                </View>
-                                <View style={styles.statBadge}>
-                                    <Ionicons name="people" size={14} color="white" />
-                                    <Text style={styles.statText}>1</Text>
-                                </View>
-
-                            </View>
-                        </View>
-                    </View>
+                    <AlbumInfoCard
+                        album={album}
+                        cover={media.find(m => m._id === album.thumbnail)}
+                    />
 
                     {/* Album Info */}
                     <View style={styles.infoSection}>
@@ -510,61 +487,6 @@ const styles = StyleSheet.create({
     modalContent: {
         paddingHorizontal: 20,
         paddingBottom: 20,
-    },
-    modalHeader: {
-        width: '100%',
-        height: 200,
-        borderRadius: 16,
-        overflow: 'hidden',
-        marginBottom: 16,
-        position: 'relative',
-    },
-    thumbnailImage: {
-        width: '100%',
-        height: '100%',
-    },
-    thumbnailPlaceholder: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#F5F5F5',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#E5E5E5',
-    },
-    thumbnailOverlay: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: 16,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    },
-    overlayTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: 'white',
-        marginBottom: 8,
-    },
-    overlayStats: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    statBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    statText: {
-        color: 'white',
-        fontSize: 13,
-        fontWeight: '600',
     },
     infoSection: {
         backgroundColor: '#F9F9F9',

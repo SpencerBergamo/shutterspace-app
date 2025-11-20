@@ -31,8 +31,6 @@ export const ProfileProvider = ({ children }: {
     const profile = useQuery(api.profile.getProfile);
     const createProfile = useMutation(api.profile.createProfile);
 
-    console.log(!!profile, !!currentUser);
-
     const createNewProfile = useCallback(async () => {
         setIsLoading(true);
         try {

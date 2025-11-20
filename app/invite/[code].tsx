@@ -42,19 +42,21 @@ export default function InviteScreen() {
     }, [isAuthenticated, code, invitation, requestAlbumCoverUrl]);
 
     const accept = useCallback(async () => {
-
         if (isAuthenticated && invitation) {
             setIsAcceptingInvite(true);
             try {
                 await acceptInvite({ code });
+                router.replace('/');
             } catch (e) {
                 Alert.alert("Failed", "Something went wrong, please try again.");
             } finally {
                 setIsAcceptingInvite(false);
             }
+        } else if (!isAuthenticated && invitation) {
+            router.push('/sign-in?redirect=/invite/' + code);
         }
 
-    }, [isAuthenticated, invitation]);
+    }, [isAuthenticated, invitation, code]);
 
     const decline = () => {
         Alert.alert(
@@ -131,7 +133,7 @@ export default function InviteScreen() {
                         </View>
                         <View style={styles.senderInfo}>
                             <Text style={styles.senderLabel}>You're invitationd by</Text>
-                            <Text style={styles.senderName}></Text>
+                            <Text style={styles.senderName}>{invitation.sender}</Text>
                         </View>
                     </View>
                 </View>
@@ -143,13 +145,13 @@ export default function InviteScreen() {
                 <View style={styles.detailsContainer}>
                     <View style={styles.detailItem}>
                         <Ionicons name="calendar-outline" size={20} color="#09ADA9" />
-                        <Text style={styles.detailValue}></Text>
+                        <Text style={styles.detailValue}>{invitation.dateRange?.start}</Text>
                         <Text style={styles.detailLabel}>Created</Text>
                     </View>
                     <View style={styles.detailDivider} />
                     <View style={styles.detailItem}>
                         <Ionicons name="images-outline" size={20} color="#09ADA9" />
-                        <Text style={styles.detailValue}></Text>
+                        <Text style={styles.detailValue}>{invitation.dateRange?.start}</Text>
                         <Text style={styles.detailLabel}>Created</Text>
                     </View>
                     <View style={styles.detailDivider} />

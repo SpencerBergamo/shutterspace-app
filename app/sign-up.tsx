@@ -1,5 +1,5 @@
-import useAppStyles from "@/constants/appStyles";
 import { api } from "@/convex/_generated/api";
+import useAppStyles from "@/hooks/useAppStyles";
 import { validateEmail, validatePassword } from "@/utils/validators";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from "@react-native-firebase/auth";

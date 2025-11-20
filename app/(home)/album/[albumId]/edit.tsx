@@ -1,7 +1,7 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
-import useAppStyles from "@/constants/appStyles";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/hooks/useAlbums";
+import useAppStyles from "@/hooks/useAppStyles";
 import { usePreventRemove, useTheme } from "@react-navigation/native";
 import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
 import { useRef, useState } from "react";
