@@ -1,38 +1,75 @@
 import { api } from "@/convex/_generated/api";
 import { Media } from "@/types/Media";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAction } from "convex/react";
 import { Image } from "expo-image";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+interface VideoCache {
+    url: string;
+    videoUID: string;
+    expiresAt: number;
+}
 
 interface UseSignedUrlsProps {
     media: Media | undefined;
-    videoPlayback?: boolean;
 }
 
-export default function useSignedUrls({ media, videoPlayback = false }: UseSignedUrlsProps) {
+interface UseSignedUrlsResult {
+    thumbnail: string | undefined;
+    requestVideo: () => Promise<string | undefined>;
+}
+
+export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedUrlsResult {
     const requestImageURL = useAction(api.cloudflare.requestImageURL);
     const requestVideoThumbnailURL = useAction(api.cloudflare.requestVideoThumbnailURL);
     const requestVideoPlaybackURL = useAction(api.cloudflare.requestVideoPlaybackURL);
 
-    const [url, setUrl] = useState<string | undefined>();
+    const [thumbnail, setThumbnail] = useState<string | undefined>();
+
+    const requestVideo = useCallback(async (): Promise<string | undefined> => {
+        try {
+            if (!media) return;
+            const type = media.identifier.type;
+            const cloudflareId = type === 'video' ? media.identifier.videoUid : media.identifier.imageId;
+            const albumId = media.albumId;
+            if (type !== 'video') return;
+
+            const cached = await AsyncStorage.getItem(media._id.toString());
+            if (cached) {
+                const entity = JSON.parse(cached) as VideoCache;
+                if (entity && entity.expiresAt > Date.now()) return entity.url;
+            }
+
+            const url = await requestVideoPlaybackURL({ albumId, videoUID: cloudflareId });
+            if (url) {
+                const newEntity: VideoCache = {
+                    url,
+                    videoUID: cloudflareId,
+                    expiresAt: Date.now() + 1000 * 60 * 60, // 1 hour
+                }
+
+                await AsyncStorage.setItem(media._id.toString(), JSON.stringify(newEntity));
+                return url;
+            }
+
+            return undefined;
+        } catch (e) {
+            console.error('Error requesting video playback: ', e);
+            return undefined;
+        }
+    }, [requestVideoPlaybackURL, media]);
 
     useEffect(() => {
         (async () => {
             if (!media) return;
-
             const type = media.identifier.type;
             const cloudflareId = type === 'video' ? media.identifier.videoUid : media.identifier.imageId;
             const albumId = media.albumId;
 
-            if (type === 'video' && videoPlayback) {
-                const response = await requestVideoPlaybackURL({ albumId, videoUID: cloudflareId });
-                setUrl(response);
-            }
-
             const localUri = await Image.getCachePathAsync(media._id);
             if (localUri) {
-                setUrl(localUri);
+                setThumbnail(localUri);
                 return;
             };
 
@@ -43,12 +80,10 @@ export default function useSignedUrls({ media, videoPlayback = false }: UseSigne
                 requestUrl = await requestVideoThumbnailURL({ albumId, videoUID: cloudflareId });
             }
 
-            setUrl(requestUrl);
-
-
+            setThumbnail(requestUrl);
         })();
-    }, [media, videoPlayback]);
+    }, [media, requestImageURL, requestVideoThumbnailURL]);
 
 
-    return url;
+    return { thumbnail, requestVideo };
 }

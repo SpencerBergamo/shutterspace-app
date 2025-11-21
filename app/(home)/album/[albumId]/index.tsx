@@ -135,16 +135,17 @@ export default function AlbumScreen() {
         });
     }, [album]);
 
-    const renderMedia = useCallback(({ item }: { item: Media }) => {
+    const renderMedia = useCallback(({ item, index }: { item: Media, index: number }) => {
         const inFlightUri: string | undefined = inFlightUploads[item.assetId] ?? undefined;
 
         return <MediaTile
             media={item}
             itemSize={itemSize}
             onPress={() => {
+                console.log('onPress', index);
                 router.push({
                     pathname: '../viewer/[mediaId]',
-                    params: { mediaId: item._id, albumId: albumId },
+                    params: { albumId: albumId, index: index.toString() },
                 })
             }}
             onLongPress={() => { }}

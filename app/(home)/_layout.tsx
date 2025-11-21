@@ -43,6 +43,8 @@ function HomeLayout() {
 
             <Stack.Screen name="viewer/[mediaId]/index" options={{
                 headerShown: true,
+                animation: 'fade',
+                animationDuration: 200,
             }} />
 
             <Stack.Screen name="(profile)/edit" options={{

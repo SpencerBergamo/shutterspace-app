@@ -17,7 +17,7 @@ interface AlbumCardProps {
 export default function AlbumCover({ album, width }: AlbumCardProps) {
     const theme = useTheme();
     const albumCover = useQuery(api.albums.getAlbumCover, { albumId: album._id });
-    const uri = useSignedUrls({ media: albumCover ?? undefined });
+    const { thumbnail: uri } = useSignedUrls({ media: albumCover ?? undefined });
 
     return (
         <TouchableOpacity

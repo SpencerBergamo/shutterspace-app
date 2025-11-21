@@ -17,7 +17,7 @@ interface MediaTileProps {
 }
 
 export default function MediaTile({ media, itemSize, onPress, onLongPress, onReady, retry, placeholderUri }: MediaTileProps) {
-    const uri = useSignedUrls({ media });
+    const { thumbnail: uri } = useSignedUrls({ media });
 
     const mediaId = media._id;
     const type = media.identifier.type;
