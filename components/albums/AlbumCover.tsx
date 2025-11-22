@@ -6,7 +6,7 @@ import { useTheme } from '@react-navigation/native';
 import { useQuery } from 'convex/react';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
 interface AlbumCardProps {
@@ -17,7 +17,7 @@ interface AlbumCardProps {
 export default function AlbumCover({ album, width }: AlbumCardProps) {
     const theme = useTheme();
     const albumCover = useQuery(api.albums.getAlbumCover, { albumId: album._id });
-    const { thumbnail: uri } = useSignedUrls({ media: albumCover ?? undefined });
+    const { requesting, thumbnail: uri } = useSignedUrls({ media: albumCover ?? undefined });
 
     return (
         <TouchableOpacity
@@ -28,6 +28,12 @@ export default function AlbumCover({ album, width }: AlbumCardProps) {
                 {!albumCover && (
                     <View style={[styles.albumThumbnail, styles.placeholderThumbnail, { backgroundColor: theme.colors.border }]}>
                         <Ionicons name="image-outline" size={64} color={theme.colors.text} />
+                    </View>
+                )}
+
+                {requesting && (
+                    <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                        <ActivityIndicator size="small" color="grey" />
                     </View>
                 )}
 

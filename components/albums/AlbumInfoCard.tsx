@@ -4,7 +4,7 @@ import { Media } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@react-navigation/native";
 import { Image } from "expo-image";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 interface AlbumInfoCardProps {
     album: Album;
@@ -13,10 +13,16 @@ interface AlbumInfoCardProps {
 
 export default function AlbumInfoCard({ album, cover }: AlbumInfoCardProps) {
     const theme = useTheme();
-    const { thumbnail: coverUrl } = useSignedUrls({ media: cover });
+    const { requesting, thumbnail: coverUrl } = useSignedUrls({ media: cover });
 
     return (
         <View style={styles.container}>
+            {requesting && (
+                <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color="grey" />
+                </View>
+            )}
+
             {cover ? (
                 <Image
                     source={{ uri: coverUrl, cacheKey: cover._id }}

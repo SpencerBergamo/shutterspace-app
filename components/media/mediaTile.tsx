@@ -4,7 +4,7 @@ import { Media } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from 'expo-image';
 import { Play } from "lucide-react-native";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface MediaTileProps {
     media: Media;
@@ -17,7 +17,7 @@ interface MediaTileProps {
 }
 
 export default function MediaTile({ media, itemSize, onPress, onLongPress, onReady, retry, placeholderUri }: MediaTileProps) {
-    const { thumbnail: uri } = useSignedUrls({ media });
+    const { requesting, thumbnail: uri } = useSignedUrls({ media });
 
     const mediaId = media._id;
     const type = media.identifier.type;
@@ -28,6 +28,14 @@ export default function MediaTile({ media, itemSize, onPress, onLongPress, onRea
                 <Ionicons name="alert-circle-outline" size={24} color="red" />
             </TouchableOpacity>
         )
+    }
+
+    if (requesting) {
+        return (
+            <View style={{ width: itemSize, height: itemSize, marginBottom: 2, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="small" color="grey" />
+            </View>
+        );
     }
 
     return (

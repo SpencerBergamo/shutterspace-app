@@ -16,6 +16,7 @@ interface UseSignedUrlsProps {
 }
 
 interface UseSignedUrlsResult {
+    requesting: boolean;
     thumbnail: string | undefined;
     requestVideo: () => Promise<string | undefined>;
 }
@@ -25,6 +26,7 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
     const requestVideoThumbnailURL = useAction(api.cloudflare.requestVideoThumbnailURL);
     const requestVideoPlaybackURL = useAction(api.cloudflare.requestVideoPlaybackURL);
 
+    const [requesting, setRequesting] = useState<boolean>(true);
     const [thumbnail, setThumbnail] = useState<string | undefined>();
 
     const requestVideo = useCallback(async (): Promise<string | undefined> => {
@@ -34,6 +36,8 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
             const cloudflareId = type === 'video' ? media.identifier.videoUid : media.identifier.imageId;
             const albumId = media.albumId;
             if (type !== 'video') return;
+
+            setRequesting(true);
 
             const cached = await AsyncStorage.getItem(media._id.toString());
             if (cached) {
@@ -57,6 +61,8 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
         } catch (e) {
             console.error('Error requesting video playback: ', e);
             return undefined;
+        } finally {
+            setRequesting(false);
         }
     }, [requestVideoPlaybackURL, media]);
 
@@ -67,23 +73,31 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
             const cloudflareId = type === 'video' ? media.identifier.videoUid : media.identifier.imageId;
             const albumId = media.albumId;
 
-            const localUri = await Image.getCachePathAsync(media._id);
-            if (localUri) {
-                setThumbnail(localUri);
-                return;
-            };
+            try {
+                const localUri = await Image.getCachePathAsync(media._id);
+                if (localUri) {
+                    setThumbnail(localUri);
+                    return;
+                };
 
-            let requestUrl: string | undefined;
-            if (type === 'image') {
-                requestUrl = await requestImageURL({ albumId, imageId: cloudflareId });
-            } else if (type === 'video') {
-                requestUrl = await requestVideoThumbnailURL({ albumId, videoUID: cloudflareId });
+                let requestUrl: string | undefined;
+                if (type === 'image') {
+                    requestUrl = await requestImageURL({ albumId, imageId: cloudflareId });
+                } else if (type === 'video') {
+                    requestUrl = await requestVideoThumbnailURL({ albumId, videoUID: cloudflareId });
+                }
+
+                setThumbnail(requestUrl);
+            } catch (e) {
+                console.error('Error requesting image URL: ', e);
+                setThumbnail(undefined);
             }
-
-            setThumbnail(requestUrl);
+            finally {
+                setRequesting(false);
+            }
         })();
     }, [media, requestImageURL, requestVideoThumbnailURL]);
 
 
-    return { thumbnail, requestVideo };
+    return { requesting, thumbnail, requestVideo };
 }
