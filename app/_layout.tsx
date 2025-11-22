@@ -8,6 +8,7 @@
  */
 
 import { ASSETS } from "@/constants/assets";
+import useAppStyles from "@/hooks/useAppStyles";
 import useFirebaseAuth from "@/hooks/useFirebaseToken";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -23,6 +24,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 SplashScreen.preventAutoHideAsync();
 
 function AppLayout({ onAuthReady }: { onAuthReady: () => void }) {
+    const appStyles = useAppStyles();
     const { isLoading, isAuthenticated } = useConvexAuth();
 
     useEffect(() => {
@@ -38,6 +40,9 @@ function AppLayout({ onAuthReady }: { onAuthReady: () => void }) {
             headerShown: true,
             headerBackButtonDisplayMode: 'minimal',
             headerShadowVisible: false,
+            headerStyle: {
+                backgroundColor: appStyles.colorScheme.background,
+            }
         }}>
             <Stack.Protected guard={isAuthenticated} >
                 <Stack.Screen name="(home)" options={{ headerShown: false }} />

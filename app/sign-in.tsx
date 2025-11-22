@@ -1,7 +1,7 @@
 import useAppStyles from "@/hooks/useAppStyles";
 import { validateEmail } from "@/utils/validators";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from "@react-native-firebase/auth";
+import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential, signInWithEmailAndPassword } from "@react-native-firebase/auth";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useTheme } from "@react-navigation/native";
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -21,7 +21,6 @@ type SignInFormData = {
 export default function SignInScreen() {
     const theme = useTheme();
     const appStyles = useAppStyles();
-    const auth = getAuth();
     const emailInputRef = useRef<TextInput>(null);
     const passwordInputRef = useRef<TextInput>(null);
 
@@ -41,7 +40,7 @@ export default function SignInScreen() {
 
     async function handleSignin(data: SignInFormData) {
         try {
-            await auth.signInWithEmailAndPassword(data.email, data.password);
+            await signInWithEmailAndPassword(getAuth(), data.email, data.password);
         } catch (e) {
             console.warn('Firebase Password Sgnup (FAIL)', e);
         }
@@ -87,7 +86,7 @@ export default function SignInScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 16 }}>
+        <View style={{ flex: 1, backgroundColor: appStyles.colorScheme.background, padding: 16 }}>
             <KeyboardAwareScrollView>
                 <Text style={styles.title}>Welcome Back!</Text>
                 <Text style={styles.subtitle}>Let's get you back in</Text>
@@ -177,7 +176,7 @@ export default function SignInScreen() {
                 <TouchableOpacity
                     onPress={handleSubmit(handleSignin)}
                     disabled={!isValid}
-                    style={{ backgroundColor: isValid ? theme.colors.primary : 'grey', padding: 16, borderRadius: 8, marginTop: 16 }}>
+                    style={{ backgroundColor: isValid ? appStyles.colorScheme.primary : 'grey', padding: 16, borderRadius: 8, marginTop: 16 }}>
                     <Text style={styles.submitButtonText}>Sign In</Text>
                 </TouchableOpacity>
 
@@ -216,13 +215,13 @@ export default function SignInScreen() {
                     <Text style={[styles.termsText, { color: 'black' }]}>
                         By continuing, you agree to our{' '}
                         <Link href="" asChild>
-                            <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
+                            <Text style={[styles.termsLink, { color: appStyles.colorScheme.primary }]}>
                                 Terms of Service
                             </Text>
                         </Link>
                         {' '}and{' '}
                         <Link href="" asChild>
-                            <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
+                            <Text style={[styles.termsLink, { color: appStyles.colorScheme.primary }]}>
                                 Privacy Policy
                             </Text>
                         </Link>

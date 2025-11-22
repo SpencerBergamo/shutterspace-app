@@ -13,7 +13,7 @@ interface AlbumInfoCardProps {
 
 export default function AlbumInfoCard({ album, cover }: AlbumInfoCardProps) {
     const theme = useTheme();
-    const coverUrl = useSignedUrls({ media: cover });
+    const { thumbnail: coverUrl } = useSignedUrls({ media: cover });
 
     return (
         <View style={styles.container}>

@@ -3,7 +3,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useMedia } from "@/hooks/useMedia";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, View } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 

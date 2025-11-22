@@ -107,7 +107,7 @@ export default function SignUpScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 16 }}>
+        <View style={{ flex: 1, backgroundColor: appStyles.colorScheme.background, padding: 16 }}>
 
             <ScrollView style={{ flex: 1 }} >
 
@@ -200,7 +200,7 @@ export default function SignUpScreen() {
                 <TouchableOpacity
                     onPress={handleSubmit(handleSignup)}
                     disabled={!isValid}
-                    style={{ backgroundColor: isValid ? theme.colors.primary : 'grey', padding: 16, borderRadius: 8, marginTop: 16 }}>
+                    style={{ backgroundColor: isValid ? appStyles.colorScheme.primary : 'grey', padding: 16, borderRadius: 8, marginTop: 16 }}>
                     <Text style={styles.submitButtonText}>Create Account</Text>
                 </TouchableOpacity>
 
@@ -240,13 +240,13 @@ export default function SignUpScreen() {
                     <Text style={[styles.termsText, { color: 'black' }]}>
                         By continuing, you agree to our{' '}
                         <Link href="" asChild>
-                            <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
+                            <Text style={[styles.termsLink, { color: appStyles.colorScheme.primary }]}>
                                 Terms of Service
                             </Text>
                         </Link>
                         {' '}and{' '}
                         <Link href="" asChild>
-                            <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
+                            <Text style={[styles.termsLink, { color: appStyles.colorScheme.primary }]}>
                                 Privacy Policy
                             </Text>
                         </Link>
