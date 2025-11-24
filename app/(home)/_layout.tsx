@@ -1,3 +1,4 @@
+import { AlbumsProvider, useAlbums } from "@/context/AlbumsContext";
 import { FriendsProvider, useFriends } from "@/context/FriendsContext";
 import { ProfileProvider, useProfile } from "@/context/ProfileContext";
 import useAppStyles from "@/hooks/useAppStyles";
@@ -10,8 +11,9 @@ function HomeLayout() {
 
     const { isLoading: profileLoading } = useProfile();
     const { isLoading: friendsLoading } = useFriends();
+    const { isLoading: albumsLoading } = useAlbums();
 
-    if (profileLoading || friendsLoading) {
+    if (profileLoading || friendsLoading || albumsLoading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color={appStyles.colorScheme.text} />
@@ -63,9 +65,11 @@ function HomeLayout() {
 export default function Layout() {
     return (
         <ProfileProvider>
-            <FriendsProvider>
-                <HomeLayout />
-            </FriendsProvider>
+            <AlbumsProvider>
+                <FriendsProvider>
+                    <HomeLayout />
+                </FriendsProvider>
+            </AlbumsProvider>
         </ProfileProvider>
     );
 }

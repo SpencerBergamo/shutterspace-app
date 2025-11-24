@@ -1,3 +1,4 @@
+import { Album } from "@/types/Album";
 import { Media } from "@/types/Media";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
@@ -5,15 +6,12 @@ import { Doc, Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 
 export const getUserAlbums = query({
-    args: {
-        profileId: v.id('profiles'),
-    }, handler: async (ctx, { profileId }) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error("Not Authenticated");
+    args: {}, handler: async (ctx): Promise<Album[]> => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
 
         const memberships = await ctx.db
             .query('albumMembers')
-            .withIndex('by_profileId', q => q.eq('profileId', profileId))
+            .withIndex('by_profileId', q => q.eq('profileId', profile._id))
             .collect();
 
         if (memberships.length === 0) return [];
@@ -38,10 +36,10 @@ export const createAlbum = action({
         const profile = await ctx.runQuery(api.profile.getProfile);
 
         // create the alblum doc
-        const albumId = await ctx.runMutation(internal.albums.insert, { hostId: profile._id, title, description, openInvites });
+        const albumId: Id<'albums'> = await ctx.runMutation(internal.albums.insert, { hostId: profile._id, title, description, openInvites });
 
         // create an invite code entry
-        const code = await ctx.runAction(internal.crypto.generateInviteCode, { length: 10 });
+        const code: string = await ctx.runAction(internal.crypto.generateRandomCode, { length: 10 });
         await ctx.runMutation(internal.inviteCodes.insert, { albumId, code, createdBy: profile._id, role: 'member' });
 
         // create album member entry: host
@@ -85,10 +83,8 @@ export const joinViaInviteCode = mutation({
 export const updateAlbum = mutation({
     args: {
         albumId: v.id('albums'),
-        profileId: v.id('profiles'),
         title: v.optional(v.string()),
         description: v.optional(v.string()),
-        thumbnail: v.optional(v.id('media')),
         isDynamicThumbnail: v.optional(v.boolean()),
         openInvites: v.optional(v.boolean()),
         dateRange: v.optional(v.object({
@@ -102,20 +98,9 @@ export const updateAlbum = mutation({
             address: v.optional(v.string()),
         })),
         expiresAt: v.optional(v.number()),
-        isDeleted: v.optional(v.boolean()),
-    }, handler: async (ctx, { albumId, profileId, ...args }) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error("Not Authorized to Update Albums");
-
-        const membership = await ctx.db
-            .query('albumMembers')
-            .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
-                .eq('profileId', profileId as Id<'profiles'>))
-            .first();
-
-        if (!membership || !['host', 'moderator'].includes(membership.role)) {
-            throw new Error('Not authorized to update this album');
-        }
+    }, handler: async (ctx, { albumId, ...args }) => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership === 'not-a-member') throw new Error('Not authorized to update this album');
 
         const album = await ctx.db.get(albumId);
         if (!album) throw new Error('Album not found');
@@ -123,19 +108,15 @@ export const updateAlbum = mutation({
         const updates = {
             title: args.title ?? album.title,
             description: args.description ?? album.description,
-            thumbnail: args.thumbnail ?? album.thumbnail,
             isDynamicThumbnail: args.isDynamicThumbnail ?? true,
             openInvites: args.openInvites ?? true,
             dateRange: args.dateRange ?? album.dateRange,
             location: args.location ?? album.location,
             updatedAt: Date.now(),
             expiresAt: args.expiresAt ?? album.expiresAt,
-            isDeleted: args.isDeleted ?? false,
         }
 
-        await ctx.db.patch(albumId, updates);
-
-        return albumId;
+        return await ctx.db.patch(albumId, updates);
     },
 });
 

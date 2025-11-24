@@ -2,10 +2,10 @@ import AlbumDeletionAlert from "@/components/albums/AlbumDeletionAlert";
 import AlbumInfoCard from "@/components/albums/AlbumInfoCard";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import MediaTile from "@/components/media/mediaTile";
+import { useAlbums } from "@/context/AlbumsContext";
 import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useAlbums } from "@/hooks/useAlbums";
 import useAppStyles from "@/hooks/useAppStyles";
 import { useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
@@ -33,9 +33,9 @@ export default function AlbumScreen() {
 
     // Data
     const { profileId } = useProfile();
-    const { getAlbumById } = useAlbums();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
-    const album = getAlbumById(albumId);
+    const { getAlbum } = useAlbums();
+    const album = getAlbum(albumId);
     const { media, selectAndUploadAssets, inFlightUploads, removeInFlightUpload, } = useMedia(albumId);
 
     // Refs

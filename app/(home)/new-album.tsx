@@ -1,8 +1,10 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
-import { useAlbums } from "@/hooks/useAlbums";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import useAppStyles from "@/hooks/useAppStyles";
 import { usePreventRemove, useTheme } from "@react-navigation/native";
-import { useNavigation } from "expo-router";
+import { useAction } from "convex/react";
+import { router, useNavigation } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, Alert, Button, Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
@@ -17,7 +19,6 @@ type FormData = {
 export default function NewAlbum() {
     const theme = useTheme();
     const appStyles = useAppStyles();
-    const { createAlbum } = useAlbums();
     const navigation = useNavigation();
 
     const titleInputRef = useRef<TextInput>(null);
@@ -26,6 +27,9 @@ export default function NewAlbum() {
     // -- State Management --
     const [isLoading, setIsLoading] = useState(false);
     const [isOpenInvites, setIsOpenInvites] = useState(true);
+
+    // Convex
+    const createAlbum = useAction(api.albums.createAlbum);
 
     const {
         control,
@@ -51,7 +55,9 @@ export default function NewAlbum() {
     const handleCreate = async (data: FormData) => {
         setIsLoading(true);
         try {
-            await createAlbum(data);
+            const albumId: Id<'albums'> = await createAlbum(data);
+
+            router.replace(`/albums/${albumId}`);
         } catch (e) {
             console.error("Failed to create album", e);
         } finally {

@@ -1,8 +1,10 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
+import { useAlbums } from "@/context/AlbumsContext";
+import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useAlbums } from "@/hooks/useAlbums";
 import useAppStyles from "@/hooks/useAppStyles";
 import { usePreventRemove, useTheme } from "@react-navigation/native";
+import { useMutation } from "convex/react";
 import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -19,9 +21,9 @@ export default function AlbumEditScreen() {
     const appStyles = useAppStyles();
     const navigation = useNavigation();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
-    const { getAlbumById, updateAlbum } = useAlbums();
+    const { getAlbum } = useAlbums();
 
-    const album = getAlbumById(albumId);
+    const album = getAlbum(albumId);
     if (!album) return null;
 
     // Refs
@@ -31,6 +33,9 @@ export default function AlbumEditScreen() {
     // State
     const [isOpenInvites, setIsOpenInvites] = useState<boolean>(album.openInvites);
     const [isSaving, setIsSaving] = useState<boolean>(false);
+
+    // Convex
+    const updateAlbum = useMutation(api.albums.updateAlbum);
 
     const {
         control,
@@ -56,7 +61,13 @@ export default function AlbumEditScreen() {
     const saveChanges = async (data: FormData) => {
         setIsSaving(true);
         try {
-            await updateAlbum(albumId, data);
+            await updateAlbum({
+                albumId,
+                title: data.title,
+                description: data.description,
+                openInvites: isOpenInvites,
+            });
+
             reset(data); // Reset form state with the saved values
         } catch (e) {
             console.error("Failed to save changes: ", e);

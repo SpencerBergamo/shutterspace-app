@@ -1,7 +1,7 @@
 import AlbumCard from "@/components/albums/AlbumCover";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
-import { useAlbums } from "@/hooks/useAlbums";
+import { useAlbums } from '@/context/AlbumsContext';
 import getGridLayout from "@/utils/getGridLyout";
 import { useTheme } from "@react-navigation/native";
 import { router } from "expo-router";
