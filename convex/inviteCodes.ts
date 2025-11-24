@@ -3,7 +3,7 @@ import { MediaIdentifier } from "@/types/Media";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { action, internalMutation, mutation, query } from "./_generated/server";
 
 
 export const createInvite = action({
@@ -14,7 +14,7 @@ export const createInvite = action({
         if (!identity) throw new Error('Not authenticated');
         const profileId = identity.user_id as Id<'profiles'>;
 
-        const code = await ctx.runAction(internal.crypto.generateInviteCode, { length: 10 });
+        const code = await ctx.runAction(internal.crypto.generateRandomCode, { length: 10 });
 
         await ctx.runMutation(internal.inviteCodes.insert, {
             code,
@@ -99,7 +99,7 @@ export const acceptInvite = mutation({
     }
 })
 
-// --- Internal ---
+// // --- Internal ---
 
 export const insert = internalMutation({
     args: {
@@ -121,13 +121,13 @@ export const insert = internalMutation({
 });
 
 
-export const getInvite = internalQuery({
-    args: { code: v.string() },
-    handler: async (ctx, { code }) => {
-        const invite = await ctx.db.query('inviteCodes')
-            .withIndex('by_code', q => q.eq('code', code))
-            .first();
+// export const getInvite = internalQuery({
+//     args: { code: v.string() },
+//     handler: async (ctx, { code }) => {
+//         const invite = await ctx.db.query('inviteCodes')
+//             .withIndex('by_code', q => q.eq('code', code))
+//             .first();
 
-        return invite;
-    },
-});
+//         return invite;
+//     },
+// });

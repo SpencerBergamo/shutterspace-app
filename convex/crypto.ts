@@ -1,6 +1,5 @@
 "use node";
 
-import axios from 'axios';
 import { v } from 'convex/values';
 import crypto from 'crypto';
 import { action, internalAction } from './_generated/server';
@@ -53,28 +52,7 @@ export const verifyWebhookSig = action({
     }
 });
 
-export const uploadFile = internalAction({
-    args: {
-        uploadURL: v.string(),
-        uri: v.string(),
-        filename: v.string(),
-        mimeType: v.string(),
-    }, handler: async (_ctx, { uploadURL, uri, filename, mimeType }) => {
-
-        const form = new FormData();
-        form.append('file', {
-            uri,
-            filename,
-            mimeType,
-        } as any);
-
-        const response = await axios.post(uploadURL, form);
-
-        return response.status;
-    }
-});
-
-export const generateInviteCode = internalAction({
+export const generateRandomCode = internalAction({
     args: {
         length: v.number(),
     }, handler: async (ctx, { length }): Promise<string> => {

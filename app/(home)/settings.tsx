@@ -1,18 +1,23 @@
 import { ASSETS } from '@/constants/assets';
 import { useProfile } from '@/context/ProfileContext';
+import { api } from '@/convex/_generated/api';
 import useAppStyles from '@/hooks/useAppStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { getAuth } from '@react-native-firebase/auth';
+import { useAction } from 'convex/react';
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import React from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { Alert, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ProfileSettings() {
     const auth = getAuth();
     const appStyles = useAppStyles();
     const { profile } = useProfile();
+
+    // Convex
+    const createShareCode = useAction(api.shareCodes.create);
 
     const handleOpenUrl = async (url: string) => {
         const supported = await Linking.canOpenURL(url);
@@ -54,6 +59,18 @@ export default function ProfileSettings() {
         )
     }
 
+    const handleShareProfile = useCallback(async () => {
+        let code = profile.shareCode;
+        if (!code) {
+            code = await createShareCode();
+        }
+
+        await Share.share({
+            message: 'Join me on Shutterspace!',
+            url: `https://shutterspace.app/share?code=${code}`
+        });
+    }, [profile])
+
     return (
         <View style={{ flex: 1, backgroundColor: appStyles.colorScheme.background }}>
             <ScrollView
@@ -83,7 +100,10 @@ export default function ProfileSettings() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Management</Text>
 
-                    <TouchableOpacity style={styles.settingsOption}  >
+                    <TouchableOpacity
+                        style={styles.settingsOption}
+                        onPress={handleShareProfile}
+                    >
                         <View style={[styles.optionIcon, { backgroundColor: '#F5F5F5' }]}>
                             <Ionicons name="share-outline" size={20} color="#8E8E93" />
                         </View>
@@ -169,7 +189,7 @@ export default function ProfileSettings() {
 
                     <TouchableOpacity
                         style={styles.settingsOption}
-                        onPress={() => handleOpenUrl("https://shutterspace.app/terms.html")}
+                        onPress={() => handleOpenUrl("https://shutterspace.app/terms")}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: '#F5F5F5' }]}>
                             <Ionicons name="document-text-outline" size={20} color="#8E8E93" />
@@ -183,7 +203,7 @@ export default function ProfileSettings() {
 
                     <TouchableOpacity
                         style={styles.settingsOption}
-                        onPress={() => handleOpenUrl("https://shutterspace.app/privacy.html")}
+                        onPress={() => handleOpenUrl("https://shutterspace.app/privacy")}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: '#F5F5F5' }]}>
                             <Ionicons name="shield-outline" size={20} color="#8E8E93" />
@@ -195,7 +215,7 @@ export default function ProfileSettings() {
                         <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
                     </TouchableOpacity>
 
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                         style={styles.settingsOption}
                         onPress={() => { }}
                     >
@@ -207,7 +227,7 @@ export default function ProfileSettings() {
                             <Text style={styles.optionSubtitle}>View open source licenses</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 </View>
 
                 {/* Danger Zone */}
