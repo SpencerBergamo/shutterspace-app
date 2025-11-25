@@ -3,9 +3,9 @@ import { Link, router } from "expo-router";
 import { GalleryVerticalEnd, Mail, QrCode, SmilePlus } from 'lucide-react-native';
 import { Dimensions, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import useAppStyles from '@/hooks/useAppStyles';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { useTheme } from '@react-navigation/native';
 import { useRef, useState } from 'react';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,7 +37,7 @@ const onboardingSlides: OnboardingSlide[] = [
 ];
 
 export default function WelcomeScreen() {
-    const theme = useTheme();
+    const { colorScheme } = useAppStyles();
 
     const [currentSlide, setCurrentSlide] = useState<number>(0);
     const scrollViewRef = useRef<ScrollView>(null);
@@ -120,7 +120,7 @@ export default function WelcomeScreen() {
                         key={index}
                         style={[
                             styles.paginationDot,
-                            { backgroundColor: index === currentSlide ? theme.colors.primary : '#E9ECEF' }
+                            { backgroundColor: index === currentSlide ? colorScheme.primary : '#E9ECEF' }
                         ]}
                     />
                 ))}
@@ -152,7 +152,7 @@ export default function WelcomeScreen() {
 
                 {/* Email Sign Up */}
                 <TouchableOpacity onPress={() => router.push('/sign-up')} style={[
-                    styles.authButton, { backgroundColor: theme.colors.primary }
+                    styles.authButton, { backgroundColor: colorScheme.primary }
                 ]}>
                     <Mail size={20} color={'white'} />
                     <Text style={{ fontSize: 17, color: 'white' }}>Continue with Email</Text>
@@ -165,7 +165,7 @@ export default function WelcomeScreen() {
                     </Text>
                     <Link href="/sign-in" asChild>
                         <Pressable>
-                            <Text style={[styles.signInLink, { color: theme.colors.primary }]}>
+                            <Text style={[styles.signInLink, { color: colorScheme.primary }]}>
                                 Sign In
                             </Text>
                         </Pressable>
