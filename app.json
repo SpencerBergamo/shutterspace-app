@@ -24,8 +24,7 @@
         "tinted": "./assets/brand/ios/ios-tinted.png"
       },
       "associatedDomains": [
-        "applinks:shutterspace.app",
-        "applinks:join.shutterspace.app"
+        "applinks:shutterspace.app"
       ]
     },
     "splash": {
@@ -60,8 +59,13 @@
             },
             {
               "scheme": "https",
-              "host": "join.shutterspace.app",
-              "pathPrefix": "/"
+              "host": "shutterspace.app",
+              "pathPrefix": "/invite"
+            },
+            {
+              "scheme": "https",
+              "host": "shutterspace.app",
+              "pathPrefix": "/share"
             }
           ],
           "category": [
