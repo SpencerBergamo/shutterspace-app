@@ -57,6 +57,10 @@ function HomeLayout() {
             <Stack.Screen name="manage-friends" options={{
                 headerTitle: 'My Friends',
             }} />
+
+            <Stack.Screen name="contact-us" options={{
+                headerTitle: 'Contact Us',
+            }} />
         </Stack>
     );
 }

@@ -142,7 +142,8 @@ export default function ProfileSettings() {
 
                     <TouchableOpacity
                         style={styles.settingsOption}
-                        onPress={handleReviewApp}
+                        disabled
+                        onPress={() => { }}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: appStyles.colorScheme.primary, opacity: 0.5 }]}>
                             <Image
@@ -156,12 +157,13 @@ export default function ProfileSettings() {
                             <Text style={styles.optionTitle}>Shutterspace Plan</Text>
                             <Text style={styles.optionSubtitle}>Manage your subscription</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+                        {/* <Ionicons name="chevron-forward" size={20} color="#C7C7CC" /> */}
+                        <Text style={{ color: '#8E8E93', fontSize: 12, fontWeight: '600' }}>COMING SOON</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.settingsOption}
-                        onPress={() => { }}
+                        onPress={handleReviewApp}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: '#FFF4E5' }]}>
                             <Ionicons name="star-outline" size={20} color="#FF9500" />
@@ -175,7 +177,7 @@ export default function ProfileSettings() {
 
                     <TouchableOpacity
                         style={styles.settingsOption}
-                        onPress={() => { }}
+                        onPress={() => router.push('./contact-us')}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: '#F0E6FF' }]}>
                             <Ionicons name="help-circle-outline" size={20} color="#8E44AD" />
