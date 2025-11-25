@@ -37,6 +37,7 @@ export default function AlbumScreen() {
     const { getAlbum } = useAlbums();
     const album = getAlbum(albumId);
     const { media, selectAndUploadAssets, inFlightUploads, removeInFlightUpload, } = useMedia(albumId);
+    console.warn('InFlightUploads', inFlightUploads.length);
 
     // Refs
     const flatListRef = useRef<FlatList>(null);

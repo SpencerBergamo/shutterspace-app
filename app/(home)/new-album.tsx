@@ -35,6 +35,7 @@ export default function NewAlbum() {
         control,
         handleSubmit,
         formState: { errors, isDirty },
+        reset,
     } = useForm<FormData>({
         mode: 'onChange',
         defaultValues: {
@@ -57,6 +58,7 @@ export default function NewAlbum() {
         try {
             const albumId: Id<'albums'> = await createAlbum(data);
 
+            reset();
             router.replace(`/albums/${albumId}`);
         } catch (e) {
             console.error("Failed to create album", e);

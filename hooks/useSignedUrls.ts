@@ -68,7 +68,10 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
 
     useEffect(() => {
         (async () => {
-            if (!media) return;
+            if (!media) {
+                setRequesting(false);
+                return;
+            }
             const type = media.identifier.type;
             const cloudflareId = type === 'video' ? media.identifier.videoUid : media.identifier.imageId;
             const albumId = media.albumId;
@@ -84,6 +87,7 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
                 if (type === 'image') {
                     requestUrl = await requestImageURL({ albumId, imageId: cloudflareId });
                 } else if (type === 'video') {
+                    console.log("requesting video thumbnail", cloudflareId);
                     requestUrl = await requestVideoThumbnailURL({ albumId, videoUID: cloudflareId });
                 }
 

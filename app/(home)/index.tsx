@@ -52,6 +52,7 @@ export default function HomeScreen() {
                     <AlbumCard
                         album={item}
                         width={gridConfig.tileWidth}
+                        height={gridConfig.tileHeight}
                     />
                 )}
             />

@@ -39,19 +39,31 @@ export const requestVideoUploadURL = internalAction({
     args: {
         filename: v.string(),
     }, handler: async (_ctx, { filename }) => {
-        const url = `${UPLOAD_BASE_URL}/stream/direct_upload`
-        const form = new FormData();
-        form.append('maxDurationSeconds', '60');
-        form.append('requireSignedURLs', 'true');
-        form.append('meta', JSON.stringify({ filename }));
+        try {
+            const url = `${UPLOAD_BASE_URL}/stream/direct_upload`;
 
-        const response = await axios.post(url, form, {
-            headers: {
-                Authorization: `Bearer ${API_TOKEN}`,
+            const response = await axios.post(url, {
+                maxDurationSeconds: 60,
+                requireSignedURLs: true,
+                meta: { name: filename },
+            }, {
+                headers: {
+                    Authorization: `Bearer ${API_TOKEN}`
+                }
+            });
+
+            if (!response.data || response.status !== 200) {
+                console.warn("Cloudflare video upload error: ", response.data);
+                throw new Error("Invalid response");
+            };
+
+            return response.data;
+        } catch (e) {
+            if (axios.isAxiosError(e)) {
+                console.error("Cloudflare video upload error: ", e.response?.data);
             }
-        });
-
-        return response.data;
+            throw e;
+        }
     }
 });
 
@@ -80,9 +92,14 @@ export const requestVideoThumbnailURL = action({
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
 
-        const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, { videoUID });
+        try {
+            const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, { videoUID });
 
-        return `${DELIVERY_BASE_URL}/${videoUID}/thumbnails/thumbnail.jpg?token=${token}`;
+            return `${DELIVERY_BASE_URL}/${videoUID}/thumbnails/thumbnail.jpg?time=2s&token=${token}`;
+
+        } catch (e) {
+            throw e
+        }
     }
 });
 
@@ -189,6 +206,7 @@ export const videoPlaybackToken = internalAction({
         const payload = {
             sub: videoUID,
             exp: expiresIn,
+            thumbnail: true,
         };
 
         const encode = (obj: any) => {
@@ -214,7 +232,6 @@ export const videoPlaybackToken = internalAction({
             .replace(/\+/g, "-")
             .replace(/\//g, "_");
 
-        console.log(`Signed Video Token: ${message}.${signature}`);
         return `${message}.${signature}`;
     },
 });

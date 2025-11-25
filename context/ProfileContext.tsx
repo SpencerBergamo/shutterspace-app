@@ -63,8 +63,10 @@ export const ProfileProvider = ({ children }: {
     }, [createProfile]);
 
     useEffect(() => {
-        if (profile === null) {
+        if (profile === undefined) {
             setIsLoading(true);
+        } else if (profile === null) {
+            createNewProfile();
         }
 
         setIsLoading(false);
