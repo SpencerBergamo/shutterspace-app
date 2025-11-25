@@ -8,6 +8,7 @@ import { useAction } from 'convex/react';
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import * as StoreReview from 'expo-store-review';
 import React, { useCallback } from 'react';
 import { Alert, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -69,7 +70,11 @@ export default function ProfileSettings() {
             message: 'Join me on Shutterspace!',
             url: `https://shutterspace.app/share?code=${code}`
         });
-    }, [profile])
+    }, [profile]);
+
+    const handleReviewApp = async () => {
+        await StoreReview.requestReview();
+    }
 
     return (
         <View style={{ flex: 1, backgroundColor: appStyles.colorScheme.background }}>
@@ -137,7 +142,7 @@ export default function ProfileSettings() {
 
                     <TouchableOpacity
                         style={styles.settingsOption}
-                        onPress={() => { }}
+                        onPress={handleReviewApp}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: appStyles.colorScheme.primary, opacity: 0.5 }]}>
                             <Image
