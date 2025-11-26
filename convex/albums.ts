@@ -40,7 +40,7 @@ export const createAlbum = action({
 
         // create an invite code entry
         const code: string = await ctx.runAction(internal.crypto.generateRandomCode, { length: 10 });
-        await ctx.runMutation(internal.inviteCodes.insert, { albumId, code, createdBy: profile._id, role: 'member' });
+        await ctx.runMutation(internal.inviteCodes.addCode, { albumId, code, createdBy: profile._id, role: 'member', openInvites });
 
         // create album member entry: host
         await ctx.runMutation(internal.albumMembers.addMember, {

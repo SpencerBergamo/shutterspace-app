@@ -17,7 +17,7 @@ export default function InviteScreen() {
     const { isAuthenticated } = useConvexAuth();
 
     // Convex
-    const invitation = useQuery(api.inviteCodes.openInvite, { code });
+    const invitation = useQuery(api.inviteCodes.openInvite, code ? { code } : "skip");
     const acceptInvite = useMutation(api.inviteCodes.acceptInvite);
     const requestAlbumCoverUrl = useAction(api.cloudflare.requestAlbumCoverURL);
 
@@ -39,7 +39,7 @@ export default function InviteScreen() {
                 setIsLoading(false);
             }
         })();
-    }, [isAuthenticated, code, invitation, requestAlbumCoverUrl]);
+    }, [isAuthenticated, code, invitation]);
 
     const accept = useCallback(async () => {
         if (isAuthenticated && invitation) {
@@ -56,7 +56,7 @@ export default function InviteScreen() {
             router.push('/sign-in?redirect=/invite/' + code);
         }
 
-    }, [isAuthenticated, invitation, code]);
+    }, [isAuthenticated, invitation, code, acceptInvite]);
 
     const decline = () => {
         Alert.alert(

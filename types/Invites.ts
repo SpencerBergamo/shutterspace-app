@@ -17,7 +17,7 @@ export interface Invitation {
     avatarUrl?: string;
     title: string;
     description?: string;
-    cover: MediaIdentifier | undefined;
+    cover?: MediaIdentifier;
     role: InviteRole;
     dateRange?: { start: string, end?: string };
     location?: {
@@ -26,4 +26,6 @@ export interface Invitation {
         name?: string;
     };
     message?: string;
+    memberCount: number;
+    mediaCount: number;
 }

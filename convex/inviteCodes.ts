@@ -1,45 +1,21 @@
 import { Invitation } from "@/types/Invites";
 import { MediaIdentifier } from "@/types/Media";
 import { v } from "convex/values";
-import { api, internal } from "./_generated/api";
+import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { action, internalMutation, mutation, query } from "./_generated/server";
-
-
-export const createInvite = action({
-    args: {
-        albumId: v.id('albums'),
-    }, handler: async (ctx, { albumId }): Promise<string> => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error('Not authenticated');
-        const profileId = identity.user_id as Id<'profiles'>;
-
-        const code = await ctx.runAction(internal.crypto.generateRandomCode, { length: 10 });
-
-        await ctx.runMutation(internal.inviteCodes.insert, {
-            code,
-            albumId,
-            createdBy: profileId,
-            role: 'member',
-        });
-
-        return code;
-    },
-});
+import { internalMutation, mutation, query } from "./_generated/server";
 
 export const getInviteCode = query({
     args: { albumId: v.id('albums') },
-    handler: async (ctx, { albumId }): Promise<string> => {
+    handler: async (ctx, { albumId }): Promise<string | undefined> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership) throw new Error('Not a member of this album');
 
-        const inviteCode = await ctx.db.query('inviteCodes')
+        const invite = await ctx.db.query('inviteCodes')
             .withIndex('by_albumId', q => q.eq('albumId', albumId))
             .first();
 
-        if (!inviteCode) throw new Error('No invite code found');
-
-        return inviteCode.code;
+        return invite?.code;
     }
 })
 
@@ -63,6 +39,14 @@ export const openInvite = query({
             albumCover = media?.identifier ?? undefined;
         }
 
+        const memberCount = await ctx.db.query('albumMembers')
+            .withIndex('by_albumId', q => q.eq('albumId', album._id))
+            .collect().then(members => members.length);
+
+        const mediaCount = await ctx.db.query('media')
+            .withIndex('by_albumId', q => q.eq('albumId', album._id))
+            .collect().then(media => media.length);
+
         return {
             sender: sender.nickname,
             avatarUrl: undefined,
@@ -73,6 +57,8 @@ export const openInvite = query({
             dateRange: album.dateRange,
             location: album.location,
             message: undefined,
+            memberCount,
+            mediaCount,
         }
     }
 })
@@ -90,10 +76,13 @@ export const acceptInvite = mutation({
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new Error('Profile not found');
 
+        const openInvites = invite.openInvites ?? true;
+        const role = openInvites ? invite.role : 'pending';
+
         await ctx.db.insert('albumMembers', {
             albumId: invite.albumId,
             profileId: profile._id,
-            role: invite.role,
+            role,
             joinedAt: Date.now(),
         });
     }
@@ -101,33 +90,23 @@ export const acceptInvite = mutation({
 
 // // --- Internal ---
 
-export const insert = internalMutation({
+export const addCode = internalMutation({
     args: {
         code: v.string(),
-        albumId: v.id('albums'),
         createdBy: v.id('profiles'),
+        albumId: v.id('albums'),
         role: v.union(
             v.literal('member'),
             v.literal('moderator'),
         ),
-    }, handler: async (ctx, { code, albumId, createdBy, role }): Promise<Id<'inviteCodes'>> => {
+        openInvites: v.boolean(),
+    }, handler: async (ctx, { code, createdBy, albumId, role, openInvites }): Promise<Id<'inviteCodes'>> => {
         return await ctx.db.insert('inviteCodes', {
             code,
             albumId,
             createdBy,
             role,
+            openInvites,
         });
     },
 });
-
-
-// export const getInvite = internalQuery({
-//     args: { code: v.string() },
-//     handler: async (ctx, { code }) => {
-//         const invite = await ctx.db.query('inviteCodes')
-//             .withIndex('by_code', q => q.eq('code', code))
-//             .first();
-
-//         return invite;
-//     },
-// });

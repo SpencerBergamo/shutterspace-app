@@ -65,6 +65,7 @@ export default defineSchema({
             v.literal('member'),
             v.literal('moderator'),
             v.literal('host'),
+            v.literal('pending'),
         ),
         joinedAt: v.number(),
     }).index("by_albumId", ["albumId"])
@@ -79,6 +80,7 @@ export default defineSchema({
             v.literal('member'),
             v.literal('moderator'),
         ),
+        openInvites: v.optional(v.boolean()),
     }).index('by_code', ['code'])
         .index('by_albumId', ['albumId']),
 

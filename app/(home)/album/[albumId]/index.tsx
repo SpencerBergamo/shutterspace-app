@@ -11,7 +11,7 @@ import { useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Images, Plus } from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -48,8 +48,7 @@ export default function AlbumScreen() {
     const [isCancelingDeletion, setIsCancelingDeletion] = useState(false);
 
     // Convex
-    const createInvite = useAction(api.inviteCodes.createInvite);
-    const inviteCode = useQuery(api.inviteCodes.getInviteCode, { albumId });
+    const inviteCode = useQuery(api.inviteCodes.getInviteCode, { albumId }) ?? undefined;
     const leaveAlbum = useMutation(api.albumMembers.leaveAlbum);
     const deleteAlbum = useMutation(api.albums.deleteAlbum);
     const cancelDeletion = useMutation(api.albums.cancelAlbumDeletion);
@@ -63,6 +62,8 @@ export default function AlbumScreen() {
 
         setIsCreatingInvite(true);
         try {
+            if (!inviteCode) throw new Error("Invite wasn't created for this album");
+
             await Share.share({
                 message: `Join my album "${album.title}" on ShutterSpace!`,
                 url: `https://shutterspace.app/invite/${inviteCode}`,
@@ -73,7 +74,7 @@ export default function AlbumScreen() {
         } finally {
             setIsCreatingInvite(false);
         }
-    }, [album, createInvite, isCreatingInvite]);
+    }, [album, inviteCode, isCreatingInvite]);
 
     const handleViewMembers = useCallback(() => {
         settingsModalRef.current?.dismiss();
