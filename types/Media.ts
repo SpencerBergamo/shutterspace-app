@@ -1,5 +1,7 @@
 import { Id } from "@/convex/_generated/dataModel";
 
+export type MediaStatus = 'pending' | 'ready' | 'error';
+
 export type Media = {
     _id: Id<'media'>; // the filename of the asset
     _creationTime: number;
@@ -16,7 +18,7 @@ export type Media = {
         name?: string;
         address?: string;
     },
-    status: 'pending' | 'ready' | 'error';
+    status: MediaStatus;
     isDeleted: boolean;
 }
 

@@ -92,14 +92,9 @@ export const requestVideoThumbnailURL = action({
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
 
-        try {
-            const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, { videoUID });
+        const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, { videoUID });
 
-            return `${DELIVERY_BASE_URL}/${videoUID}/thumbnails/thumbnail.jpg?time=2s&token=${token}`;
-
-        } catch (e) {
-            throw e
-        }
+        return `${DELIVERY_BASE_URL}/${token}/thumbnails/thumbnail.jpg`;
     }
 });
 
@@ -114,7 +109,7 @@ export const requestVideoPlaybackURL = action({
 
         const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, { videoUID });
 
-        return `${DELIVERY_BASE_URL}/${token}/manifest/video.mp4`;
+        return `${DELIVERY_BASE_URL}/${token}/manifest/video.m3u8`;
     }
 });
 
@@ -153,7 +148,7 @@ export const requestAlbumCoverURL = action({
                 videoUID: cloudflareId,
                 expires: Math.floor(Date.now() / 1000) + 60 * 60 * 24
             });
-            return `${DELIVERY_BASE_URL}/${cloudflareId}/thumbnails/thumbnail.jpg?token=${token}`;
+            return `${DELIVERY_BASE_URL}/${token}/thumbnails/thumbnail.jpg`;
         }
 
         throw new Error('Unsupported media type');
@@ -189,50 +184,44 @@ export const videoPlaybackToken = internalAction({
         expires: v.optional(v.number()),
     },
     handler: async (_ctx, { videoUID, expires }) => {
+
         const base64PEM = process.env.CLOUDFLARE_STREAM_PEM;
         const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;
 
         if (!base64PEM || !keyID) throw new Error('Missing PEM or Key ID');
 
         const pem = Buffer.from(base64PEM, 'base64').toString('utf8');
-        const expiresIn = expires ?? Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
+        const expiresIn = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
 
         const header = {
             alg: 'RS256',
-            typ: 'JWT', //new
             kid: keyID,
         };
 
         const payload = {
             sub: videoUID,
+            kid: keyID,
             exp: expiresIn,
-            thumbnail: true,
         };
 
-        const encode = (obj: any) => {
-            const json = JSON.stringify(obj);
-            return Buffer.from(json)
+        const b64url = (buf: Buffer): string => {
+            return buf
                 .toString('base64')
                 .replace(/=/g, "")
                 .replace(/\+/g, "-")
                 .replace(/\//g, "_");
-        };
+        }
 
-        const encodedHeader = encode(header);
-        const encodedPayload = encode(payload);
-        const message = `${encodedHeader}.${encodedPayload}`;
+        const encodedHeader = b64url(Buffer.from(JSON.stringify(header)));
+        const encodedPayload = b64url(Buffer.from(JSON.stringify(payload)));
+        const signingInput = `${encodedHeader}.${encodedPayload}`;
 
         const signer = crypto.createSign('RSA-SHA256');
-        signer.update(message);
-        signer.end();
+        signer.update(signingInput);
+        const signatureBuffer = signer.sign(pem);
+        const signature = b64url(signatureBuffer);
 
-        const signatureToBuffer = signer.sign(pem, 'base64');
-        const signature = signatureToBuffer
-            .replace(/=/g, "")
-            .replace(/\+/g, "-")
-            .replace(/\//g, "_");
-
-        return `${message}.${signature}`;
+        return `${signingInput}.${signature}`;
     },
 });
 

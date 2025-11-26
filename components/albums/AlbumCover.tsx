@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 
 interface AlbumCardProps {
@@ -20,10 +20,8 @@ export default function AlbumCover({ album, width, height }: AlbumCardProps) {
     const albumCover = useQuery(api.albums.getAlbumCover, { albumId: album._id });
     const { requesting, thumbnail: uri } = useSignedUrls({ media: albumCover ?? undefined });
 
-    console.log("album cover", uri);
-
     return (
-        <TouchableOpacity
+        <Pressable
             style={[styles.albumContainer, { width, height }]}
             onPress={() => router.push(`album/${album._id}`)}
         >
@@ -62,7 +60,7 @@ export default function AlbumCover({ album, width, height }: AlbumCardProps) {
             <Text style={[styles.albumDate, { color: colorScheme.text + '80' }]}>
                 {new Date(album._creationTime).toLocaleDateString()}
             </Text>
-        </TouchableOpacity>
+        </Pressable>
     );
 }
 

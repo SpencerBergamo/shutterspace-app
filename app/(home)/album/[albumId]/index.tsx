@@ -19,8 +19,7 @@ import { Alert, Dimensions, FlatList, Share, StyleSheet, Text, TouchableOpacity,
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const NUM_COLUMNS = 3;
-const GAP = 2;
-
+const GAP = 1;
 
 export default function AlbumScreen() {
 
@@ -37,7 +36,6 @@ export default function AlbumScreen() {
     const { getAlbum } = useAlbums();
     const album = getAlbum(albumId);
     const { media, selectAndUploadAssets, inFlightUploads, removeInFlightUpload, } = useMedia(albumId);
-    console.warn('InFlightUploads', inFlightUploads.length);
 
     // Refs
     const flatListRef = useRef<FlatList>(null);
@@ -138,12 +136,12 @@ export default function AlbumScreen() {
 
     const renderMedia = useCallback(({ item, index }: { item: Media, index: number }) => {
         const inFlightUri: string | undefined = inFlightUploads[item.assetId] ?? undefined;
+        if (inFlightUri) console.log("inFlight: ", inFlightUri);
 
         return <MediaTile
             media={item}
             itemSize={itemSize}
             onPress={() => {
-                console.log('onPress', index);
                 router.push({
                     pathname: '../viewer/[mediaId]',
                     params: { albumId: albumId, index: index.toString() },

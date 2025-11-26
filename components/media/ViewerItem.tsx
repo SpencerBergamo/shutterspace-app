@@ -3,7 +3,7 @@ import { Media } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useState } from "react";
-import { Dimensions, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Dimensions, Pressable, StyleSheet, View } from "react-native";
 import Video from "react-native-video";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -14,7 +14,7 @@ interface ViewerItemProps {
 }
 
 export default function ViewerItem({ media, isViewable }: ViewerItemProps) {
-    const { thumbnail, requestVideo } = useSignedUrls({ media });
+    const { thumbnail, requestingVideo, requestVideo } = useSignedUrls({ media });
 
     // Constants
     const type = media.identifier.type;
@@ -49,15 +49,19 @@ export default function ViewerItem({ media, isViewable }: ViewerItemProps) {
                 />
 
                 {type === 'video' && !isPlaying && (
-                    <TouchableOpacity
+                    <Pressable
                         onPress={handleRequestVideo}
+                        style={styles.playButtonPosition}
+                        disabled={requestingVideo}
                     >
-                        <Ionicons name="play-circle-outline" size={24} color="white" />
-                    </TouchableOpacity>
+                        <View style={styles.playButton}>
+                            {requestingVideo ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="play-outline" size={32} color="white" />}
+                        </View>
+                    </Pressable>
                 )}
             </View>
         );
-    }, [thumbnail, type, isPlaying, handleRequestVideo]);
+    }, [thumbnail, type, isPlaying, handleRequestVideo, requestingVideo]);
 
     const renderVideo = useCallback(() => {
         return (
@@ -71,7 +75,6 @@ export default function ViewerItem({ media, isViewable }: ViewerItemProps) {
                     onError={(error) => {
                         console.error('Video playback error:', error);
                     }}
-                    ignoreSilentSwitch="ignore"
                     playInBackground={false}
                 />
             </View>
@@ -81,7 +84,7 @@ export default function ViewerItem({ media, isViewable }: ViewerItemProps) {
     if (!thumbnail) {
         return (
             <View style={styles.container}>
-                <Ionicons name="alert-outline" size={24} color="red" />
+                <Ionicons name="alert-circle-outline" size={24} color="white" />
             </View>
         );
     }
@@ -102,6 +105,26 @@ export const styles = StyleSheet.create({
         width: SCREEN_WIDTH,
         height: SCREEN_HEIGHT,
     },
+
+    playButtonPosition: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    playButton: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
 
     video: {
         width: SCREEN_WIDTH,

@@ -3,6 +3,7 @@ import { useProfile } from '@/context/ProfileContext';
 import { api } from '@/convex/_generated/api';
 import useAppStyles from '@/hooks/useAppStyles';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '@react-native-firebase/auth';
 import { useAction } from 'convex/react';
 import Constants from 'expo-constants';
@@ -54,6 +55,22 @@ export default function ProfileSettings() {
                 {
                     text: 'Delete Account', style: 'destructive', onPress: () => {
                         // auth.signOut();
+                    }
+                },
+            ]
+        )
+    }
+
+    const handleClearCache = () => {
+        Alert.alert(
+            "Clear Cache",
+            "Are you sure you want to clear the cache? This action will clear the cache from your device. All of your data will still be available in your account.",
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Clear', style: 'destructive', onPress: async () => {
+                        await AsyncStorage.clear();
+                        Alert.alert("Cache Cleared", "The cache has been cleared successfully.");
                     }
                 },
             ]
@@ -267,10 +284,19 @@ export default function ProfileSettings() {
                             <Text style={styles.optionSubtitle}>Permanently delete your account</Text>
                         </View>
                     </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={{ margin: 24, alignItems: 'center' }}
+                        onPress={handleClearCache}
+                    >
+                        <Text style={{ color: '#007AFF', fontSize: 16, fontWeight: '600' }}>Clear Cache</Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Footer */}
                 <View style={styles.footer}>
+
+
                     <Text style={styles.footerTitle}>
                         Shutterspace
                     </Text>

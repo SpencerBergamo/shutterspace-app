@@ -3,8 +3,7 @@ import useSignedUrls from "@/hooks/useSignedUrls";
 import { Media } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from 'expo-image';
-import { Play } from "lucide-react-native";
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface MediaTileProps {
     media: Media;
@@ -21,6 +20,14 @@ export default function MediaTile({ media, itemSize, onPress, onLongPress, onRea
 
     const mediaId = media._id;
     const type = media.identifier.type;
+    const duration = type === 'video' ? media.identifier.duration : undefined;
+
+    const formatDuration = (ms: number) => {
+        const seconds = Math.floor(ms / 1000);
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
 
     if (media.status === 'error') {
         return (
@@ -32,28 +39,19 @@ export default function MediaTile({ media, itemSize, onPress, onLongPress, onRea
 
     if (requesting) {
         return (
-            <View style={{ width: itemSize, height: itemSize, marginBottom: 2, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ width: itemSize, height: itemSize, marginBottom: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: "#DEDEDEFF" }}>
                 <ActivityIndicator size="small" color="grey" />
             </View>
-        );
+        )
     }
 
     return (
-        <TouchableOpacity
-            style={{ width: itemSize, height: itemSize, marginBottom: 2 }}
+        <Pressable
+            style={[styles.container, { width: itemSize, height: itemSize }]}
             onPress={() => onPress(mediaId)}
             onLongPress={() => onLongPress(mediaId)}
         >
-            {!uri && placeholderUri && (
-                <Image
-                    source={{ uri: placeholderUri }}
-                    style={{ width: '100%', height: '100%' }}
-                    contentFit="cover"
-                />
-            )}
-
-
-            {uri && (
+            {uri ? (
                 <Image
                     source={{ uri, cacheKey: mediaId }}
                     style={{ width: '100%', height: '100%' }}
@@ -66,28 +64,43 @@ export default function MediaTile({ media, itemSize, onPress, onLongPress, onRea
                         console.error("Rendering tile failed: ", e);
                     }}
                 />
+            ) : (
+                <Ionicons name="alert-circle-outline" size={24} color="red" />
             )}
-
 
             {uri && type === 'video' && (
                 <View style={styles.playIconPosition}>
-                    <Play size={24} color="white" />
+                    {duration ? (
+                        <Text style={styles.videoDurationText}>{formatDuration(duration)}</Text>
+                    ) : (
+                        <Ionicons name="play-circle-outline" size={24} color="white" />
+                    )}
                 </View>
             )}
-        </TouchableOpacity>
+        </Pressable>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        overflow: 'hidden',
-        position: 'relative',
-        borderRadius: 4,
+        marginBottom: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: "#DEDEDEFF",
     },
 
     playIconPosition: {
-        justifyContent: 'flex-end',
-        alignItems: 'flex-end',
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        alignItems: 'center',
         padding: 12,
+    },
+
+    videoDurationText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: 'bold',
+
     }
 })
