@@ -1815,7 +1815,7 @@ PODS:
     - ReactCommon/turbomodule/core
   - react-native-get-random-values (1.11.0):
     - React-Core
-  - react-native-keyboard-controller (1.19.5):
+  - react-native-keyboard-controller (1.19.6):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1830,7 +1830,7 @@ PODS:
     - React-hermes
     - React-ImageManager
     - React-jsi
-    - react-native-keyboard-controller/common (= 1.19.5)
+    - react-native-keyboard-controller/common (= 1.19.6)
     - React-NativeModulesApple
     - React-RCTFabric
     - React-renderercss
@@ -1840,7 +1840,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-keyboard-controller/common (1.19.5):
+  - react-native-keyboard-controller/common (1.19.6):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -3250,7 +3250,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 28c35d4355981ed4a9da6b13bd7f38189533ae05
   React-microtasksnativemodule: e46cff912b07dc383f04715b4225ca131b325a4a
   react-native-get-random-values: d16467cf726c618e9c7a8c3c39c31faa2244bbba
-  react-native-keyboard-controller: 184ba98c9b855f1aab81bc4c9b20eded0d23108b
+  react-native-keyboard-controller: 6f8181c2b95b309323650f0cb03ba66f5b26692f
   react-native-safe-area-context: 5928d84c879db2f9eb6969ca70e68f58623dbf25
   react-native-video: 7c4893f268a28d3a44519969fadbb34a2ac1174e
   React-NativeModulesApple: 3e3e6bf35c6ba5d0aa785e899087385821fa78bd
