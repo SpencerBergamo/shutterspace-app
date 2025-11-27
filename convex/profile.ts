@@ -57,6 +57,22 @@ export const updateProfile = mutation({
     },
 });
 
+export const getUserByShareCode = query({
+    args: { code: v.string() },
+    handler: async (ctx, { code }) => {
+        const profile = await ctx.db.query('profiles')
+            .withIndex('by_shareCode', q => q.eq('shareCode', code))
+            .first();
+
+        if (!profile) return null;
+
+        return {
+            _id: profile._id,
+            nickname: profile.nickname,
+        };
+    }
+})
+
 // --- Internal ---
 
 export const getPublicProfile = internalQuery({

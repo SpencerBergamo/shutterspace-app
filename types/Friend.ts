@@ -1,12 +1,12 @@
 import { Id } from "@/convex/_generated/dataModel";
 
-export type FriendshipStatus = 'pending' | 'accepted' | 'blocked';
+export type FriendshipStatus = 'pending' | 'accepted' | 'blocked' | 'rejected';
 
 export interface Friendship {
     _id: Id<'friendships'>;
     _creationTime: number;
-    profileId: Id<'profiles'>;
-    friendId: Id<'profiles'>;
+    senderId: Id<'profiles'>;
+    recipientId: Id<'profiles'>;
     status: FriendshipStatus;
     createdAt: number;
     updatedAt: number;
@@ -14,6 +14,5 @@ export interface Friendship {
 
 export interface Friend {
     _id: Id<'profiles'>;
-    friendshipId: Id<'friendships'>;
     nickname: string;
 }

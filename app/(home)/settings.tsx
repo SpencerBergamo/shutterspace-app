@@ -137,7 +137,9 @@ export default function ProfileSettings() {
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.settingsOption}
-                        onPress={() => router.push('./manage-friends')}
+                        onPress={() => router.push('friends', {
+
+                        })}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: '#F5F5F5' }]}>
                             <Ionicons name="person-outline" size={20} color="#8E8E93" />

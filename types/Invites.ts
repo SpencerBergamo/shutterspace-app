@@ -19,12 +19,7 @@ export interface Invitation {
     description?: string;
     cover?: MediaIdentifier;
     role: InviteRole;
-    dateRange?: { start: string, end?: string };
-    location?: {
-        lat: number;
-        lng: number;
-        name?: string;
-    };
+    created: number;
     message?: string;
     memberCount: number;
     mediaCount: number;

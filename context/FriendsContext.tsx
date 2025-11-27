@@ -1,19 +1,11 @@
-
-
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import { Friend } from "@/types/Friend";
-import { useMutation, useQuery } from "convex/react";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-
-type AcceptStatus = "accepted" | "blocked";
+import { Friendship } from "@/types/Friend";
+import { useQuery } from "convex/react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 interface FriendsContextType {
     isLoading: boolean;
-    friends: Friend[];
-    sendFriendRequest: (friendId: Id<'profiles'>) => Promise<void>;
-    acceptFriendRequest: (friendshipId: Id<'friendships'>, status?: AcceptStatus) => Promise<void>;
-    removeFriend: (friendId: Id<'profiles'>) => Promise<void>;
+    friendships: Friendship[];
 }
 
 const FriendsContext = createContext<FriendsContextType | null>(null);
@@ -24,51 +16,22 @@ export const FriendsProvider = ({ children }: { children: React.ReactNode }) => 
     const [isLoading, setIsLoading] = useState(true);
 
     // Provider Data
-    const friends = useQuery(api.friendships.getFriends);
+    const friendships: Friendship[] | undefined = useQuery(api.friendships.getFriendships);
 
-    // Provider Functions
-    const send = useMutation(api.friendships.sendFriendRequest);
-    const accept = useMutation(api.friendships.acceptFriendRequest);
-    const remove = useMutation(api.friendships.removeFriend);
+    // Convex
 
     useEffect(() => {
-        if (friends !== undefined) {
+        if (friendships !== undefined) {
             setIsLoading(false);
         }
-    }, [friends]);
+    }, [friendships]);
 
-    const sendFriendRequest = useCallback(async (friendId: Id<"profiles">) => {
-        try {
-            await send({ friendId });
-        } catch (e) {
-            console.error('Failed to send friend request', e);
-        }
-    }, [send]);
 
-    const acceptFriendRequest = useCallback(async (friendshipId: Id<"friendships">, status?: AcceptStatus) => {
-        try {
-            await accept({ friendshipId, status: status });
-        } catch (e) {
-            console.error('Failed to accept friend request', e);
-        }
-    }, [accept]);
-
-    const removeFriend = useCallback(async (friendId: Id<"profiles">) => {
-        try {
-            await remove({ friendId });
-        } catch (e) {
-            console.error('Failed to remove friend', e);
-        }
-    }, [remove]);
-
-    if (friends === undefined) return null;
+    if (friendships === undefined) return null;
 
     const value = {
         isLoading,
-        friends,
-        sendFriendRequest,
-        acceptFriendRequest,
-        removeFriend,
+        friendships,
     }
 
     return (

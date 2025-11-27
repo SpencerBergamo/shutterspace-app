@@ -1,6 +1,5 @@
 import AlbumDeletionAlert from "@/components/albums/AlbumDeletionAlert";
 import AlbumInfoCard from "@/components/albums/AlbumInfoCard";
-import FloatingActionButton from "@/components/FloatingActionButton";
 import MediaTile from "@/components/media/mediaTile";
 import { useAlbums } from "@/context/AlbumsContext";
 import { useProfile } from "@/context/ProfileContext";
@@ -13,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery } from "convex/react";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { Images, Plus } from "lucide-react-native";
+import { Images } from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert, Dimensions, FlatList, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
@@ -24,7 +23,7 @@ const GAP = 1;
 export default function AlbumScreen() {
 
     // Layout
-    const appStyles = useAppStyles();
+    const { colorScheme, fabPosition, fabButton } = useAppStyles();
     const { width } = useWindowDimensions();
     const itemSize: number = useMemo(() => {
         return (SCREEN_WIDTH - (GAP * 2)) / NUM_COLUMNS;
@@ -158,7 +157,7 @@ export default function AlbumScreen() {
     }, [media, inFlightUploads, removeInFlightUpload]);
 
     if (!album) return (
-        <View style={{ flex: 1, backgroundColor: appStyles.colorScheme.background }}>
+        <View style={{ flex: 1, backgroundColor: colorScheme.background }}>
             <Stack.Screen options={{
                 headerTitle: 'Album Not Found',
             }} />
@@ -172,7 +171,7 @@ export default function AlbumScreen() {
     );
 
     return (
-        <View style={{ flex: 1, backgroundColor: appStyles.colorScheme.background }}>
+        <View style={{ flex: 1, backgroundColor: colorScheme.background }}>
 
             {/* Header */}
             <Stack.Screen options={{
@@ -198,6 +197,8 @@ export default function AlbumScreen() {
             <FlatList
                 ref={flatListRef}
                 data={media}
+                initialNumToRender={20}
+                maxToRenderPerBatch={media.length}
                 keyExtractor={(item: Media) => item._id}
                 numColumns={NUM_COLUMNS}
                 columnWrapperStyle={{ gap: GAP }}
@@ -214,17 +215,21 @@ export default function AlbumScreen() {
             />
 
             {/* Floating Action Button */}
-            <FloatingActionButton
-                render={() => <Plus size={24} color="white" />}
-                onPress={selectAndUploadAssets}
-            />
+            <View style={fabPosition}>
+                <TouchableOpacity
+                    style={[fabButton, { backgroundColor: colorScheme.primary }]}
+                    onPress={selectAndUploadAssets}
+                >
+                    <Ionicons name="add" size={24} color={colorScheme.surface} />
+                </TouchableOpacity>
+            </View>
 
             {/* Settings Modal */}
             <BottomSheetModal
                 ref={settingsModalRef}
                 snapPoints={['85%']}
                 enablePanDownToClose
-                backgroundStyle={{ backgroundColor: appStyles.colorScheme.background }}
+                backgroundStyle={{ backgroundColor: colorScheme.background }}
                 backdropComponent={(props) => (
                     <BottomSheetBackdrop
                         {...props}

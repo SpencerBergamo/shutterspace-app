@@ -15,20 +15,24 @@ export default defineSchema({
         avatarKey: v.optional(v.string()), // R2 key for public avatars: 'avatars/{profile._id}.jpg'
         ssoAvatarUrl: v.optional(v.string()), // URL for SSO avatars
         shareCode: v.optional(v.string()),
-    }).index('by_firebase_uid', ['firebaseUID']),
+        shareCodeUpdatedAt: v.optional(v.number()),
+    }).index('by_firebase_uid', ['firebaseUID'])
+        .index('by_shareCode', ['shareCode']),
 
     friendships: defineTable({
-        profileId: v.id('profiles'),
-        friendId: v.id('profiles'),
+        senderId: v.id('profiles'),
+        recipientId: v.id('profiles'),
         status: v.union(
             v.literal('pending'),
             v.literal('accepted'),
             v.literal('blocked'),
+            v.literal('rejected'),
         ),
         createdAt: v.number(),
         updatedAt: v.number(),
-    }).index('by_profileId', ['profileId'])
-        .index('by_pair', ['profileId', 'friendId']),
+    }).index('by_senderId', ['senderId'])
+        .index('by_recipientId', ['recipientId'])
+        .index('by_pair', ['senderId', 'recipientId']),
 
     albums: defineTable({
         hostId: v.id("profiles"),

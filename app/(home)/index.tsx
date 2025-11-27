@@ -1,24 +1,25 @@
 import AlbumCard from "@/components/albums/AlbumCover";
-import FloatingActionButton from "@/components/FloatingActionButton";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
 import { useAlbums } from '@/context/AlbumsContext';
+import useAppStyles from "@/hooks/useAppStyles";
 import getGridLayout from "@/utils/getGridLyout";
-import { useTheme } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Plus } from "lucide-react-native";
 import { useMemo } from "react";
-import { FlatList, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
-    const theme = useTheme();
+    const { colorScheme, fabPosition, fabButton } = useAppStyles();
     const { width } = useWindowDimensions();
     const { albums } = useAlbums();
 
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 2, gap: 16, aspectRatio: 1 }), [width]);
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.container, { backgroundColor: colorScheme.background }]}>
             <HomeScreenHeader />
+
             <FlatList
                 data={albums}
                 keyExtractor={(item) => item._id}
@@ -29,19 +30,19 @@ export default function HomeScreen() {
                 scrollEnabled={albums.length > 0}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <View style={[styles.emptyCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-                            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+                        <View style={[styles.emptyCard, { backgroundColor: colorScheme.background, borderColor: colorScheme.border }]}>
+                            <Text style={[styles.emptyTitle, { color: colorScheme.text }]}>
                                 Welcome to Shutterspace!
                             </Text>
-                            <Text style={[styles.emptySubtitle, { color: theme.colors.text }]}>
+                            <Text style={[styles.emptySubtitle, { color: colorScheme.text }]}>
                                 You don't have any albums yet.
                             </Text>
-                            <Text style={[styles.emptyDescription, { color: theme.colors.text }]}>
+                            <Text style={[styles.emptyDescription, { color: colorScheme.text }]}>
                                 Create your first album to start sharing photos with friends and family.
                             </Text>
-                            <View style={[styles.ctaContainer, { backgroundColor: theme.colors.background }]}>
-                                <Plus size={20} color={theme.colors.primary} />
-                                <Text style={[styles.ctaText, { color: theme.colors.primary }]}>
+                            <View style={[styles.ctaContainer, { backgroundColor: colorScheme.background }]}>
+                                <Plus size={20} color={colorScheme.primary} />
+                                <Text style={[styles.ctaText, { color: colorScheme.primary }]}>
                                     Tap the button below to get started
                                 </Text>
                             </View>
@@ -57,10 +58,18 @@ export default function HomeScreen() {
                 )}
             />
 
-            <FloatingActionButton
+            {/* <FloatingActionButton
                 render={() => <Plus size={24} color="white" />}
                 onPress={() => router.push('/new-album')}
-            />
+            /> */}
+            <View style={fabPosition}>
+                <TouchableOpacity
+                    style={[fabButton, { backgroundColor: colorScheme.primary }]}
+                    onPress={() => router.push('/new-album')}
+                >
+                    <Ionicons name="add" size={24} color={colorScheme.surface} />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }

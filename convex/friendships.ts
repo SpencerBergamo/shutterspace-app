@@ -1,30 +1,45 @@
-import { Friend } from "@/types/Friend";
+import { Friend, Friendship } from "@/types/Friend";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
-export const getFriends = query({
-    args: {},
-    handler: async (ctx, _args): Promise<Friend[]> => {
+export const getFriendships = query({
+    args: {}, handler: async (ctx): Promise<Friendship[]> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
 
-        const friendships = await ctx.db.query('friendships')
-            .withIndex('by_profileId', q => q.eq('profileId', profile._id))
+        const sent = await ctx.db.query('friendships')
+            .withIndex('by_senderId', q => q.eq('senderId', profile._id))
             .collect();
 
-        const friends = await Promise.all(friendships.map(async (friend) => {
-            const doc = await ctx.db.get(friend.friendId);
-            if (!doc) return;
+        const received = await ctx.db.query('friendships')
+            .withIndex('by_recipientId', q => q.eq('recipientId', profile._id))
+            .collect();
 
-            return {
-                _id: doc._id,
-                friendshipId: friend._id,
-                nickname: doc.nickname,
-            }
-        }));
+        return [...sent, ...received];
+    }
+})
 
-        return friends.filter((friend): friend is Friend => friend !== undefined);
+export const getFriendByFriendshipId = query({
+    args: {
+        friendshipId: v.id('friendships'),
+    }, handler: async (ctx, { friendshipId }): Promise<Friend> => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+
+        const friendship = await ctx.db.get(friendshipId);
+        if (!friendship) throw new Error('Friendship does not exist');
+
+        if (friendship.senderId !== profile._id && friendship.recipientId !== profile._id) throw new Error("You are not a part of this friendship");
+
+        const friendId = friendship.senderId === profile._id ? friendship.recipientId : friendship.senderId;
+        const friend = await ctx.db.get(friendId);
+        if (!friend) throw new Error('Friend does not exist');
+
+        return {
+            _id: friend._id,
+            nickname: friend.nickname,
+        }
+
     }
 })
 
@@ -36,8 +51,8 @@ export const sendFriendRequest = mutation({
         const profile = await ctx.runQuery(api.profile.getProfile);
 
         return await ctx.db.insert('friendships', {
-            profileId: profile._id,
-            friendId: friendId,
+            senderId: profile._id,
+            recipientId: friendId,
             status: 'pending',
             createdAt: Date.now(),
             updatedAt: Date.now(),
@@ -53,15 +68,15 @@ export const acceptFriendRequest = mutation({
             v.literal('blocked'),
         )),
     },
-    handler: async (ctx, { friendshipId, status }): Promise<void> => {
+    handler: async (ctx, { friendshipId, status }) => {
         const profile = await ctx.runQuery(api.profile.getProfile);
 
         const friendship = await ctx.db.get(friendshipId);
-        if (!friendship) throw new Error('Friendship does not exist')
+        if (!friendship) return null;
 
-        if (friendship.friendId !== profile._id) throw new Error("You did not send this friend request");
+        if (friendship.recipientId !== profile._id) return null;
 
-        return await ctx.db.patch(friendshipId, {
+        await ctx.db.patch(friendshipId, {
             status: status ?? 'accepted',
         });
     }
@@ -69,17 +84,38 @@ export const acceptFriendRequest = mutation({
 
 export const removeFriend = mutation({
     args: {
-        friendId: v.id('profiles'),
+        friendshipId: v.id('friendships'),
     },
-    handler: async (ctx, { friendId }): Promise<void> => {
-
+    handler: async (ctx, { friendshipId }) => {
         const profile = await ctx.runQuery(api.profile.getProfile);
-        const friendship = await ctx.db.query('friendships')
-            .withIndex('by_pair', q => q.eq('profileId', profile._id).eq('friendId', friendId))
-            .first();
 
-        if (!friendship) throw new Error('Friendship does not exist');
+        const friendship = await ctx.db.get(friendshipId);
+        if (!friendship) return null;
 
-        return await ctx.db.delete(friendship._id);
+        if (friendship.senderId !== profile._id && friendship.recipientId !== profile._id) return null;
+
+        await ctx.db.patch(friendshipId, {
+            status: 'rejected',
+            updatedAt: Date.now(),
+        });
     }
 })
+
+export const blockFriend = mutation({
+    args: {
+        friendshipId: v.id('friendships'),
+    },
+    handler: async (ctx, { friendshipId }) => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+
+        const friendship = await ctx.db.get(friendshipId);
+        if (!friendship) return null;
+
+        if (friendship.senderId !== profile._id && friendship.recipientId !== profile._id) return null;
+
+        await ctx.db.patch(friendshipId, {
+            status: 'blocked',
+            updatedAt: Date.now(),
+        });
+    }
+});

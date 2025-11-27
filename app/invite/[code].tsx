@@ -1,45 +1,55 @@
 import { api } from "@/convex/_generated/api";
+import useAlbumCover from "@/hooks/useAlbumCover";
+import { MediaIdentifier } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
-import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+function AlbumCover({ cover }: { cover: MediaIdentifier }) {
+    const { requesting, coverUrl } = useAlbumCover(cover);
+
+    return (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '60%' }}>
+            {requesting ? (
+                <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color="grey" />
+                </View>
+            ) : (
+                <View style={{ width: '100%', height: '100%' }}>
+                    <Image
+                        source={{ uri: coverUrl }}
+                        style={{ width: '100%', height: '100%' }}
+                        contentFit="cover"
+                    />
+                    <LinearGradient
+                        colors={['transparent', 'rgba(0, 0, 0, 0.4)', 'rgba(0, 0, 0, 0.6)']}
+                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, height: '100%' }}
+                    />
+                </View>
+            )}
+        </View>
+    );
+}
 
 export default function InviteScreen() {
 
     // Layout & Params
-    const insets = useSafeAreaInsets();
     const { code } = useLocalSearchParams<{ code: string }>();
     const { isAuthenticated } = useConvexAuth();
 
     // Convex
     const invitation = useQuery(api.inviteCodes.openInvite, code ? { code } : "skip");
     const acceptInvite = useMutation(api.inviteCodes.acceptInvite);
-    const requestAlbumCoverUrl = useAction(api.cloudflare.requestAlbumCoverURL);
+
+    const albumCover = invitation?.cover;
 
     // States
-    const [isLoading, setIsLoading] = useState(true);
     const [isAcceptingInvite, setIsAcceptingInvite] = useState(false);
-    const [coverUrl, setCoverUrl] = useState<string | undefined>(undefined);
-
-    useEffect(() => {
-        (async () => {
-            try {
-                if (invitation && invitation.cover) {
-                    const url = await requestAlbumCoverUrl({ identifier: invitation.cover });
-                    setCoverUrl(url);
-                }
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setIsLoading(false);
-            }
-        })();
-    }, [isAuthenticated, code, invitation]);
 
     const accept = useCallback(async () => {
         if (isAuthenticated && invitation) {
@@ -58,6 +68,11 @@ export default function InviteScreen() {
 
     }, [isAuthenticated, invitation, code, acceptInvite]);
 
+    const formatDate = (date: number) => {
+        const d = new Date(date);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
     const decline = () => {
         Alert.alert(
             "Decline Invite",
@@ -75,51 +90,36 @@ export default function InviteScreen() {
         );
     };
 
-    if (isLoading) {
+    if (!invitation) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" />
             </View>
         )
-    };
-
-    if (!invitation) {
-        router.replace('/');
-        return null;
     }
 
     return (
         <View style={styles.container}>
             <Stack.Screen options={{
-                headerTitle: invitation.title,
+                headerTitle: invitation?.title ?? 'Loading...',
             }} />
 
-            {coverUrl && <View style={styles.thumbnailContainer}>
-                <Image
-                    source={{ uri: coverUrl }}
-                    style={styles.thumbnailImage}
-                    contentFit="cover"
-                />
-
-                <LinearGradient
-                    colors={['transparent', 'rgba(0, 0, 0, 0.4)', 'rgba(0, 0, 0, 0.6)']}
-                    style={styles.gradient}
-                />
-            </View>}
+            {albumCover && <AlbumCover
+                cover={albumCover}
+            />}
 
             <ScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={{}}
+                contentContainerStyle={{ paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
             >
-
-                {/* spacer to push card down */}
-                <View style={{ height: coverUrl ? 0 : 300 }} />
+                {/* Spacer to push content below cover image */}
+                {albumCover && <View style={{ height: 320 }} />}
 
                 {/* Content Card */}
                 <View style={[
                     styles.contentCard,
-                    coverUrl && {
+                    albumCover && {
                         borderTopLeftRadius: 32,
                         borderTopRightRadius: 32,
                     }
@@ -128,82 +128,80 @@ export default function InviteScreen() {
                     <View style={styles.senderSection}>
                         <View style={styles.senderAvatar}>
                             <Text style={styles.avatarText}>
-                                {invitation.sender.charAt(0).toUpperCase()}
+                                {invitation?.sender.charAt(0).toUpperCase()}
                             </Text>
                         </View>
                         <View style={styles.senderInfo}>
-                            <Text style={styles.senderLabel}>You're invitationd by</Text>
-                            <Text style={styles.senderName}>{invitation.sender}</Text>
+                            <Text style={styles.senderLabel}>You're invited by</Text>
+                            <Text style={styles.senderName}>{invitation?.sender}</Text>
                         </View>
                     </View>
-                </View>
 
-                {/* Album Title */}
-                <Text style={styles.albumTitle}>{invitation.title}</Text>
+                    {/* Album Title */}
+                    <Text style={styles.albumTitle}>{invitation?.title}</Text>
 
-                {/* Album Details */}
-                <View style={styles.detailsContainer}>
-                    <View style={styles.detailItem}>
-                        <Ionicons name="calendar-outline" size={20} color="#09ADA9" />
-                        <Text style={styles.detailValue}>{invitation.dateRange?.start}</Text>
-                        <Text style={styles.detailLabel}>Created</Text>
-                    </View>
-                    <View style={styles.detailDivider} />
-                    <View style={styles.detailItem}>
-                        <Ionicons name="images-outline" size={20} color="#09ADA9" />
-                        <Text style={styles.detailValue}>{invitation.dateRange?.start}</Text>
-                        <Text style={styles.detailLabel}>Created</Text>
-                    </View>
-                    <View style={styles.detailDivider} />
-                    <View style={styles.detailItem}>
-                        <Ionicons name="images-outline" size={20} color="#09ADA9" />
-                        <Text style={styles.detailValue}></Text>
-                        <Text style={styles.detailLabel}>Created</Text>
-                    </View>
-                </View>
-
-                {/* Description Section */}
-                {invitation.description && (
-                    <View style={styles.descriptionSection}>
-                        <Text style={styles.sectionTitle}>About this album</Text>
-                        <Text style={styles.descriptionText}>{invitation.description}</Text>
-                    </View>
-                )}
-
-                {/* Personal Message Section */}
-                {invitation.message && (
-                    <View style={styles.messageSection}>
-                        <Text style={styles.sectionTitle}>Message from {invitation.sender}</Text>
-                        <View style={styles.messageBox}>
-                            <Text style={styles.messageText}>{invitation.message}</Text>
+                    {/* Album Details */}
+                    <View style={styles.detailsContainer}>
+                        <View style={styles.detailItem}>
+                            <Ionicons name="calendar-outline" size={20} color="#09ADA9" />
+                            <Text style={styles.detailValue}>
+                                {formatDate(invitation?.created)}
+                            </Text>
+                            <Text style={styles.detailLabel}>Created</Text>
+                        </View>
+                        <View style={styles.detailDivider} />
+                        <View style={styles.detailItem}>
+                            <Ionicons name="people-outline" size={20} color="#09ADA9" />
+                            <Text style={styles.detailValue}>{invitation?.memberCount}</Text>
+                            <Text style={styles.detailLabel}>Members</Text>
+                        </View>
+                        <View style={styles.detailDivider} />
+                        <View style={styles.detailItem}>
+                            <Ionicons name="images-outline" size={20} color="#09ADA9" />
+                            <Text style={styles.detailValue}>{invitation?.mediaCount}</Text>
+                            <Text style={styles.detailLabel}>Photos</Text>
                         </View>
                     </View>
-                )}
 
-                {/* What You Can Do */}
-                <View style={styles.permissionsSection}>
-                    <Text style={styles.sectionTitle}>As a member, you can</Text>
-                    <View style={styles.permissionItem}>
-                        <Ionicons name="checkmark-circle" size={20} color="#09ADA9" />
-                        <Text style={styles.permissionText}>View all photos and videos</Text>
-                    </View>
-                    <View style={styles.permissionItem}>
-                        <Ionicons name="checkmark-circle" size={20} color="#09ADA9" />
-                        <Text style={styles.permissionText}>Add your own memories</Text>
-                    </View>
-                    {/* <View style={styles.permissionItem}>
-                        <Ionicons name="checkmark-circle" size={20} color="#09ADA9" />
-                        <Text style={styles.permissionText}>Comment and react</Text>
-                    </View> */}
-                    <View style={styles.permissionItem}>
-                        <Ionicons name="checkmark-circle" size={20} color="#09ADA9" />
-                        <Text style={styles.permissionText}>Download shared content</Text>
+                    {/* Description Section */}
+                    {invitation?.description && (
+                        <View style={styles.descriptionSection}>
+                            <Text style={styles.sectionTitle}>About this album</Text>
+                            <Text style={styles.descriptionText}>{invitation.description}</Text>
+                        </View>
+                    )}
+
+                    {/* Personal Message Section */}
+                    {invitation.message && (
+                        <View style={styles.messageSection}>
+                            <Text style={styles.sectionTitle}>Message from {invitation.sender}</Text>
+                            <View style={styles.messageBox}>
+                                <Text style={styles.messageText}>{invitation.message}</Text>
+                            </View>
+                        </View>
+                    )}
+
+                    {/* What You Can Do */}
+                    <View style={styles.permissionsSection}>
+                        <Text style={styles.sectionTitle}>As a member, you can</Text>
+                        <View style={styles.permissionItem}>
+                            <Ionicons name="checkmark-circle" size={20} color="#09ADA9" />
+                            <Text style={styles.permissionText}>View all photos and videos</Text>
+                        </View>
+                        <View style={styles.permissionItem}>
+                            <Ionicons name="checkmark-circle" size={20} color="#09ADA9" />
+                            <Text style={styles.permissionText}>Add your own memories</Text>
+                        </View>
+                        <View style={styles.permissionItem}>
+                            <Ionicons name="checkmark-circle" size={20} color="#09ADA9" />
+                            <Text style={styles.permissionText}>Download shared content</Text>
+                        </View>
                     </View>
                 </View>
             </ScrollView>
 
             {/* Action Buttons */}
-            <BlurView intensity={80} tint="light" style={[styles.actionContainer, { paddingBottom: insets.bottom + 16 }]}>
+            <BlurView intensity={80} tint="light" style={[styles.actionContainer, { paddingBottom: 50 }]}>
                 <TouchableOpacity
                     style={styles.declineButton}
                     onPress={decline}
@@ -256,9 +254,9 @@ const styles = StyleSheet.create({
     },
     contentCard: {
         backgroundColor: 'white',
-        marginHorizontal: 24,
+        paddingHorizontal: 24,
         paddingTop: 24,
-        minHeight: '100%',
+        paddingBottom: 24,
     },
     scrollContent: {
         paddingHorizontal: 24,

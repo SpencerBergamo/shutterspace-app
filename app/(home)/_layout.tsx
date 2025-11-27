@@ -54,8 +54,14 @@ function HomeLayout() {
                 headerBackButtonDisplayMode: 'minimal',
             }} />
 
-            <Stack.Screen name="manage-friends" options={{
+            <Stack.Screen name="friends" options={{
                 headerTitle: 'My Friends',
+            }} />
+
+            <Stack.Screen name="shareId/[code]" options={{
+                headerShown: false,
+                presentation: 'transparentModal',
+                gestureEnabled: true,
             }} />
 
             <Stack.Screen name="contact-us" options={{

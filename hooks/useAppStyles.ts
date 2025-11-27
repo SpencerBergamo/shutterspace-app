@@ -71,14 +71,14 @@ export default function useAppStyles(): UseAppStylesResult {
 
     const fabPosition = {
         position: 'absolute' as const,
-        right: 20,
+        right: 30,
         bottom: 50,
     }
 
     const fabButton = {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 70,
+        height: 70,
+        borderRadius: 35,
         justifyContent: 'center' as const,
         alignItems: 'center' as const,
     }

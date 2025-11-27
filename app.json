@@ -55,17 +55,12 @@
             {
               "scheme": "https",
               "host": "shutterspace.app",
-              "pathPrefix": "/"
-            },
-            {
-              "scheme": "https",
-              "host": "shutterspace.app",
               "pathPrefix": "/invite"
             },
             {
               "scheme": "https",
               "host": "shutterspace.app",
-              "pathPrefix": "/share"
+              "pathPrefix": "/shareId"
             }
           ],
           "category": [
