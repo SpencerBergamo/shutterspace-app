@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "usesAppleSignIn": true,
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "org.bbtechnologies.shutterspace",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {

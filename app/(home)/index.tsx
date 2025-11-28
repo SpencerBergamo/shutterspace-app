@@ -58,10 +58,6 @@ export default function HomeScreen() {
                 )}
             />
 
-            {/* <FloatingActionButton
-                render={() => <Plus size={24} color="white" />}
-                onPress={() => router.push('/new-album')}
-            /> */}
             <View style={fabPosition}>
                 <TouchableOpacity
                     style={[fabButton, { backgroundColor: colorScheme.primary }]}
