@@ -7,6 +7,7 @@ import { mutation, query } from "./_generated/server";
 export const getFriendships = query({
     args: {}, handler: async (ctx): Promise<Friendship[]> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return [];
 
         const sent = await ctx.db.query('friendships')
             .withIndex('by_senderId', q => q.eq('senderId', profile._id))
@@ -23,8 +24,9 @@ export const getFriendships = query({
 export const getFriendByFriendshipId = query({
     args: {
         friendshipId: v.id('friendships'),
-    }, handler: async (ctx, { friendshipId }): Promise<Friend> => {
+    }, handler: async (ctx, { friendshipId }): Promise<Friend | null> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return null;
 
         const friendship = await ctx.db.get(friendshipId);
         if (!friendship) throw new Error('Friendship does not exist');
@@ -47,8 +49,9 @@ export const sendFriendRequest = mutation({
     args: {
         friendId: v.id('profiles'),
     },
-    handler: async (ctx, { friendId }): Promise<Id<'friendships'>> => {
+    handler: async (ctx, { friendId }): Promise<Id<'friendships'> | null> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return null;
 
         return await ctx.db.insert('friendships', {
             senderId: profile._id,
@@ -70,6 +73,7 @@ export const acceptFriendRequest = mutation({
     },
     handler: async (ctx, { friendshipId, status }) => {
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return null;
 
         const friendship = await ctx.db.get(friendshipId);
         if (!friendship) return null;
@@ -88,6 +92,7 @@ export const removeFriend = mutation({
     },
     handler: async (ctx, { friendshipId }) => {
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return null;
 
         const friendship = await ctx.db.get(friendshipId);
         if (!friendship) return null;
@@ -107,6 +112,7 @@ export const blockFriend = mutation({
     },
     handler: async (ctx, { friendshipId }) => {
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return null;
 
         const friendship = await ctx.db.get(friendshipId);
         if (!friendship) return null;

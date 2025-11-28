@@ -8,6 +8,7 @@ import { action, internalMutation, internalQuery, mutation, query } from "./_gen
 export const getUserAlbums = query({
     args: {}, handler: async (ctx): Promise<Album[]> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return [];
 
         const memberships = await ctx.db
             .query('albumMembers')
@@ -32,8 +33,9 @@ export const createAlbum = action({
         description: v.optional(v.string()),
         openInvites: v.boolean(),
     },
-    handler: async (ctx, { title, description, openInvites }): Promise<Id<'albums'>> => {
+    handler: async (ctx, { title, description, openInvites }): Promise<Id<'albums'> | null> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return null;
 
         // create the alblum doc
         const albumId: Id<'albums'> = await ctx.runMutation(internal.albums.insert, { hostId: profile._id, title, description, openInvites });

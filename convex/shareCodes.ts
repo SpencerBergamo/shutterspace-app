@@ -3,8 +3,10 @@ import { api, internal } from "./_generated/api";
 import { action, internalMutation } from "./_generated/server";
 
 export const create = action({
-    args: {}, handler: async (ctx): Promise<string> => {
+    args: {}, handler: async (ctx): Promise<string | null> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return null;
+
         const shareCode = profile.shareCode;
         if (shareCode) return shareCode;
 

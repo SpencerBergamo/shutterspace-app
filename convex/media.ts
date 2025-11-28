@@ -21,11 +21,13 @@ export const prepareUpload = action({
             address: v.optional(v.string()),
         })),
         isLast: v.boolean(),
-    }, handler: async (ctx, { albumId, assetId, filename, type, width, height, duration, size, dateTaken, location, isLast = false }): Promise<string> => {
+    }, handler: async (ctx, { albumId, assetId, filename, type, width, height, duration, size, dateTaken, location, isLast = false }): Promise<string | null> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
 
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return null;
+
         let uploadUrl: string | undefined;
         let identifier: MediaIdentifier | undefined;
 

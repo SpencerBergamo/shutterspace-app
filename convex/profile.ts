@@ -29,7 +29,7 @@ export const createProfile = mutation({
 })
 
 export const getProfile = query({
-    args: {}, handler: async (ctx): Promise<Profile> => {
+    args: {}, handler: async (ctx): Promise<Profile | null> => {
         const session = await ctx.auth.getUserIdentity();
         if (!session) throw new Error('Unauthorized');
 
@@ -39,7 +39,7 @@ export const getProfile = query({
             .withIndex('by_firebase_uid', q => q.eq('firebaseUID', fuid))
             .first();
 
-        if (!profile) throw new Error('Profile not found');
+        // if (!profile) throw new Error('Profile not found');
 
         return profile;
     }
@@ -50,6 +50,7 @@ export const updateProfile = mutation({
         nickname: v.optional(v.string()),
     }, handler: async (ctx, { nickname }) => {
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return;
 
         await ctx.db.patch(profile._id, {
             nickname: nickname,

@@ -3,15 +3,9 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Profile } from "@/types/Profile";
 import { getAuth } from "@react-native-firebase/auth";
 import { useMutation, useQuery } from "convex/react";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { router } from "expo-router";
+import { createContext, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
-
-/** createProfileMutation flow
- * - the first execution of useQuery will return null, therefore, the useEffect
- *   will call the mutation to create the profile. After the mutation is executed
- *   successfully, the useEffect will detect the profile, set isLoading to false, 
- *   and the profile will be available to the children.
- */
 
 interface ProfileContextType {
     profile: Profile;
@@ -31,48 +25,45 @@ export const ProfileProvider = ({ children }: {
     if (!currentUser) return null;
 
     // State
-    const [isLoading, setIsLoading] = useState(true);
+    const [isCreatingProfile, setIsCreatingProfile] = useState(false);
 
     // Convex
     const profile = useQuery(api.profile.getProfile);
     const createProfile = useMutation(api.profile.createProfile);
 
-    const createNewProfile = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            let provider: 'email' | 'google' | 'apple';
-            const data = currentUser.providerData[0];
-
-            if (data.providerId === 'google.com') {
-                provider = 'google';
-            } else if (data.providerId === 'apple.com') {
-                provider = 'apple';
-            } else {
-                provider = 'email';
-            }
-
-            await createProfile({
-                nickname: currentUser.displayName ?? undefined,
-                authProvider: provider,
-            })
-        } catch (e) {
-            console.error("failed to create new profile", e);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [createProfile]);
-
     useEffect(() => {
-        if (profile === undefined) {
-            setIsLoading(true);
-        } else if (profile === null) {
-            createNewProfile();
+        if (profile === undefined) return;
+
+        if (profile === null && !isCreatingProfile) {
+            setIsCreatingProfile(true);
+
+            (async () => {
+                try {
+                    let provider: 'email' | 'google' | 'apple';
+                    const data = currentUser.providerData[0];
+
+                    if (data.providerId === 'google.com') {
+                        provider = 'google';
+                    } else if (data.providerId === 'apple.com') {
+                        provider = 'apple';
+                    } else {
+                        provider = 'email';
+                    }
+
+                    await createProfile({
+                        nickname: currentUser.displayName ?? undefined,
+                        authProvider: provider,
+                    });
+                    // After creation, Convex query will re-run and profile will be populated
+                } catch (e) {
+                    console.error("failed to create new profile", e);
+                    setIsCreatingProfile(false);
+                }
+            })();
         }
+    }, [profile, currentUser, createProfile, isCreatingProfile]);
 
-        setIsLoading(false);
-    }, [profile, currentUser, createNewProfile]);
-
-    if (isLoading || !profile) {
+    if (profile === undefined || isCreatingProfile) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color="black" />
@@ -80,10 +71,15 @@ export const ProfileProvider = ({ children }: {
         );
     }
 
+    if (profile === null) {
+        router.replace('/welcome');
+        return null;
+    }
+
     return <ProfileContext.Provider value={{
         profile,
         profileId: profile._id,
-        isLoading,
+        isLoading: false,
     }}>
         {children}
     </ProfileContext.Provider>;
