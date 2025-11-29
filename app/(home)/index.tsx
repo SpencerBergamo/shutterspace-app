@@ -2,6 +2,7 @@ import AlbumCard from "@/components/albums/AlbumCover";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
 import { useAlbums } from '@/context/AlbumsContext';
 import useAppStyles from "@/hooks/useAppStyles";
+import useFabStyles from "@/hooks/useFabStyles";
 import getGridLayout from "@/utils/getGridLyout";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -10,7 +11,8 @@ import { useMemo } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
-    const { colorScheme, fabPosition, fabButton } = useAppStyles();
+    const { colorScheme } = useAppStyles();
+    const { position, button, iconSize } = useFabStyles();
     const { width } = useWindowDimensions();
     const { albums } = useAlbums();
 
@@ -58,12 +60,12 @@ export default function HomeScreen() {
                 )}
             />
 
-            <View style={fabPosition}>
+            <View style={position}>
                 <TouchableOpacity
-                    style={[fabButton, { backgroundColor: colorScheme.primary }]}
+                    style={button}
                     onPress={() => router.push('/new-album')}
                 >
-                    <Ionicons name="add" size={24} color={colorScheme.surface} />
+                    <Ionicons name="add" size={iconSize} color={colorScheme.surface} />
                 </TouchableOpacity>
             </View>
         </View>
@@ -74,6 +76,19 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+
+    // Fab
+    fabPosition: {
+        position: 'absolute',
+        right: 30,
+    },
+    fabButton: {
+        borderRadius: 999,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    // Empty Container Styles
     emptyContainer: {
         flex: 1,
         paddingTop: 16,

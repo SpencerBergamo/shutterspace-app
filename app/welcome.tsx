@@ -8,6 +8,7 @@ import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } 
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useRef, useState } from 'react';
 import 'react-native-get-random-values';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -38,6 +39,7 @@ const onboardingSlides: OnboardingSlide[] = [
 
 export default function WelcomeScreen() {
     const { colorScheme } = useAppStyles();
+    const insets = useSafeAreaInsets();
 
     const [currentSlide, setCurrentSlide] = useState<number>(0);
     const scrollViewRef = useRef<ScrollView>(null);
@@ -88,7 +90,7 @@ export default function WelcomeScreen() {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: 'white' }]}>
+        <View style={[styles.container, { backgroundColor: 'white', paddingBottom: insets.bottom }]}>
             {/* Page View Section */}
             <ScrollView
                 ref={scrollViewRef}

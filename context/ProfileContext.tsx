@@ -58,6 +58,8 @@ export const ProfileProvider = ({ children }: {
                 } catch (e) {
                     console.error("failed to create new profile", e);
                     setIsCreatingProfile(false);
+                } finally {
+                    setIsCreatingProfile(false);
                 }
             })();
         }

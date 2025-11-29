@@ -5,10 +5,9 @@ import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential, s
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useTheme } from "@react-navigation/native";
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { Link } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Button, Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { v4 as uuidv4 } from 'uuid';
@@ -20,7 +19,7 @@ type SignInFormData = {
 
 export default function SignInScreen() {
     const theme = useTheme();
-    const appStyles = useAppStyles();
+    const { colorScheme, textInput } = useAppStyles();
     const emailInputRef = useRef<TextInput>(null);
     const passwordInputRef = useRef<TextInput>(null);
 
@@ -86,8 +85,12 @@ export default function SignInScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: appStyles.colorScheme.background, padding: 16 }}>
-            <KeyboardAwareScrollView>
+        <View style={{ flex: 1, backgroundColor: colorScheme.background, padding: 16 }}>
+            <KeyboardAwareScrollView
+                contentContainerStyle={{ flexShrink: 1 }}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
                 <Text style={styles.title}>Welcome Back!</Text>
                 <Text style={styles.subtitle}>Let's get you back in</Text>
 
@@ -116,7 +119,7 @@ export default function SignInScreen() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => passwordInputRef.current?.focus()}
-                            style={appStyles.textInput}
+                            style={textInput}
                         />
                     )}
                 />
@@ -126,19 +129,19 @@ export default function SignInScreen() {
                     </View>
                 ) : <View style={styles.space} />}
 
-                {/* Password */}
-                <Controller
-                    control={control}
-                    name="password"
-                    rules={{
-                        required: 'Password is required',
-                        validate: (value) => {
+                <View style={{ position: 'relative' }}>
 
-                            return value.length > 0 ? true : 'Password is required';
-                        }
-                    }}
-                    render={({ field: { onChange, onBlur, value } }) => (
-                        <View style={[appStyles.textInput, { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }]}>
+                    <Controller
+                        control={control}
+                        name="password"
+                        rules={{
+                            required: 'Password is required',
+                            validate: (value) => {
+                                return value.length > 0 ? true : 'Password is required';
+                            }
+                        }}
+                        render={({ field: { onChange, onBlur, value } }) => (
+
                             <TextInput
                                 ref={passwordInputRef}
                                 value={value}
@@ -152,33 +155,36 @@ export default function SignInScreen() {
                                 onChangeText={onChange}
                                 onBlur={onBlur}
                                 onSubmitEditing={handleSubmit(handleSignin)}
-                                style={{ width: '80%', fontSize: 16 }}
+                                style={textInput}
                             />
+                        )}
+                    />
 
-                            {isPasswordVisible ? (
-                                <Pressable onPress={() => { setIsPasswordVisible(false) }}>
-                                    <Ionicons name="eye-outline" size={20} color={theme.colors.text} />
-                                </Pressable>
-                            ) : (
-                                <Pressable onPress={() => { setIsPasswordVisible(true) }}>
-                                    <Ionicons name="eye-off-outline" size={20} color={theme.colors.text} />
-                                </Pressable>
-                            )}
-                        </View>
-                    )}
-                />
+                    <View style={{ position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }}>
+
+                        {isPasswordVisible ? (
+                            <Pressable onPress={() => { setIsPasswordVisible(false) }}>
+                                <Ionicons name="eye-outline" size={20} color={theme.colors.text} />
+                            </Pressable>
+                        ) : (
+                            <Pressable onPress={() => { setIsPasswordVisible(true) }}>
+                                <Ionicons name="eye-off-outline" size={20} color={theme.colors.text} />
+                            </Pressable>
+                        )}
+                    </View>
+                </View>
                 {errors.password ? (
                     <View style={styles.errorTextView}>
                         <Text style={{ color: "#FF3B30" }}>{errors.password.message}</Text>
                     </View>
-                ) : <View style={styles.space} />}
+                ) : (<View style={styles.space} />)}
 
-                <TouchableOpacity
+                <Button
+                    title="Sign In"
                     onPress={handleSubmit(handleSignin)}
                     disabled={!isValid}
-                    style={{ backgroundColor: isValid ? appStyles.colorScheme.primary : 'grey', padding: 16, borderRadius: 8, marginTop: 16 }}>
-                    <Text style={styles.submitButtonText}>Sign In</Text>
-                </TouchableOpacity>
+                    color={isValid ? colorScheme.primary : 'grey'}
+                />
 
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 21, alignItems: 'center' }} >
                     <View style={styles.divider} />
@@ -208,24 +214,6 @@ export default function SignInScreen() {
                             <Text style={{ fontSize: 17, color: 'white' }}>Continue with Apple</Text>
                         </TouchableOpacity>
                     )}
-                </View>
-
-                {/* Terms of Service */}
-                <View style={styles.termsContainer}>
-                    <Text style={[styles.termsText, { color: 'black' }]}>
-                        By continuing, you agree to our{' '}
-                        <Link href="" asChild>
-                            <Text style={[styles.termsLink, { color: appStyles.colorScheme.primary }]}>
-                                Terms of Service
-                            </Text>
-                        </Link>
-                        {' '}and{' '}
-                        <Link href="" asChild>
-                            <Text style={[styles.termsLink, { color: appStyles.colorScheme.primary }]}>
-                                Privacy Policy
-                            </Text>
-                        </Link>
-                    </Text>
                 </View>
             </KeyboardAwareScrollView>
         </View>
@@ -263,7 +251,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 
-    space: { height: 0 },
+    space: { height: 21 },
 
     divider: {
         flex: 1,

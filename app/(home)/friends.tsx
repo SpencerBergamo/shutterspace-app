@@ -3,13 +3,13 @@ import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import useAppStyles from "@/hooks/useAppStyles";
+import useFabStyles from "@/hooks/useFabStyles";
 import { Friendship, FriendshipStatus } from "@/types/Friend";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useMemo } from "react";
 import { ActivityIndicator, Alert, AlertButton, FlatList, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
-
 
 interface FriendCardProps {
     friendshipId: Id<'friendships'>;
@@ -54,7 +54,8 @@ function FriendCard({ friendshipId, status, isRecipient, onAction }: FriendCardP
 
 export default function FriendsListScreen() {
 
-    const { colorScheme, fabPosition, fabButton } = useAppStyles();
+    const { position, button, iconSize } = useFabStyles();
+    const { colorScheme } = useAppStyles();
     const { profile } = useProfile();
     const { friendships } = useFriends();
 
@@ -162,12 +163,12 @@ export default function FriendsListScreen() {
                 )}
             />
 
-            <View style={fabPosition}>
+            <View style={position}>
                 <TouchableOpacity
-                    style={[fabButton, { backgroundColor: colorScheme.primary }]}
+                    style={button}
                     onPress={handleShareProfile}
                 >
-                    <Ionicons name="share-outline" size={24} color={colorScheme.surface} />
+                    <Ionicons name="share-outline" size={iconSize} color={colorScheme.surface} />
                 </TouchableOpacity>
             </View>
         </View>

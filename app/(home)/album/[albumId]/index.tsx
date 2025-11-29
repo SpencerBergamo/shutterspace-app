@@ -6,6 +6,7 @@ import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import useAppStyles from "@/hooks/useAppStyles";
+import useFabStyles from "@/hooks/useFabStyles";
 import { useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,8 +24,10 @@ const GAP = 1;
 export default function AlbumScreen() {
 
     // Layout
-    const { colorScheme, fabPosition, fabButton } = useAppStyles();
     const { width } = useWindowDimensions();
+
+    const { colorScheme } = useAppStyles();
+    const { position, button, iconSize } = useFabStyles();
     const itemSize: number = useMemo(() => {
         return (SCREEN_WIDTH - (GAP * 2)) / NUM_COLUMNS;
     }, [width]);
@@ -215,12 +218,12 @@ export default function AlbumScreen() {
             />
 
             {/* Floating Action Button */}
-            <View style={fabPosition}>
+            <View style={position}>
                 <TouchableOpacity
-                    style={[fabButton, { backgroundColor: colorScheme.primary }]}
+                    style={button}
                     onPress={selectAndUploadAssets}
                 >
-                    <Ionicons name="add" size={24} color={colorScheme.surface} />
+                    <Ionicons name="add" size={iconSize} color={colorScheme.surface} />
                 </TouchableOpacity>
             </View>
 

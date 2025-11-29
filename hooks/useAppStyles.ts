@@ -44,8 +44,6 @@ export const darkColors: ColorScheme = {
 interface UseAppStylesResult {
     colorScheme: ColorScheme;
     textInput: StyleProp<ViewStyle>;
-    fabPosition: StyleProp<ViewStyle>;
-    fabButton: StyleProp<ViewStyle>;
 }
 
 export default function useAppStyles(): UseAppStylesResult {
@@ -69,24 +67,8 @@ export default function useAppStyles(): UseAppStylesResult {
         color: theme.colors.text,
     }
 
-    const fabPosition = {
-        position: 'absolute' as const,
-        right: 30,
-        bottom: 50,
-    }
-
-    const fabButton = {
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        justifyContent: 'center' as const,
-        alignItems: 'center' as const,
-    }
-
     return {
         colorScheme: colors ?? lightColors,
         textInput,
-        fabPosition,
-        fabButton,
     }
 }
