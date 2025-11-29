@@ -65,6 +65,12 @@ export const ProfileProvider = ({ children }: {
         }
     }, [profile, currentUser, createProfile, isCreatingProfile]);
 
+    useEffect(() => {
+        if (profile === null && !isCreatingProfile) {
+            router.replace('/welcome');
+        }
+    }, [profile, isCreatingProfile]);
+
     if (profile === undefined || isCreatingProfile) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -74,7 +80,6 @@ export const ProfileProvider = ({ children }: {
     }
 
     if (profile === null) {
-        router.replace('/welcome');
         return null;
     }
 

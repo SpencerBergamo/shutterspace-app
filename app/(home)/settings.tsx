@@ -46,16 +46,16 @@ export default function ProfileSettings() {
         )
     };
 
-    const handleDeleteAccount = async () => {
+    const handleDeleteAccount = () => {
         Alert.alert(
             "Delete Account",
             "Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.",
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
-                    text: 'Delete Account', style: 'destructive', onPress: () => {
-                        // auth.signOut();
-                    }
+                    text: 'Delete Account',
+                    style: 'destructive',
+                    onPress: () => { console.log('Delete Account'); }
                 },
             ]
         )
@@ -78,9 +78,15 @@ export default function ProfileSettings() {
     }
 
     const handleShareProfile = useCallback(async () => {
-        let code = profile.shareCode;
-        if (!code) {
+        let code: string | undefined | null = profile.shareCode;
+
+        if (code === undefined) {
             code = await createShareCode();
+        }
+
+        if (code === null) {
+            Alert.alert("Error", "Failed to create share code. Please try again.");
+            return;
         }
 
         await Share.share({
@@ -278,9 +284,9 @@ export default function ProfileSettings() {
                         style={[styles.settingsOption, styles.dangerOption]}
                         onPress={handleDeleteAccount}
                     >
-                        <View style={[styles.optionIcon, { backgroundColor: '#FFE5E5' }]}>
+                        {<View style={[styles.optionIcon, { backgroundColor: '#FFE5E5' }]}>
                             <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                        </View>
+                        </View>}
                         <View style={styles.optionContent}>
                             <Text style={[styles.optionTitle, { color: '#FF3B30' }]}>Delete Account</Text>
                             <Text style={styles.optionSubtitle}>Permanently delete your account</Text>

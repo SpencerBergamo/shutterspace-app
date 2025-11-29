@@ -1,12 +1,12 @@
-import * as AppleAuthentication from 'expo-apple-authentication';
-import { Link, router } from "expo-router";
-import { GalleryVerticalEnd, Mail, QrCode, SmilePlus } from 'lucide-react-native';
-import { Dimensions, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
 import useAppStyles from '@/hooks/useAppStyles';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
+import { Link, router } from "expo-router";
+import { GalleryVerticalEnd, Mail, QrCode, SmilePlus } from 'lucide-react-native';
 import { useRef, useState } from 'react';
+import { Dimensions, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
@@ -59,20 +59,29 @@ export default function WelcomeScreen() {
             }
 
             const nonce = uuidv4();
+            const hashedNonce = await Crypto.digestStringAsync(
+                Crypto.CryptoDigestAlgorithm.SHA256,
+                nonce
+            );
+
             const response = await AppleAuthentication.signInAsync({
                 requestedScopes: [
                     AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
                     AppleAuthentication.AppleAuthenticationScope.EMAIL,
                 ],
-                nonce: nonce,
+                nonce: hashedNonce,
             });
 
+            if (!response) return;
             if (!response.identityToken) throw new Error('No identity token');
 
             const credential = AppleAuthProvider.credential(response.identityToken, nonce);
-            return signInWithCredential(getAuth(), credential);
+            await signInWithCredential(getAuth(), credential);
         } catch (e) {
             console.error('Apple Auth FAIL', e);
+        }
+        finally {
+            console.log('Apple Auth COMPLETED');
         }
     };
 

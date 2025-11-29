@@ -7,6 +7,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useTheme } from "@react-navigation/native";
 import { useMutation } from "convex/react";
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
 import { Link } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from 'react-hook-form';
@@ -68,18 +69,26 @@ export default function SignUpScreen() {
                 return;
             }
 
-            const nonce = uuidv4();
+            const rawNonce = uuidv4();
+            const hashedNonce = await Crypto.digestStringAsync(
+                Crypto.CryptoDigestAlgorithm.SHA256,
+                rawNonce
+            );
+
             const response = await AppleAuthentication.signInAsync({
                 requestedScopes: [
                     AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
                     AppleAuthentication.AppleAuthenticationScope.EMAIL,
                 ],
-                nonce: nonce,
+                nonce: hashedNonce,
             });
+
+            // if user cancels, response will be null
+            if (!response) return;
 
             if (!response.identityToken) throw new Error('No identity token');
 
-            const credential = AppleAuthProvider.credential(response.identityToken, nonce);
+            const credential = AppleAuthProvider.credential(response.identityToken, rawNonce);
             await signInWithCredential(getAuth(), credential);
 
             return await createProfileMutation({

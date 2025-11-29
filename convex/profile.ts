@@ -74,6 +74,15 @@ export const getUserByShareCode = query({
     }
 })
 
+export const deleteProfile = mutation({
+    args: {}, handler: async (ctx) => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) throw new Error('Profile not found');
+
+        await ctx.db.delete(profile._id);
+    }
+})
+
 // --- Internal ---
 
 export const getPublicProfile = internalQuery({
