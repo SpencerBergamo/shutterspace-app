@@ -16,9 +16,13 @@ export default function useFabStyles(): UseFabStylesResult {
     const { colorScheme } = useAppStyles();
 
     return useMemo(() => {
+        const breakPoint = 400;
+        const minSize = breakPoint * 0.2;
+        const maxSize = 60;
+
         const fabSize = Math.min(
-            Math.max(SCREEN_WIDTH * 0.2, 60),
-            72,
+            Math.max(SCREEN_WIDTH * 0.2, minSize),
+            maxSize,
         )
 
         const position: StyleProp<ViewStyle> = {

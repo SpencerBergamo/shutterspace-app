@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "convex/react";
 import { BlurView } from "expo-blur";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
     runOnJS,
@@ -14,6 +14,7 @@ import Animated, {
     withSpring,
     withTiming,
 } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const SPRING_CONFIG = {
     damping: 20,
@@ -95,67 +96,70 @@ export default function ShareIdScreen() {
     };
 
     return (
-        <View style={styles.overlay}>
-            <GestureDetector gesture={tapGesture}>
-                <Animated.View style={[styles.backdrop, animatedBackdrop]}>
-                    <BlurView intensity={20} style={StyleSheet.absoluteFillObject} />
-                </Animated.View>
-            </GestureDetector>
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.overlay}>
+                <GestureDetector gesture={tapGesture}>
+                    <Animated.View style={[styles.backdrop, animatedBackdrop]}>
+                        {Platform.OS === 'ios' ? (<BlurView intensity={20} style={StyleSheet.absoluteFillObject} />) :
+                            (<View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0, 0, 0, 0.3)' }]} />)}
+                    </Animated.View>
+                </GestureDetector>
 
-            <GestureDetector gesture={panGesture}>
-                <Animated.View style={[styles.sheetContainer, animatedSheet]}>
-                    <View style={[styles.sheet, { backgroundColor: colorScheme.background }]}>
-                        {/* Drag handle */}
-                        <View style={styles.handleContainer}>
-                            <View style={[styles.handle, { backgroundColor: colorScheme.border }]} />
-                        </View>
+                <GestureDetector gesture={panGesture}>
+                    <Animated.View style={[styles.sheetContainer, animatedSheet]}>
+                        <View style={[styles.sheet, { backgroundColor: colorScheme.background }]}>
+                            {/* Drag handle */}
+                            <View style={styles.handleContainer}>
+                                <View style={[styles.handle, { backgroundColor: colorScheme.border }]} />
+                            </View>
 
-                        {/* Content */}
-                        {user === undefined ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="large" color={colorScheme.primary} />
-                            </View>
-                        ) : user === null ? (
-                            <View style={styles.contentContainer}>
-                                <Text style={[styles.errorText, { color: colorScheme.text }]}>
-                                    User not found
-                                </Text>
-                            </View>
-                        ) : (
-                            <View style={styles.contentContainer}>
-                                {/* Avatar */}
-                                <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colorScheme.border }]}>
-                                    <Text style={[styles.avatarInitial, { color: colorScheme.text }]}>
-                                        {user.nickname?.charAt(0).toUpperCase() || '?'}
+                            {/* Content */}
+                            {user === undefined ? (
+                                <View style={styles.loadingContainer}>
+                                    <ActivityIndicator size="large" color={colorScheme.primary} />
+                                </View>
+                            ) : user === null ? (
+                                <View style={styles.contentContainer}>
+                                    <Text style={[styles.errorText, { color: colorScheme.text }]}>
+                                        User not found
                                     </Text>
                                 </View>
+                            ) : (
+                                <View style={styles.contentContainer}>
+                                    {/* Avatar */}
+                                    <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colorScheme.border }]}>
+                                        <Text style={[styles.avatarInitial, { color: colorScheme.text }]}>
+                                            {user.nickname?.charAt(0).toUpperCase() || '?'}
+                                        </Text>
+                                    </View>
 
-                                {/* Nickname */}
-                                <Text style={[styles.nickname, { color: colorScheme.text }]}>
-                                    {user.nickname || 'Unknown User'}
-                                </Text>
+                                    {/* Nickname */}
+                                    <Text style={[styles.nickname, { color: colorScheme.text }]}>
+                                        {user.nickname || 'Unknown User'}
+                                    </Text>
 
-                                {/* Add Friend Button */}
-                                <Pressable
-                                    style={({ pressed }) => [
-                                        styles.addButton,
-                                        { backgroundColor: colorScheme.primary, opacity: pressed ? 0.8 : 1 },
-                                    ]}
-                                    onPress={handleAddFriend}
-                                    disabled={isAddingFriend}
-                                >
-                                    {isAddingFriend ? (
-                                        <ActivityIndicator size="small" color="white" />
-                                    ) : (
-                                        <Text style={styles.addButtonText}>{areFriends ? 'Already Friends' : 'Add Friend'}</Text>
-                                    )}
-                                </Pressable>
-                            </View>
-                        )}
-                    </View>
-                </Animated.View>
-            </GestureDetector>
-        </View>
+                                    {/* Add Friend Button */}
+                                    <Pressable
+                                        style={({ pressed }) => [
+                                            styles.addButton,
+                                            { backgroundColor: colorScheme.primary, opacity: pressed ? 0.8 : 1 },
+                                        ]}
+                                        onPress={handleAddFriend}
+                                        disabled={isAddingFriend}
+                                    >
+                                        {isAddingFriend ? (
+                                            <ActivityIndicator size="small" color="white" />
+                                        ) : (
+                                            <Text style={styles.addButtonText}>{areFriends ? 'Already Friends' : 'Add Friend'}</Text>
+                                        )}
+                                    </Pressable>
+                                </View>
+                            )}
+                        </View>
+                    </Animated.View>
+                </GestureDetector>
+            </View>
+        </SafeAreaView>
     );
 }
 
