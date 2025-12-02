@@ -1,5 +1,5 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
-import { TextInputStyles } from "@/constants/styles";
+import { MAX_WIDTH, TextInputStyles } from "@/constants/styles";
 import { useAlbums } from "@/context/AlbumsContext";
 import { useAppTheme } from "@/context/AppThemeContext";
 import { api } from "@/convex/_generated/api";
@@ -9,7 +9,7 @@ import { useMutation } from "convex/react";
 import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { ActivityIndicator, Alert, Button, Keyboard, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 type FormData = {
@@ -78,14 +78,14 @@ export default function AlbumEditScreen() {
     }
 
     return (
-        <View style={{ flex: 1, padding: 16, backgroundColor: colors.background }}>
+        <View style={{ flex: 1, padding: 16, backgroundColor: colors.background, alignItems: 'center' }}>
             <Stack.Screen options={{
                 headerBackButtonDisplayMode: 'minimal',
                 headerTitle: `Edit ${album.title}`
             }} />
 
             <KeyboardAwareScrollView
-                contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+                style={{ flexShrink: 1, width: '100%', maxWidth: MAX_WIDTH, paddingHorizontal: 16 }}
                 keyboardShouldPersistTaps="handled"
             >
 
@@ -179,13 +179,30 @@ export default function AlbumEditScreen() {
                 />
 
                 {/* Save Changes Button */}
-                {isSaving ? <ActivityIndicator size="small" color={theme.colors.primary} /> : <Button
-                    title="Save Changes"
-                    disabled={!isDirty}
-                    color={theme.colors.primary}
-                    onPress={handleSubmit(saveChanges)}
-                />}
+                {isSaving ? <ActivityIndicator size="small" color={theme.colors.primary} /> : (
+                    <TouchableOpacity
+                        disabled={!isDirty}
+                        onPress={handleSubmit(saveChanges)}
+                        style={[styles.button, { backgroundColor: !isDirty ? '#ccc' : colors.primary }]}>
+                        <Text style={styles.buttonText}>Save Changes</Text>
+                    </TouchableOpacity>
+                )}
             </KeyboardAwareScrollView>
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    button: {
+        width: '100%',
+        height: 44,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+})

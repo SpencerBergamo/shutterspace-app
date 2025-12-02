@@ -1,4 +1,4 @@
-import { TextInputStyles } from "@/constants/styles";
+import { MAX_WIDTH, TextInputStyles } from "@/constants/styles";
 import { useAppTheme } from "@/context/AppThemeContext";
 import { api } from "@/convex/_generated/api";
 import { validateEmail, validatePassword } from "@/utils/validators";
@@ -12,7 +12,7 @@ import * as Crypto from 'expo-crypto';
 import { Link } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from 'react-hook-form';
-import { Button, Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { v4 as uuidv4 } from 'uuid';
@@ -60,6 +60,7 @@ export default function SignUpScreen() {
         } catch (e) {
             console.warn('Firebase Password Signup (FAIL)', e);
         }
+
     }
 
     async function handleAppleAuth() {
@@ -118,9 +119,9 @@ export default function SignUpScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center' }}>
 
-            <KeyboardAwareScrollView style={{ flexShrink: 1 }}
+            <KeyboardAwareScrollView style={{ flexShrink: 1, width: '100%', maxWidth: MAX_WIDTH, paddingHorizontal: 16 }}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
@@ -220,12 +221,15 @@ export default function SignUpScreen() {
                     </View>
                 ) : <View style={styles.space} />}
 
-                <Button
-                    title="Create Account"
-                    onPress={handleSubmit(handleSignup)}
+
+                {/* Submit Button */}
+                <TouchableOpacity
                     disabled={!isValid}
-                    color={isValid ? colors.primary : 'grey'}
-                />
+                    style={[styles.authButton, { backgroundColor: isValid ? colors.primary : colors.grey2 }]}
+                    onPress={handleSubmit(handleSignup)}
+                >
+                    <Text style={styles.submitButtonText}>Create Account</Text>
+                </TouchableOpacity>
 
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 21, alignItems: 'center' }} >
                     <View style={styles.divider} />

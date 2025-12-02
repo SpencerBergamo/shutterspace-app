@@ -1,5 +1,6 @@
 import AlbumCard from "@/components/albums/AlbumCover";
 import { ASSETS } from "@/constants/assets";
+import { MAX_WIDTH } from "@/constants/styles";
 import { useAlbums } from '@/context/AlbumsContext';
 import { useAppTheme } from "@/context/AppThemeContext";
 import { useProfile } from "@/context/ProfileContext";
@@ -18,7 +19,7 @@ export default function HomeScreen() {
     const { width } = useWindowDimensions();
     const { albums } = useAlbums();
 
-    const gridConfig = useMemo(() => getGridLayout({ width, columns: 2, gap: 16, aspectRatio: 1 }), [width]);
+    const gridConfig = useMemo(() => getGridLayout({ width, columns: width > MAX_WIDTH ? 3 : 2, gap: 16, aspectRatio: 1 }), [width, MAX_WIDTH]);
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>

@@ -1,8 +1,8 @@
+import { useAppTheme } from "@/context/AppThemeContext";
 import useSignedUrls from "@/hooks/useSignedUrls";
 import { Album } from "@/types/Album";
 import { Media } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "@react-navigation/native";
 import { Image } from "expo-image";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
@@ -12,7 +12,7 @@ interface AlbumInfoCardProps {
 }
 
 export default function AlbumInfoCard({ album, cover }: AlbumInfoCardProps) {
-    const theme = useTheme();
+    const { colors } = useAppTheme();
     const { requesting, thumbnail: coverUrl } = useSignedUrls({ media: cover });
 
     return (
@@ -32,7 +32,7 @@ export default function AlbumInfoCard({ album, cover }: AlbumInfoCardProps) {
                 />
             ) : (
                 <View style={styles.coverPlaceholder}>
-                    <Ionicons name="image-outline" size={64} color={theme.colors.text} />
+                    <Ionicons name="image-outline" size={64} color={colors.text} />
                 </View>
             )}
 

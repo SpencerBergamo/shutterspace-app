@@ -36,6 +36,8 @@ export const Light: AppThemeColors = {
     grey3: '#F8F9FA',
 }
 
+export const MAX_WIDTH = 500;
+
 export const TextInputStyles = {
     borderWidth: 1,
     borderRadius: 12,

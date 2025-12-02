@@ -1,4 +1,4 @@
-import { TextInputStyles } from "@/constants/styles";
+import { MAX_WIDTH, TextInputStyles } from "@/constants/styles";
 import { useAppTheme } from "@/context/AppThemeContext";
 import { validateEmail } from "@/utils/validators";
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -9,7 +9,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Button, Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { v4 as uuidv4 } from 'uuid';
@@ -92,12 +92,18 @@ export default function SignInScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center' }}>
             <KeyboardAwareScrollView
-                contentContainerStyle={{ flexShrink: 1 }}
+                style={{
+                    flexShrink: 1,
+                    width: '100%',
+                    maxWidth: MAX_WIDTH,
+                    paddingHorizontal: 16,
+                }}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
+
                 <Text style={styles.title}>Welcome Back!</Text>
                 <Text style={styles.subtitle}>Let's get you back in</Text>
 
@@ -194,12 +200,15 @@ export default function SignInScreen() {
                     </View>
                 ) : (<View style={styles.space} />)}
 
-                <Button
-                    title="Sign In"
-                    onPress={handleSubmit(handleSignin)}
+
+                {/* Submit Button */}
+                <TouchableOpacity
                     disabled={!isValid}
-                    color={isValid ? colors.primary : 'grey'}
-                />
+                    style={[styles.authButton, { backgroundColor: isValid ? colors.primary : colors.grey2 }]}
+                    onPress={handleSubmit(handleSignin)}
+                >
+                    <Text style={styles.submitButtonText}>Sign In</Text>
+                </TouchableOpacity>
 
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 21, alignItems: 'center' }} >
                     <View style={styles.divider} />

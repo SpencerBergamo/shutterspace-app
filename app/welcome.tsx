@@ -1,3 +1,4 @@
+import { MAX_WIDTH } from '@/constants/styles';
 import { useAppTheme } from '@/context/AppThemeContext';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -46,8 +47,9 @@ export default function WelcomeScreen() {
 
     function handleScroll(event: any) {
         const contentOffset = event.nativeEvent.contentOffset.x;
-        const slide = Math.round(contentOffset / (screenWidth - 40));
-        setCurrentSlide(slide);
+        const slide = Math.floor((contentOffset + (screenWidth - 40) / 2) / (screenWidth - 40));
+        const clampedSlide = Math.max(0, Math.min(slide, onboardingSlides.length - 1));
+        setCurrentSlide(clampedSlide);
     }
 
     async function handleAppleAuth() {
@@ -100,87 +102,94 @@ export default function WelcomeScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: 'white', paddingBottom: insets.bottom }]}>
-            {/* Page View Section */}
-            <ScrollView
-                ref={scrollViewRef}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                style={styles.pageViewContainer}
-                onScroll={handleScroll}
-            >
-                {onboardingSlides.map((slide, index) => (
-                    <View key={index} style={styles.slide}>
-                        <View style={styles.iconContainer}>
-                            {slide.icon}
+            <View style={{
+                flex: 1,
+                width: '100%',
+                alignItems: 'center',
+                justifyContent: 'center',
+            }}>
+                {/* Page View Section */}
+                <ScrollView
+                    ref={scrollViewRef}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.pageViewContainer}
+                    onScroll={handleScroll}
+                >
+                    {onboardingSlides.map((slide, index) => (
+                        <View key={index} style={styles.slide}>
+                            <View style={styles.iconContainer}>
+                                {slide.icon}
+                            </View>
+                            <Text style={[styles.slideTitle, { color: 'black' }]}>
+                                {slide.title}
+                            </Text>
+                            <Text style={[styles.slideDescription, { color: 'black' }]}>
+                                {slide.description}
+                            </Text>
                         </View>
-                        <Text style={[styles.slideTitle, { color: 'black' }]}>
-                            {slide.title}
-                        </Text>
-                        <Text style={[styles.slideDescription, { color: 'black' }]}>
-                            {slide.description}
-                        </Text>
-                    </View>
-                ))}
-            </ScrollView>
+                    ))}
+                </ScrollView>
 
-            {/* Pagination Dots */}
-            <View style={styles.paginationContainer}>
-                {onboardingSlides.map((_, index) => (
-                    <View
-                        key={index}
-                        style={[
-                            styles.paginationDot,
-                            { backgroundColor: index === currentSlide ? colors.primary : '#E9ECEF' }
-                        ]}
-                    />
-                ))}
-            </View>
+                {/* Pagination Dots */}
+                <View style={styles.paginationContainer}>
+                    {onboardingSlides.map((_, index) => (
+                        <View
+                            key={index}
+                            style={[
+                                styles.paginationDot,
+                                { backgroundColor: index === currentSlide ? colors.primary : '#E9ECEF' }
+                            ]}
+                        />
+                    ))}
+                </View>
 
-            {/* Authentication Section */}
-            <View style={styles.authContainer}>
+                {/* Authentication Section */}
+                <View style={styles.authContainer}>
 
-                {/* Google Auth */}
-                <TouchableOpacity onPress={handleGoogleAuth} style={[
-                    styles.authButton, { backgroundColor: '#F2F2F2' }
-                ]} >
-                    <Image source={require('../assets/images/google-logo.png')}
-                        style={{ width: 20, height: 20 }}
-                        resizeMode='contain' />
-                    <Text style={{ fontSize: 17 }}>Continue with Google</Text>
-                </TouchableOpacity>
-
-                {Platform.OS === 'ios' && (
-                    <TouchableOpacity onPress={handleAppleAuth} style={[
-                        styles.authButton, { backgroundColor: 'black' }
+                    {/* Google Auth */}
+                    <TouchableOpacity onPress={handleGoogleAuth} style={[
+                        styles.authButton, { backgroundColor: '#F2F2F2' }
                     ]} >
-                        <Image source={require('../assets/images/apple-logo.png')}
+                        <Image source={require('../assets/images/google-logo.png')}
                             style={{ width: 20, height: 20 }}
                             resizeMode='contain' />
-                        <Text style={{ fontSize: 17, color: 'white' }}>Continue with Apple</Text>
+                        <Text style={{ fontSize: 17 }}>Continue with Google</Text>
                     </TouchableOpacity>
-                )}
 
-                {/* Email Sign Up */}
-                <TouchableOpacity onPress={() => router.push('/sign-up')} style={[
-                    styles.authButton, { backgroundColor: colors.primary }
-                ]}>
-                    <Mail size={20} color={'white'} />
-                    <Text style={{ fontSize: 17, color: 'white' }}>Continue with Email</Text>
-                </TouchableOpacity>
+                    {Platform.OS === 'ios' && (
+                        <TouchableOpacity onPress={handleAppleAuth} style={[
+                            styles.authButton, { backgroundColor: 'black' }
+                        ]} >
+                            <Image source={require('../assets/images/apple-logo.png')}
+                                style={{ width: 20, height: 20 }}
+                                resizeMode='contain' />
+                            <Text style={{ fontSize: 17, color: 'white' }}>Continue with Apple</Text>
+                        </TouchableOpacity>
+                    )}
 
-                {/* Already have account */}
-                <View style={styles.signInContainer}>
-                    <Text style={[styles.signInText, { color: 'black' }]}>
-                        Already have an account?{' '}
-                    </Text>
-                    <Link href="/sign-in" asChild>
-                        <Pressable>
-                            <Text style={[styles.signInLink, { color: colors.primary }]}>
-                                Sign In
-                            </Text>
-                        </Pressable>
-                    </Link>
+                    {/* Email Sign Up */}
+                    <TouchableOpacity onPress={() => router.push('/sign-up')} style={[
+                        styles.authButton, { backgroundColor: colors.primary }
+                    ]}>
+                        <Mail size={20} color={'white'} />
+                        <Text style={{ fontSize: 17, color: 'white' }}>Continue with Email</Text>
+                    </TouchableOpacity>
+
+                    {/* Already have account */}
+                    <View style={styles.signInContainer}>
+                        <Text style={[styles.signInText, { color: 'black' }]}>
+                            Already have an account?{' '}
+                        </Text>
+                        <Link href="/sign-in" asChild>
+                            <Pressable>
+                                <Text style={[styles.signInLink, { color: colors.primary }]}>
+                                    Sign In
+                                </Text>
+                            </Pressable>
+                        </Link>
+                    </View>
                 </View>
             </View>
         </View>
@@ -195,9 +204,11 @@ const styles = StyleSheet.create({
     pageViewContainer: {
         flex: 1,
         marginTop: 60,
+        maxWidth: MAX_WIDTH,
     },
     slide: {
-        width: screenWidth - 40,
+        maxWidth: MAX_WIDTH,
+        width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 20,

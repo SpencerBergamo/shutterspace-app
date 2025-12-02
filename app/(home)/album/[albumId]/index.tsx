@@ -1,6 +1,7 @@
 import AlbumDeletionAlert from "@/components/albums/AlbumDeletionAlert";
 import AlbumInfoCard from "@/components/albums/AlbumInfoCard";
 import MediaTile from "@/components/media/mediaTile";
+import { MAX_WIDTH } from "@/constants/styles";
 import { useAlbums } from "@/context/AlbumsContext";
 import { useAppTheme } from "@/context/AppThemeContext";
 import { useProfile } from "@/context/ProfileContext";
@@ -248,10 +249,10 @@ export default function AlbumScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Album Header with Thumbnail */}
-                    <AlbumInfoCard
+                    {width < MAX_WIDTH && (<AlbumInfoCard
                         album={album}
                         cover={media.find(m => m._id === album.thumbnail)}
-                    />
+                    />)}
 
                     {/* Album Info */}
                     <View style={styles.infoSection}>

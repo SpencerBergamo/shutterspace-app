@@ -1,4 +1,4 @@
-import { TextInputStyles } from '@/constants/styles';
+import { MAX_WIDTH, TextInputStyles } from '@/constants/styles';
 import { useAppTheme } from '@/context/AppThemeContext';
 import { useProfile } from '@/context/ProfileContext';
 import { api } from '@/convex/_generated/api';
@@ -6,7 +6,7 @@ import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { useMutation } from 'convex/react';
 import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { ActivityIndicator, Alert, Button, Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 type ProfileFormData = {
@@ -58,9 +58,9 @@ export default function EditProfileScreen() {
     }
 
     return (
-        <View style={{ flex: 1, padding: 16, alignContent: 'center', backgroundColor: colors.background }}>
+        <View style={{ flex: 1, padding: 16, backgroundColor: colors.background, alignItems: 'center' }}>
             <KeyboardAwareScrollView
-                contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+                style={{ flexShrink: 1, width: '100%', maxWidth: MAX_WIDTH, paddingHorizontal: 16 }}
                 keyboardShouldPersistTaps="handled"
             >
 
@@ -111,11 +111,12 @@ export default function EditProfileScreen() {
                 )}
 
                 {isSaving ? <ActivityIndicator size="small" color={colors.primary} /> :
-                    <Button
-                        title="Save Changes"
-                        onPress={handleSubmit(saveChanges)}
+                    <TouchableOpacity
                         disabled={!isDirty}
-                    />
+                        onPress={handleSubmit(saveChanges)}
+                        style={[styles.button, { backgroundColor: !isDirty ? '#ccc' : colors.primary }]}>
+                        <Text style={styles.buttonText}>Save Changes</Text>
+                    </TouchableOpacity>
                 }
 
             </KeyboardAwareScrollView>
@@ -129,5 +130,17 @@ const styles = StyleSheet.create({
         height: 21,
         justifyContent: 'center',
         paddingHorizontal: 8,
+    },
+    button: {
+        width: '100%',
+        height: 44,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
     },
 })

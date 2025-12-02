@@ -112,8 +112,7 @@ export default function ProfileSettings() {
                         style={styles.profileOption}
                         onPress={() => router.push('(profile)/edit')}
                     >
-
-                        <View style={[styles.optionIcon, { backgroundColor: colors.secondary }]}>
+                        <View style={[styles.optionIcon, { backgroundColor: colors.secondary + '50' }]}>
                             <Text>{profile.nickname.charAt(0)}</Text>
                         </View>
                         <View style={styles.optionContent}>
