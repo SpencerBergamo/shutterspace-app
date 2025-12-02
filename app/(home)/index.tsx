@@ -1,17 +1,20 @@
 import AlbumCard from "@/components/albums/AlbumCover";
-import HomeScreenHeader from "@/components/HomeScreenHeader";
+import { ASSETS } from "@/constants/assets";
 import { useAlbums } from '@/context/AlbumsContext';
 import { useAppTheme } from "@/context/AppThemeContext";
+import { useProfile } from "@/context/ProfileContext";
 import useFabStyles from "@/hooks/useFabStyles";
 import getGridLayout from "@/utils/getGridLyout";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { Image } from "expo-image";
+import { router, Stack } from "expo-router";
 import { Plus } from "lucide-react-native";
 import { useMemo } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
     const { colors } = useAppTheme();
+    const { profile } = useProfile();
     const { position, button, iconSize } = useFabStyles();
     const { width } = useWindowDimensions();
     const { albums } = useAlbums();
@@ -20,7 +23,38 @@ export default function HomeScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <HomeScreenHeader />
+            <Stack.Screen options={{
+                headerLeft: () => (
+                    <Image
+                        source={ASSETS.logo}
+                        style={{ height: 32, width: 32 }}
+                        contentFit="contain"
+                    />
+                ),
+                headerTitle: '',
+                headerRight: () => (
+                    <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 12,
+                    }}>
+                        <Text style={{
+                            fontSize: 18,
+                            color: colors.text,
+                        }}>
+                            Hey, <Text style={{ fontSize: 18, fontWeight: '600', }}>{profile.nickname} 👋</Text>
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.avatarContainer, {
+                                backgroundColor: colors.secondary + '60'
+                            }]}
+                            onPress={() => router.push('/settings')}
+                        >
+                            <Text style={styles.avatarInitial}>{profile.nickname.charAt(0)}</Text>
+                        </TouchableOpacity>
+                    </View>
+                )
+            }} />
 
             <FlatList
                 data={albums}
@@ -75,6 +109,20 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+
+    avatarContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 12,
+        width: 40,
+        height: 40,
+        overflow: 'hidden',
+    },
+
+    avatarInitial: {
+        fontSize: 18,
+        fontWeight: '600',
     },
 
     // Fab

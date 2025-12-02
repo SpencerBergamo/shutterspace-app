@@ -29,7 +29,7 @@ function HomeLayout() {
                 backgroundColor: colors.background,
             }
         }}>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="index" />
 
             <Stack.Screen name="settings" options={{
                 headerTitle: 'Settings',

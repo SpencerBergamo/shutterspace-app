@@ -3,7 +3,7 @@
     "name": "Shutterspace",
     "slug": "Shutterspace",
     "version": "1.0.7",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/brand/ios/ios-light.png",
     "scheme": "shutterspace",
     "userInterfaceStyle": "automatic",
