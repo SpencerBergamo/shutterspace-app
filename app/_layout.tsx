@@ -59,6 +59,7 @@ function AppLayout({ onAuthReady }: { onAuthReady: () => void }) {
             </Stack.Protected>
 
             <Stack.Screen name="invite/[code]" options={{}} />
+            <Stack.Screen name="+not-found" options={{ title: "Not Found" }} />
         </Stack>
     );
 }

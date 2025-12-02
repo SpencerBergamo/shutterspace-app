@@ -6,7 +6,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { usePreventRemove, useTheme } from "@react-navigation/native";
 import { useAction } from "convex/react";
 import { router, useNavigation } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, Alert, InteractionManager, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -70,24 +70,25 @@ export default function NewAlbum() {
         return () => task.cancel();
     }, []);
 
-    const handleCreate = async (data: FormData) => {
+    const handleCreate = useCallback(async (data: FormData) => {
         setIsLoading(true);
+
         try {
             const albumId: Id<'albums'> | null = await createAlbum(data);
 
-            if (!albumId) {
-                Alert.alert("Failed to create album", "Please try again.");
+            if (albumId) {
+                reset();
+                router.replace(`/album/${albumId}`);
                 return;
             }
 
-            reset();
-            router.replace(`/albums/${albumId}`);
+            Alert.alert("Failed to create album", "Please try again.");
         } catch (e) {
             console.error("Failed to create album", e);
         } finally {
             setIsLoading(false);
         }
-    }
+    }, []);
 
     return (
         <View style={{ flex: 1, padding: 16, backgroundColor: colors.background }}>
