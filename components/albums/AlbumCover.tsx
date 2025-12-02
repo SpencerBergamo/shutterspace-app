@@ -22,34 +22,32 @@ export default function AlbumCover({ album, width, height }: AlbumCardProps) {
 
     return (
         <Pressable
-            style={[styles.albumContainer, { width, height }]}
+            style={[styles.container, { width, height }]}
             onPress={() => router.push(`album/${album._id}`)}
         >
-            <View style={styles.albumThumbnailContainer}>
-                {requesting ? (
-                    <View style={[styles.albumThumbnail, { justifyContent: 'center', alignItems: 'center' }]}>
-                        <ActivityIndicator size="small" color="grey" />
-                    </View>
-                ) : !albumCover ? (
-                    <View style={[styles.albumThumbnail, styles.placeholderThumbnail, { backgroundColor: "#DEDEDEFF" }]}>
-                        <Ionicons name="image-outline" size={48} color="#777777FF" />
-                    </View>
-                ) : uri ? (
-                    <Image
-                        source={{ uri, cacheKey: albumCover._id }}
-                        style={styles.albumThumbnail}
-                        contentFit="cover"
-                        cachePolicy={'memory-disk'}
-                        onError={(e) => {
-                            console.error("Album Cover ERROR: ", e);
-                        }}
-                    />
-                ) : (
-                    <View style={[styles.albumThumbnail, styles.placeholderThumbnail, { backgroundColor: colors.border }]}>
-                        <Ionicons name="alert-circle-outline" size={48} color={colors.text} />
-                    </View>
-                )}
-            </View>
+            {requesting ? (
+                <View style={[styles.thumbnail, styles.placeholder, { backgroundColor: '#F5F5F5' }]}>
+                    <ActivityIndicator size="small" color="grey" />
+                </View>
+            ) : !albumCover ? (
+                <View style={[styles.thumbnail, styles.placeholder, { backgroundColor: '#DEDEDE' }]}>
+                    <Ionicons name="image-outline" size={48} color="#777777" />
+                </View>
+            ) : uri ? (
+                <Image
+                    source={{ uri, cacheKey: albumCover._id }}
+                    style={styles.thumbnail}
+                    contentFit="cover"
+                    cachePolicy={'memory-disk'}
+                    onError={(e) => {
+                        console.error("Album Cover ERROR: ", e);
+                    }}
+                />
+            ) : (
+                <View style={[styles.thumbnail, styles.placeholder]}>
+                    <Ionicons name="alert-circle-outline" size={48} color={colors.text} />
+                </View>
+            )}
             <Text
                 style={[styles.albumTitle, { color: colors.text }]}
                 numberOfLines={2}
@@ -65,18 +63,16 @@ export default function AlbumCover({ album, width, height }: AlbumCardProps) {
 }
 
 const styles = StyleSheet.create({
-    albumContainer: {
+    container: {
         marginBottom: 16,
     },
-    albumThumbnailContainer: {
-        marginBottom: 8,
-    },
-    albumThumbnail: {
+    thumbnail: {
         width: '100%',
         aspectRatio: 1,
         borderRadius: 16,
+        marginBottom: 8,
     },
-    placeholderThumbnail: {
+    placeholder: {
         justifyContent: 'center',
         alignItems: 'center',
     },
