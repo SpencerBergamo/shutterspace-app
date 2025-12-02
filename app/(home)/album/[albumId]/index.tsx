@@ -10,6 +10,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import useFabStyles from "@/hooks/useFabStyles";
 import { useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
+import { formatAlbumData } from "@/utils/formatters";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery } from "convex/react";
@@ -128,15 +129,6 @@ export default function AlbumScreen() {
             setIsCancelingDeletion(false);
         }
     }, [albumId, cancelDeletion]);
-
-    const formattedDate = useMemo(() => {
-        if (!album) return '';
-        return new Date(album._creationTime).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        });
-    }, [album]);
 
     const renderMedia = useCallback(({ item, index }: { item: Media, index: number }) => {
         const mediaId = item._id;
@@ -262,7 +254,7 @@ export default function AlbumScreen() {
                     <View style={styles.infoSection}>
                         <View style={styles.infoRow}>
                             <Ionicons name="calendar-outline" size={18} color="#666" />
-                            <Text style={styles.infoText}>Created {formattedDate}</Text>
+                            <Text style={styles.infoText}>Created {formatAlbumData(album._creationTime)}</Text>
                         </View>
                         {album.description && (
                             <View style={styles.infoRow}>

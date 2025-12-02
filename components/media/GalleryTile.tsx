@@ -2,6 +2,7 @@ import { useProfile } from "@/context/ProfileContext";
 import { Id } from "@/convex/_generated/dataModel";
 import useSignedUrls from "@/hooks/useSignedUrls";
 import { Media } from "@/types/Media";
+import { formatVideoDuration } from "@/utils/formatters";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from "expo-image";
 import { useState } from "react";
@@ -28,13 +29,6 @@ export default function GalleryTile({ media, itemSize, placeholder, onPress, onL
     const isVideo = type === 'video';
     const duration = type === 'video' ? media.identifier.duration : null;
     const isOwner = profileId === media.createdBy;
-
-    const formatDuration = (ms: number) => {
-        const seconds = Math.floor(ms / 1000);
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    }
 
     if (imageError) {
         return (
@@ -82,7 +76,7 @@ export default function GalleryTile({ media, itemSize, placeholder, onPress, onL
             {isVideo && (
                 <View style={styles.playIconPosition}>
                     {duration ? (
-                        <Text style={styles.videoDurationText}>{formatDuration(duration)}</Text>
+                        <Text style={styles.videoDurationText}>{formatVideoDuration(duration)}</Text>
                     ) : (
                         <Ionicons name="play-circle-outline" size={24} color="white" />
                     )}

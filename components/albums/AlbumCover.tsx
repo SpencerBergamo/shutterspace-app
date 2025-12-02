@@ -2,7 +2,7 @@ import { useAppTheme } from '@/context/AppThemeContext';
 import { api } from '@/convex/_generated/api';
 import useSignedUrls from '@/hooks/useSignedUrls';
 import { Album } from '@/types/Album';
-import { formatAlbumData } from '@/utils/dateFormatters';
+import { formatAlbumData } from '@/utils/formatters';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { Image } from 'expo-image';
