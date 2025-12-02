@@ -1,4 +1,5 @@
-import useAppStyles from "@/hooks/useAppStyles";
+import { TextInputStyles } from "@/constants/styles";
+import { useAppTheme } from "@/context/AppThemeContext";
 import { validateEmail } from "@/utils/validators";
 import { useNavigation, usePreventRemove } from "@react-navigation/native";
 import { useRef } from "react";
@@ -14,7 +15,7 @@ type ContactFormData = {
 
 export default function ContactUs() {
     const navigation = useNavigation();
-    const { colorScheme, textInput } = useAppStyles();
+    const { colors } = useAppTheme();
 
     const emailInputRef = useRef<TextInput>(null);
     const messageInputRef = useRef<TextInput>(null);
@@ -62,7 +63,7 @@ export default function ContactUs() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colorScheme.background }]}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
 
             <KeyboardAwareScrollView
                 contentContainerStyle={{}}
@@ -93,7 +94,11 @@ export default function ContactUs() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => emailInputRef.current?.focus()}
-                            style={textInput}
+                            style={[TextInputStyles, {
+                                backgroundColor: colors.background,
+                                borderColor: colors.border,
+                                color: colors.text,
+                            }]}
                         />
 
                     )}
@@ -124,7 +129,11 @@ export default function ContactUs() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => messageInputRef.current?.blur()}
-                            style={textInput}
+                            style={[TextInputStyles, {
+                                backgroundColor: colors.background,
+                                borderColor: colors.border,
+                                color: colors.text,
+                            }]}
                         />
                     )}
                 />
@@ -136,7 +145,7 @@ export default function ContactUs() {
                     title="Send"
                     disabled={!isValid}
                     onPress={handleSubmit(handleSend)}
-                    color={colorScheme.primary}
+                    color={colors.primary}
                 />
             </KeyboardAwareScrollView>
         </View>

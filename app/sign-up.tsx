@@ -1,5 +1,6 @@
+import { TextInputStyles } from "@/constants/styles";
+import { useAppTheme } from "@/context/AppThemeContext";
 import { api } from "@/convex/_generated/api";
-import useAppStyles from "@/hooks/useAppStyles";
 import { validateEmail, validatePassword } from "@/utils/validators";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from "@react-native-firebase/auth";
@@ -23,7 +24,7 @@ type SignUpFormData = {
 
 export default function SignUpScreen() {
     const theme = useTheme();
-    const { colorScheme, textInput } = useAppStyles();
+    const { colors } = useAppTheme();
     const auth = getAuth();
 
     // Refs
@@ -117,7 +118,7 @@ export default function SignUpScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: colorScheme.background, padding: 16 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
 
             <KeyboardAwareScrollView style={{ flexShrink: 1 }}
                 keyboardShouldPersistTaps="handled"
@@ -152,7 +153,11 @@ export default function SignUpScreen() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => passwordInputRef.current?.focus()}
-                            style={textInput}
+                            style={[TextInputStyles, {
+                                backgroundColor: colors.background,
+                                borderColor: colors.border,
+                                color: colors.text,
+                            }]}
                         />
                     )}
                 />
@@ -188,7 +193,11 @@ export default function SignUpScreen() {
                                 onChangeText={onChange}
                                 onBlur={onBlur}
                                 onSubmitEditing={handleSubmit(handleSignup)}
-                                style={textInput}
+                                style={[TextInputStyles, {
+                                    backgroundColor: colors.background,
+                                    borderColor: colors.border,
+                                    color: colors.text,
+                                }]}
                             />
                         )}
                     />
@@ -215,7 +224,7 @@ export default function SignUpScreen() {
                     title="Create Account"
                     onPress={handleSubmit(handleSignup)}
                     disabled={!isValid}
-                    color={isValid ? colorScheme.primary : 'grey'}
+                    color={isValid ? colors.primary : 'grey'}
                 />
 
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 21, alignItems: 'center' }} >
@@ -253,13 +262,13 @@ export default function SignUpScreen() {
                     <Text style={[styles.termsText, { color: 'black' }]}>
                         By continuing, you agree to our{' '}
                         <Link href="" asChild>
-                            <Text style={[styles.termsLink, { color: colorScheme.primary }]}>
+                            <Text style={[styles.termsLink, { color: colors.primary }]}>
                                 Terms of Service
                             </Text>
                         </Link>
                         {' '}and{' '}
                         <Link href="" asChild>
-                            <Text style={[styles.termsLink, { color: colorScheme.primary }]}>
+                            <Text style={[styles.termsLink, { color: colors.primary }]}>
                                 Privacy Policy
                             </Text>
                         </Link>

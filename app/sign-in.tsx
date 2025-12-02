@@ -1,4 +1,5 @@
-import useAppStyles from "@/hooks/useAppStyles";
+import { TextInputStyles } from "@/constants/styles";
+import { useAppTheme } from "@/context/AppThemeContext";
 import { validateEmail } from "@/utils/validators";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential, signInWithEmailAndPassword } from "@react-native-firebase/auth";
@@ -20,7 +21,7 @@ type SignInFormData = {
 
 export default function SignInScreen() {
     const theme = useTheme();
-    const { colorScheme, textInput } = useAppStyles();
+    const { colors } = useAppTheme();
     const emailInputRef = useRef<TextInput>(null);
     const passwordInputRef = useRef<TextInput>(null);
 
@@ -91,7 +92,7 @@ export default function SignInScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: colorScheme.background, padding: 16 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
             <KeyboardAwareScrollView
                 contentContainerStyle={{ flexShrink: 1 }}
                 keyboardShouldPersistTaps="handled"
@@ -125,7 +126,11 @@ export default function SignInScreen() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => passwordInputRef.current?.focus()}
-                            style={textInput}
+                            style={[TextInputStyles, {
+                                backgroundColor: colors.background,
+                                borderColor: colors.border,
+                                color: colors.text,
+                            }]}
                         />
                     )}
                 />
@@ -161,7 +166,11 @@ export default function SignInScreen() {
                                 onChangeText={onChange}
                                 onBlur={onBlur}
                                 onSubmitEditing={handleSubmit(handleSignin)}
-                                style={textInput}
+                                style={[TextInputStyles, {
+                                    backgroundColor: colors.background,
+                                    borderColor: colors.border,
+                                    color: colors.text,
+                                }]}
                             />
                         )}
                     />
@@ -189,7 +198,7 @@ export default function SignInScreen() {
                     title="Sign In"
                     onPress={handleSubmit(handleSignin)}
                     disabled={!isValid}
-                    color={isValid ? colorScheme.primary : 'grey'}
+                    color={isValid ? colors.primary : 'grey'}
                 />
 
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 21, alignItems: 'center' }} >

@@ -1,8 +1,8 @@
+import { useAppTheme } from "@/context/AppThemeContext";
 import { useFriends } from "@/context/FriendsContext";
 import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import useAppStyles from "@/hooks/useAppStyles";
 import useFabStyles from "@/hooks/useFabStyles";
 import { Friendship, FriendshipStatus } from "@/types/Friend";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,18 +19,18 @@ interface FriendCardProps {
 }
 
 function FriendCard({ friendshipId, status, isRecipient, onAction }: FriendCardProps) {
-    const { colorScheme } = useAppStyles();
+    const { colors } = useAppTheme();
 
     const friend = useQuery(api.friendships.getFriendByFriendshipId, { friendshipId });
 
     return (
         <View style={[styles.friendItem, styles.shadow]}>
-            <View style={[styles.avatar, { backgroundColor: colorScheme.background, borderColor: colorScheme.border }]}>
+            <View style={[styles.avatar, { backgroundColor: colors.background, borderColor: colors.border }]}>
                 <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '600' }}>
                     {friend ? friend.nickname.charAt(0).toUpperCase() : ''}
                 </Text>
             </View>
-            <Text style={[styles.friendName, { color: colorScheme.text }]}>
+            <Text style={[styles.friendName, { color: colors.text }]}>
                 {friend ? friend.nickname : 'Loading...'}
             </Text>
             {status !== 'accepted' && (
@@ -55,7 +55,7 @@ function FriendCard({ friendshipId, status, isRecipient, onAction }: FriendCardP
 export default function FriendsListScreen() {
 
     const { position, button, iconSize } = useFabStyles();
-    const { colorScheme } = useAppStyles();
+    const { colors } = useAppTheme();
     const { profile } = useProfile();
     const { friendships } = useFriends();
 
@@ -125,13 +125,13 @@ export default function FriendsListScreen() {
     if (friendships === undefined) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color={colorScheme.text} />
+                <ActivityIndicator size="large" color={colors.text} />
             </View>
         )
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: colorScheme.background }]}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <FlatList
                 data={friendshipList}
                 initialNumToRender={friendshipList.length}
@@ -139,15 +139,15 @@ export default function FriendsListScreen() {
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <View style={[styles.emptyCard, { backgroundColor: colorScheme.background, borderColor: colorScheme.border }]}>
+                        <View style={[styles.emptyCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
                             <QRCode
                                 value={shareUrl}
                                 size={175}
                             />
-                            <Text style={[styles.emptyTitle, { color: colorScheme.text }]}>
+                            <Text style={[styles.emptyTitle, { color: colors.text }]}>
                                 No Friends Yet
                             </Text>
-                            <Text style={[styles.emptyDescription, { color: colorScheme.text }]}>
+                            <Text style={[styles.emptyDescription, { color: colors.text }]}>
                                 Share your profile to connect with friends and start sharing photos together.
                             </Text>
                         </View>
@@ -168,7 +168,7 @@ export default function FriendsListScreen() {
                     style={button}
                     onPress={handleShareProfile}
                 >
-                    <Ionicons name="share-outline" size={iconSize} color={colorScheme.surface} />
+                    <Ionicons name="share-outline" size={iconSize} color={colors.border} />
                 </TouchableOpacity>
             </View>
         </View>

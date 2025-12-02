@@ -1,7 +1,8 @@
+import { TextInputStyles } from '@/constants/styles';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { useProfile } from '@/context/ProfileContext';
 import { api } from '@/convex/_generated/api';
-import useAppStyles from '@/hooks/useAppStyles';
-import { useNavigation, usePreventRemove, useTheme } from '@react-navigation/native';
+import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { useMutation } from 'convex/react';
 import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -14,9 +15,8 @@ type ProfileFormData = {
 
 export default function EditProfileScreen() {
     const { profile } = useProfile();
-    const theme = useTheme();
+    const { colors } = useAppTheme();
     const navigation = useNavigation();
-    const appStyles = useAppStyles();
 
     const updateProfile = useMutation(api.profile.updateProfile);
 
@@ -58,7 +58,7 @@ export default function EditProfileScreen() {
     }
 
     return (
-        <View style={{ flex: 1, padding: 16, alignContent: 'center', backgroundColor: appStyles.colorScheme.background }}>
+        <View style={{ flex: 1, padding: 16, alignContent: 'center', backgroundColor: colors.background }}>
             <KeyboardAwareScrollView
                 contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
                 keyboardShouldPersistTaps="handled"
@@ -83,7 +83,7 @@ export default function EditProfileScreen() {
                             ref={nicknameInputRef}
                             value={value}
                             placeholder="Nickname"
-                            placeholderTextColor={theme.colors.text}
+                            placeholderTextColor={colors.text}
                             maxLength={30}
                             autoCapitalize="words"
                             autoCorrect={false}
@@ -91,11 +91,16 @@ export default function EditProfileScreen() {
                             textAlign="left"
                             keyboardType="default"
                             returnKeyType="next"
-                            selectionColor={theme.colors.primary}
+                            selectionColor={colors.primary}
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => nicknameInputRef.current?.blur()}
-                            style={[appStyles.textInput, { marginBottom: 16 }]}
+                            style={[TextInputStyles, {
+                                backgroundColor: colors.background,
+                                borderColor: colors.border,
+                                color: colors.text,
+                                marginBottom: 16
+                            }]}
                         />
                     )}
                 />
@@ -105,7 +110,7 @@ export default function EditProfileScreen() {
                     </View>
                 )}
 
-                {isSaving ? <ActivityIndicator size="small" color={theme.colors.primary} /> :
+                {isSaving ? <ActivityIndicator size="small" color={colors.primary} /> :
                     <Button
                         title="Save Changes"
                         onPress={handleSubmit(saveChanges)}

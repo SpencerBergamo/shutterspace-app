@@ -1,8 +1,9 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
+import { TextInputStyles } from "@/constants/styles";
 import { useAlbums } from "@/context/AlbumsContext";
+import { useAppTheme } from "@/context/AppThemeContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import useAppStyles from "@/hooks/useAppStyles";
 import { usePreventRemove, useTheme } from "@react-navigation/native";
 import { useMutation } from "convex/react";
 import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
@@ -18,7 +19,7 @@ type FormData = {
 
 export default function AlbumEditScreen() {
     const theme = useTheme();
-    const appStyles = useAppStyles();
+    const { colors } = useAppTheme();
     const navigation = useNavigation();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbum } = useAlbums();
@@ -77,7 +78,7 @@ export default function AlbumEditScreen() {
     }
 
     return (
-        <View style={{ flex: 1, padding: 16, backgroundColor: appStyles.colorScheme.background }}>
+        <View style={{ flex: 1, padding: 16, backgroundColor: colors.background }}>
             <Stack.Screen options={{
                 headerBackButtonDisplayMode: 'minimal',
                 headerTitle: `Edit ${album.title}`
@@ -115,7 +116,12 @@ export default function AlbumEditScreen() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => titleInputRef.current?.focus()}
-                            style={[appStyles.textInput, { marginBottom: 16 }]}
+                            style={[TextInputStyles, {
+                                backgroundColor: colors.background,
+                                borderColor: colors.border,
+                                color: colors.text,
+                                marginBottom: 16
+                            }]}
                         />
                     )}
                 />
@@ -152,7 +158,12 @@ export default function AlbumEditScreen() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => descriptionInputRef.current?.blur()}
-                            style={[appStyles.textInput, { marginBottom: 16 }]}
+                            style={[TextInputStyles, {
+                                backgroundColor: colors.background,
+                                borderColor: colors.border,
+                                color: colors.text,
+                                marginBottom: 16
+                            }]}
                         />
                     )}
                 />

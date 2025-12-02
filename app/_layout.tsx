@@ -8,7 +8,7 @@
  */
 
 import { ASSETS } from "@/constants/assets";
-import useAppStyles from "@/hooks/useAppStyles";
+import { AppThemeProvider, useAppTheme } from "@/context/AppThemeContext";
 import useFirebaseAuth from "@/hooks/useFirebaseToken";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -24,7 +24,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 SplashScreen.preventAutoHideAsync();
 
 function AppLayout({ onAuthReady }: { onAuthReady: () => void }) {
-    const appStyles = useAppStyles();
+    const { colors } = useAppTheme();
     const { isLoading, isAuthenticated } = useConvexAuth();
 
     useEffect(() => {
@@ -41,7 +41,7 @@ function AppLayout({ onAuthReady }: { onAuthReady: () => void }) {
             headerBackButtonDisplayMode: 'minimal',
             headerShadowVisible: false,
             headerStyle: {
-                backgroundColor: appStyles.colorScheme.background,
+                backgroundColor: colors.background,
             }
         }}>
             <Stack.Protected guard={isAuthenticated} >
@@ -95,7 +95,9 @@ export default function RootLayout() {
                     <KeyboardProvider>
                         <ActionSheetProvider>
                             <BottomSheetModalProvider>
-                                <AppLayout onAuthReady={() => setAuthReady(true)} />
+                                <AppThemeProvider>
+                                    <AppLayout onAuthReady={() => setAuthReady(true)} />
+                                </AppThemeProvider>
                             </BottomSheetModalProvider>
                         </ActionSheetProvider>
                     </KeyboardProvider>

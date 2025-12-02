@@ -2,10 +2,10 @@ import AlbumDeletionAlert from "@/components/albums/AlbumDeletionAlert";
 import AlbumInfoCard from "@/components/albums/AlbumInfoCard";
 import MediaTile from "@/components/media/mediaTile";
 import { useAlbums } from "@/context/AlbumsContext";
+import { useAppTheme } from "@/context/AppThemeContext";
 import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import useAppStyles from "@/hooks/useAppStyles";
 import useFabStyles from "@/hooks/useFabStyles";
 import { useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
@@ -26,7 +26,7 @@ export default function AlbumScreen() {
     // Layout
     const { width } = useWindowDimensions();
 
-    const { colorScheme } = useAppStyles();
+    const { colors } = useAppTheme();
     const { position, button, iconSize } = useFabStyles();
     const itemSize: number = useMemo(() => {
         return (SCREEN_WIDTH - (GAP * 2)) / NUM_COLUMNS;
@@ -160,7 +160,7 @@ export default function AlbumScreen() {
     }, [media, inFlightUploads, removeInFlightUpload]);
 
     if (!album) return (
-        <View style={{ flex: 1, backgroundColor: colorScheme.background }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <Stack.Screen options={{
                 headerTitle: 'Album Not Found',
             }} />
@@ -174,7 +174,7 @@ export default function AlbumScreen() {
     );
 
     return (
-        <View style={{ flex: 1, backgroundColor: colorScheme.background }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
 
             {/* Header */}
             <Stack.Screen options={{
@@ -223,7 +223,7 @@ export default function AlbumScreen() {
                     style={button}
                     onPress={selectAndUploadAssets}
                 >
-                    <Ionicons name="add" size={iconSize} color={colorScheme.surface} />
+                    <Ionicons name="add" size={iconSize} color="white" />
                 </TouchableOpacity>
             </View>
 
@@ -232,7 +232,7 @@ export default function AlbumScreen() {
                 ref={settingsModalRef}
                 snapPoints={['85%']}
                 enablePanDownToClose
-                backgroundStyle={{ backgroundColor: colorScheme.background }}
+                backgroundStyle={{ backgroundColor: colors.background }}
                 backdropComponent={(props) => (
                     <BottomSheetBackdrop
                         {...props}

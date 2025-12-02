@@ -1,7 +1,7 @@
+import { useAppTheme } from "@/context/AppThemeContext";
 import { useMemo } from "react";
 import { Dimensions, StyleProp, ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import useAppStyles from "./useAppStyles";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -13,7 +13,7 @@ interface UseFabStylesResult {
 
 export default function useFabStyles(): UseFabStylesResult {
     const insets = useSafeAreaInsets();
-    const { colorScheme } = useAppStyles();
+    const { colors } = useAppTheme();
 
     return useMemo(() => {
         const breakPoint = 400;
@@ -37,7 +37,7 @@ export default function useFabStyles(): UseFabStylesResult {
             borderRadius: fabSize / 2,
             justifyContent: 'center' as const,
             alignItems: 'center' as const,
-            backgroundColor: colorScheme.primary,
+            backgroundColor: colors.primary,
         }
 
         const iconSize = Math.max(fabSize * 0.5, 24);
@@ -47,5 +47,5 @@ export default function useFabStyles(): UseFabStylesResult {
             button,
             iconSize,
         }
-    }, [insets.bottom, colorScheme.primary]);
+    }, [insets.bottom, colors.primary]);
 }

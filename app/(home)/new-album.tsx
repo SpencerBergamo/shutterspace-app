@@ -1,13 +1,14 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
+import { TextInputStyles } from "@/constants/styles";
+import { useAppTheme } from "@/context/AppThemeContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import useAppStyles from "@/hooks/useAppStyles";
 import { usePreventRemove, useTheme } from "@react-navigation/native";
 import { useAction } from "convex/react";
 import { router, useNavigation } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { ActivityIndicator, Alert, Button, Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, InteractionManager, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 type FormData = {
@@ -18,7 +19,7 @@ type FormData = {
 
 export default function NewAlbum() {
     const theme = useTheme();
-    const appStyles = useAppStyles();
+    const { colors } = useAppTheme();
     const navigation = useNavigation();
 
     const titleInputRef = useRef<TextInput>(null);
@@ -45,6 +46,14 @@ export default function NewAlbum() {
         }
     });
 
+    useEffect(() => {
+        const task = InteractionManager.runAfterInteractions(() => {
+            titleInputRef.current?.focus();
+        });
+
+        return () => task.cancel();
+    }, []);
+
     usePreventRemove(isDirty, ({ data }) => {
         Keyboard.dismiss();
         Alert.alert("Unsaved Changes", "You have unsaved changes. Are you sure you want to leave?", [
@@ -53,10 +62,23 @@ export default function NewAlbum() {
         ]);
     });
 
+    useEffect(() => {
+        const task = InteractionManager.runAfterInteractions(() => {
+            titleInputRef.current?.focus();
+        });
+
+        return () => task.cancel();
+    }, []);
+
     const handleCreate = async (data: FormData) => {
         setIsLoading(true);
         try {
-            const albumId: Id<'albums'> = await createAlbum(data);
+            const albumId: Id<'albums'> | null = await createAlbum(data);
+
+            if (!albumId) {
+                Alert.alert("Failed to create album", "Please try again.");
+                return;
+            }
 
             reset();
             router.replace(`/albums/${albumId}`);
@@ -68,7 +90,7 @@ export default function NewAlbum() {
     }
 
     return (
-        <View style={{ flex: 1, padding: 16, backgroundColor: appStyles.colorScheme.background }}>
+        <View style={{ flex: 1, padding: 16, backgroundColor: colors.background }}>
             <KeyboardAwareScrollView
                 contentContainerStyle={{ paddingBottom: 20 }}
                 keyboardShouldPersistTaps="handled"
@@ -89,10 +111,8 @@ export default function NewAlbum() {
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput
                             ref={titleInputRef}
-                            autoFocus
                             placeholder="What's this album for?"
                             value={value}
-                            maxLength={50}
                             autoCapitalize="words"
                             autoCorrect={false}
                             spellCheck={false}
@@ -103,7 +123,12 @@ export default function NewAlbum() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => descriptionInputRef.current?.focus()}
-                            style={[appStyles.textInput, { marginBottom: 8 }]} />
+                            style={[TextInputStyles, {
+                                backgroundColor: colors.background,
+                                borderColor: colors.border,
+                                color: colors.text,
+                                marginBottom: 8
+                            }]} />
                     )}
                 />
                 {errors.title && (
@@ -145,7 +170,12 @@ export default function NewAlbum() {
                             onChangeText={onChange}
                             onBlur={onBlur}
                             onSubmitEditing={() => descriptionInputRef.current?.blur()}
-                            style={[appStyles.textInput, { marginBottom: 16 }]} />
+                            style={[TextInputStyles, {
+                                backgroundColor: colors.background,
+                                borderColor: colors.border,
+                                color: colors.text,
+                                marginBottom: 16
+                            }]} />
                     )}
                 />
                 {errors.description && (
@@ -158,12 +188,14 @@ export default function NewAlbum() {
                     openInvites={isOpenInvites}
                     onToggle={setIsOpenInvites} />
 
-                {isLoading ? (<ActivityIndicator size="small" color={theme.colors.primary} />) : (<Button
-                    title="Create Album"
-                    onPress={handleSubmit(handleCreate)}
-                    disabled={!isDirty}
-                    color={appStyles.colorScheme.primary}
-                />)}
+                {isLoading ? (<ActivityIndicator size="small" color={theme.colors.primary} />) : (
+                    <TouchableOpacity
+                        disabled={!isDirty}
+                        onPress={handleSubmit(handleCreate)}
+                        style={[styles.button, { backgroundColor: !isDirty ? '#ccc' : colors.primary }]}>
+                        <Text style={styles.buttonText}>Create Album</Text>
+                    </TouchableOpacity>
+                )}
             </KeyboardAwareScrollView>
         </View >
     );
@@ -181,6 +213,20 @@ const styles = StyleSheet.create({
         height: 21,
         justifyContent: 'center',
         paddingHorizontal: 8,
+    },
+
+    button: {
+        width: '100%',
+        height: 44,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
     },
 
 });

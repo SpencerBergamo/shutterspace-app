@@ -1,7 +1,7 @@
 import { ASSETS } from '@/constants/assets';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { useProfile } from '@/context/ProfileContext';
 import { api } from '@/convex/_generated/api';
-import useAppStyles from '@/hooks/useAppStyles';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '@react-native-firebase/auth';
@@ -15,7 +15,7 @@ import { Alert, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, 
 
 export default function ProfileSettings() {
     const auth = getAuth();
-    const appStyles = useAppStyles();
+    const { colors } = useAppTheme();
     const { profile } = useProfile();
 
     // Convex
@@ -100,7 +100,7 @@ export default function ProfileSettings() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: appStyles.colorScheme.background }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <ScrollView
                 style={{ flex: 1, paddingHorizontal: 14 }}
                 showsVerticalScrollIndicator={false}
@@ -113,7 +113,7 @@ export default function ProfileSettings() {
                         onPress={() => router.push('(profile)/edit')}
                     >
 
-                        <View style={[styles.optionIcon, { backgroundColor: appStyles.colorScheme.accent }]}>
+                        <View style={[styles.optionIcon, { backgroundColor: colors.secondary }]}>
                             <Text>{profile.nickname.charAt(0)}</Text>
                         </View>
                         <View style={styles.optionContent}>
@@ -170,7 +170,7 @@ export default function ProfileSettings() {
                         disabled
                         onPress={() => { }}
                     >
-                        <View style={[styles.optionIcon, { backgroundColor: appStyles.colorScheme.primary, opacity: 0.5 }]}>
+                        <View style={[styles.optionIcon, { backgroundColor: colors.primary, opacity: 0.5 }]}>
                             <Image
                                 source={ASSETS.logo}
                                 style={{ width: 20, height: 20 }}

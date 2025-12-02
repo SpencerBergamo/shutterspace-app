@@ -1,13 +1,13 @@
 import { AlbumsProvider, useAlbums } from "@/context/AlbumsContext";
+import { useAppTheme } from "@/context/AppThemeContext";
 import { FriendsProvider, useFriends } from "@/context/FriendsContext";
 import { ProfileProvider, useProfile } from "@/context/ProfileContext";
-import useAppStyles from "@/hooks/useAppStyles";
 // import { useTheme } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
 function HomeLayout() {
-    const appStyles = useAppStyles();
+    const { colors } = useAppTheme();
 
     const { isLoading: profileLoading } = useProfile();
     const { isLoading: friendsLoading } = useFriends();
@@ -16,7 +16,7 @@ function HomeLayout() {
     if (profileLoading || friendsLoading || albumsLoading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color={appStyles.colorScheme.text} />
+                <ActivityIndicator size="large" color={colors.text} />
             </View>
         )
     }
@@ -26,7 +26,7 @@ function HomeLayout() {
             headerBackButtonDisplayMode: 'minimal',
             headerShadowVisible: false,
             headerStyle: {
-                backgroundColor: appStyles.colorScheme.background,
+                backgroundColor: colors.background,
             }
         }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />

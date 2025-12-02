@@ -1,6 +1,6 @@
+import { useAppTheme } from "@/context/AppThemeContext";
 import { useFriends } from "@/context/FriendsContext";
 import { api } from "@/convex/_generated/api";
-import useAppStyles from "@/hooks/useAppStyles";
 import { useMutation, useQuery } from "convex/react";
 import { BlurView } from "expo-blur";
 import { router, useLocalSearchParams } from "expo-router";
@@ -24,7 +24,7 @@ const SPRING_CONFIG = {
 const DISMISS_THRESHOLD = 100;
 
 export default function ShareIdScreen() {
-    const { colorScheme } = useAppStyles();
+    const { colors } = useAppTheme();
     const { code }: { code: string } = useLocalSearchParams<{ code: string }>();
     const { friendships } = useFriends();
 
@@ -107,34 +107,34 @@ export default function ShareIdScreen() {
 
                 <GestureDetector gesture={panGesture}>
                     <Animated.View style={[styles.sheetContainer, animatedSheet]}>
-                        <View style={[styles.sheet, { backgroundColor: colorScheme.background }]}>
+                        <View style={[styles.sheet, { backgroundColor: colors.background }]}>
                             {/* Drag handle */}
                             <View style={styles.handleContainer}>
-                                <View style={[styles.handle, { backgroundColor: colorScheme.border }]} />
+                                <View style={[styles.handle, { backgroundColor: colors.border }]} />
                             </View>
 
                             {/* Content */}
                             {user === undefined ? (
                                 <View style={styles.loadingContainer}>
-                                    <ActivityIndicator size="large" color={colorScheme.primary} />
+                                    <ActivityIndicator size="large" color={colors.primary} />
                                 </View>
                             ) : user === null ? (
                                 <View style={styles.contentContainer}>
-                                    <Text style={[styles.errorText, { color: colorScheme.text }]}>
+                                    <Text style={[styles.errorText, { color: colors.text }]}>
                                         User not found
                                     </Text>
                                 </View>
                             ) : (
                                 <View style={styles.contentContainer}>
                                     {/* Avatar */}
-                                    <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colorScheme.border }]}>
-                                        <Text style={[styles.avatarInitial, { color: colorScheme.text }]}>
+                                    <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colors.border }]}>
+                                        <Text style={[styles.avatarInitial, { color: colors.text }]}>
                                             {user.nickname?.charAt(0).toUpperCase() || '?'}
                                         </Text>
                                     </View>
 
                                     {/* Nickname */}
-                                    <Text style={[styles.nickname, { color: colorScheme.text }]}>
+                                    <Text style={[styles.nickname, { color: colors.text }]}>
                                         {user.nickname || 'Unknown User'}
                                     </Text>
 
@@ -142,7 +142,7 @@ export default function ShareIdScreen() {
                                     <Pressable
                                         style={({ pressed }) => [
                                             styles.addButton,
-                                            { backgroundColor: colorScheme.primary, opacity: pressed ? 0.8 : 1 },
+                                            { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
                                         ]}
                                         onPress={handleAddFriend}
                                         disabled={isAddingFriend}

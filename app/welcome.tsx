@@ -1,4 +1,4 @@
-import useAppStyles from '@/hooks/useAppStyles';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -38,7 +38,7 @@ const onboardingSlides: OnboardingSlide[] = [
 ];
 
 export default function WelcomeScreen() {
-    const { colorScheme } = useAppStyles();
+    const { colors } = useAppTheme();
     const insets = useSafeAreaInsets();
 
     const [currentSlide, setCurrentSlide] = useState<number>(0);
@@ -131,7 +131,7 @@ export default function WelcomeScreen() {
                         key={index}
                         style={[
                             styles.paginationDot,
-                            { backgroundColor: index === currentSlide ? colorScheme.primary : '#E9ECEF' }
+                            { backgroundColor: index === currentSlide ? colors.primary : '#E9ECEF' }
                         ]}
                     />
                 ))}
@@ -163,7 +163,7 @@ export default function WelcomeScreen() {
 
                 {/* Email Sign Up */}
                 <TouchableOpacity onPress={() => router.push('/sign-up')} style={[
-                    styles.authButton, { backgroundColor: colorScheme.primary }
+                    styles.authButton, { backgroundColor: colors.primary }
                 ]}>
                     <Mail size={20} color={'white'} />
                     <Text style={{ fontSize: 17, color: 'white' }}>Continue with Email</Text>
@@ -176,7 +176,7 @@ export default function WelcomeScreen() {
                     </Text>
                     <Link href="/sign-in" asChild>
                         <Pressable>
-                            <Text style={[styles.signInLink, { color: colorScheme.primary }]}>
+                            <Text style={[styles.signInLink, { color: colors.primary }]}>
                                 Sign In
                             </Text>
                         </Pressable>

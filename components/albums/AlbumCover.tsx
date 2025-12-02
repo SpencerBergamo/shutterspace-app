@@ -1,5 +1,5 @@
+import { useAppTheme } from '@/context/AppThemeContext';
 import { api } from '@/convex/_generated/api';
-import useAppStyles from '@/hooks/useAppStyles';
 import useSignedUrls from '@/hooks/useSignedUrls';
 import { Album } from '@/types/Album';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +16,7 @@ interface AlbumCardProps {
 }
 
 export default function AlbumCover({ album, width, height }: AlbumCardProps) {
-    const { colorScheme } = useAppStyles();
+    const { colors } = useAppTheme();
     const albumCover = useQuery(api.albums.getAlbumCover, { albumId: album._id });
     const { requesting, thumbnail: uri } = useSignedUrls({ media: albumCover ?? undefined });
 
@@ -45,19 +45,19 @@ export default function AlbumCover({ album, width, height }: AlbumCardProps) {
                         }}
                     />
                 ) : (
-                    <View style={[styles.albumThumbnail, styles.placeholderThumbnail, { backgroundColor: colorScheme.border }]}>
-                        <Ionicons name="alert-circle-outline" size={48} color={colorScheme.text} />
+                    <View style={[styles.albumThumbnail, styles.placeholderThumbnail, { backgroundColor: colors.border }]}>
+                        <Ionicons name="alert-circle-outline" size={48} color={colors.text} />
                     </View>
                 )}
             </View>
             <Text
-                style={[styles.albumTitle, { color: colorScheme.text }]}
+                style={[styles.albumTitle, { color: colors.text }]}
                 numberOfLines={2}
             >
                 {album.title}
             </Text>
 
-            <Text style={[styles.albumDate, { color: colorScheme.text + '80' }]}>
+            <Text style={[styles.albumDate, { color: colors.text + '80' }]}>
                 {new Date(album._creationTime).toLocaleDateString()}
             </Text>
         </Pressable>

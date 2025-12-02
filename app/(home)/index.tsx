@@ -1,7 +1,7 @@
 import AlbumCard from "@/components/albums/AlbumCover";
 import HomeScreenHeader from "@/components/HomeScreenHeader";
 import { useAlbums } from '@/context/AlbumsContext';
-import useAppStyles from "@/hooks/useAppStyles";
+import { useAppTheme } from "@/context/AppThemeContext";
 import useFabStyles from "@/hooks/useFabStyles";
 import getGridLayout from "@/utils/getGridLyout";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,7 +11,7 @@ import { useMemo } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
-    const { colorScheme } = useAppStyles();
+    const { colors } = useAppTheme();
     const { position, button, iconSize } = useFabStyles();
     const { width } = useWindowDimensions();
     const { albums } = useAlbums();
@@ -19,7 +19,7 @@ export default function HomeScreen() {
     const gridConfig = useMemo(() => getGridLayout({ width, columns: 2, gap: 16, aspectRatio: 1 }), [width]);
 
     return (
-        <View style={[styles.container, { backgroundColor: colorScheme.background }]}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <HomeScreenHeader />
 
             <FlatList
@@ -32,19 +32,19 @@ export default function HomeScreen() {
                 scrollEnabled={albums.length > 0}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <View style={[styles.emptyCard, { backgroundColor: colorScheme.background, borderColor: colorScheme.border }]}>
-                            <Text style={[styles.emptyTitle, { color: colorScheme.text }]}>
+                        <View style={[styles.emptyCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                            <Text style={[styles.emptyTitle, { color: colors.text }]}>
                                 Welcome to Shutterspace!
                             </Text>
-                            <Text style={[styles.emptySubtitle, { color: colorScheme.text }]}>
+                            <Text style={[styles.emptySubtitle, { color: colors.text }]}>
                                 You don't have any albums yet.
                             </Text>
-                            <Text style={[styles.emptyDescription, { color: colorScheme.text }]}>
+                            <Text style={[styles.emptyDescription, { color: colors.text }]}>
                                 Create your first album to start sharing photos with friends and family.
                             </Text>
-                            <View style={[styles.ctaContainer, { backgroundColor: colorScheme.background }]}>
-                                <Plus size={20} color={colorScheme.primary} />
-                                <Text style={[styles.ctaText, { color: colorScheme.primary }]}>
+                            <View style={[styles.ctaContainer, { backgroundColor: colors.background }]}>
+                                <Plus size={20} color={colors.primary} />
+                                <Text style={[styles.ctaText, { color: colors.primary }]}>
                                     Tap the button below to get started
                                 </Text>
                             </View>
@@ -65,7 +65,7 @@ export default function HomeScreen() {
                     style={button}
                     onPress={() => router.push('/new-album')}
                 >
-                    <Ionicons name="add" size={iconSize} color={colorScheme.surface} />
+                    <Ionicons name="add" size={iconSize} color="white" />
                 </TouchableOpacity>
             </View>
         </View>
