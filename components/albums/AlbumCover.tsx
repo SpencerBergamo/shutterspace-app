@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface AlbumCardProps {
@@ -19,6 +20,7 @@ export default function AlbumCover({ album, width, height }: AlbumCardProps) {
     const { colors } = useAppTheme();
     const albumCover = useQuery(api.albums.getAlbumCover, { albumId: album._id });
     const { requesting, thumbnail: uri } = useSignedUrls({ media: albumCover ?? undefined });
+    const [imageError, setImageError] = useState(false);
 
     return (
         <Pressable
@@ -26,12 +28,16 @@ export default function AlbumCover({ album, width, height }: AlbumCardProps) {
             onPress={() => router.push(`album/${album._id}`)}
         >
             {requesting ? (
-                <View style={[styles.thumbnail, styles.placeholder, { backgroundColor: '#F5F5F5' }]}>
+                <View style={[styles.thumbnail, styles.placeholder]}>
                     <ActivityIndicator size="small" color="grey" />
                 </View>
             ) : !albumCover ? (
-                <View style={[styles.thumbnail, styles.placeholder, { backgroundColor: '#DEDEDE' }]}>
+                <View style={[styles.thumbnail, styles.placeholder]}>
                     <Ionicons name="image-outline" size={48} color="#777777" />
+                </View>
+            ) : uri === null || imageError ? (
+                <View style={[styles.thumbnail, styles.placeholder]}>
+                    <Ionicons name="alert-circle-outline" size={48} color="#D32F2F" />
                 </View>
             ) : uri ? (
                 <Image
@@ -41,11 +47,12 @@ export default function AlbumCover({ album, width, height }: AlbumCardProps) {
                     cachePolicy={'memory-disk'}
                     onError={(e) => {
                         console.error("Album Cover ERROR: ", e);
+                        setImageError(true);
                     }}
                 />
             ) : (
                 <View style={[styles.thumbnail, styles.placeholder]}>
-                    <Ionicons name="alert-circle-outline" size={48} color={colors.text} />
+                    <ActivityIndicator size="small" color="grey" />
                 </View>
             )}
             <Text
@@ -69,12 +76,14 @@ const styles = StyleSheet.create({
     thumbnail: {
         width: '100%',
         aspectRatio: 1,
+        backgroundColor: '#DEDEDEFF',
         borderRadius: 16,
         marginBottom: 8,
     },
     placeholder: {
         justifyContent: 'center',
         alignItems: 'center',
+        borderRadius: 16,
     },
     albumTitle: {
         fontSize: 16,

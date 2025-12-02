@@ -26,7 +26,10 @@ export const prepareUpload = action({
         if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
 
         const profile = await ctx.runQuery(api.profile.getProfile);
-        if (!profile) return null;
+        if (!profile) {
+            console.error("prepareUpload media.ts: no profile");
+            return null;
+        };
 
         let uploadUrl: string | undefined;
         let identifier: MediaIdentifier | undefined;

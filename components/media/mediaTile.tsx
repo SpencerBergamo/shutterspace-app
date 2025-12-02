@@ -22,6 +22,9 @@ export default function MediaTile({ media, itemSize, onPress, onLongPress, onRea
     const type = media.identifier.type;
     const duration = type === 'video' ? media.identifier.duration : undefined;
 
+    // Use placeholder URI for in-flight uploads, otherwise use signed URL
+    const displayUri = placeholderUri || uri;
+
     const formatDuration = (ms: number) => {
         const seconds = Math.floor(ms / 1000);
         const mins = Math.floor(seconds / 60);
@@ -34,6 +37,29 @@ export default function MediaTile({ media, itemSize, onPress, onLongPress, onRea
             <TouchableOpacity style={{ width: itemSize, height: itemSize, marginBottom: 2, justifyContent: 'center', alignItems: 'center' }}>
                 <Ionicons name="alert-circle-outline" size={24} color="red" />
             </TouchableOpacity>
+        )
+    }
+
+    // Show placeholder immediately if available (for in-flight uploads)
+    if (placeholderUri) {
+        return (
+            <Pressable
+                style={[styles.container, { width: itemSize, height: itemSize }]}
+                onPress={() => onPress(mediaId)}
+                onLongPress={() => onLongPress(mediaId)}
+            >
+                <Image
+                    source={{ uri: placeholderUri }}
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="cover"
+                    cachePolicy={'none'}
+                />
+
+
+                {requesting && <View style={styles.uploadingOverlay}>
+                    <ActivityIndicator size="small" color="white" />
+                </View>}
+            </Pressable>
         )
     }
 
@@ -51,9 +77,9 @@ export default function MediaTile({ media, itemSize, onPress, onLongPress, onRea
             onPress={() => onPress(mediaId)}
             onLongPress={() => onLongPress(mediaId)}
         >
-            {uri ? (
+            {displayUri ? (
                 <Image
-                    source={{ uri, cacheKey: mediaId }}
+                    source={{ uri: displayUri, cacheKey: mediaId }}
                     style={{ width: '100%', height: '100%' }}
                     contentFit="cover"
                     cachePolicy={'memory-disk'}
@@ -68,7 +94,7 @@ export default function MediaTile({ media, itemSize, onPress, onLongPress, onRea
                 <Ionicons name="alert-circle-outline" size={24} color="red" />
             )}
 
-            {uri && type === 'video' && (
+            {displayUri && type === 'video' && (
                 <View style={styles.playIconPosition}>
                     {duration ? (
                         <Text style={styles.videoDurationText}>{formatDuration(duration)}</Text>
@@ -101,6 +127,16 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 12,
         fontWeight: 'bold',
+    },
 
-    }
+    uploadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
 })

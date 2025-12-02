@@ -5,14 +5,14 @@ import { useEffect, useState } from "react";
 
 interface UseAlbumCoverResult {
     requesting: boolean;
-    coverUrl: string | undefined;
+    coverUrl: string | undefined | null;
 }
 
 export default function useAlbumCover(identifier: MediaIdentifier): UseAlbumCoverResult {
     const requestCover = useAction(api.cloudflare.requestAlbumCoverURL);
 
     const [requesting, setRequesting] = useState(true);
-    const [coverUrl, setCoverUrl] = useState<string | undefined>(undefined);
+    const [coverUrl, setCoverUrl] = useState<string | undefined | null>(undefined);
 
     useEffect(() => {
         (async () => {
@@ -23,6 +23,7 @@ export default function useAlbumCover(identifier: MediaIdentifier): UseAlbumCove
                 setCoverUrl(url);
             } catch (e) {
                 console.error('Error requesting album cover: ', e);
+                setCoverUrl(null);
             } finally {
                 setRequesting(false);
             }

@@ -6,6 +6,8 @@ import { validateAssets } from "@/utils/mediaHelper";
 import axios from "axios";
 import { useAction, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 import { useCallback, useState } from "react";
 
 interface UseMediaResult {
@@ -63,7 +65,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
 
                     addInFlightUpload({ assetId: asset.assetId, uri: asset.uri });
 
-                    const uploadUrl: string = await prepareUpload({
+                    const uploadUrl: string | null = await prepareUpload({
                         albumId,
                         assetId: asset.assetId,
                         filename: asset.filename,
@@ -77,14 +79,52 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                         isLast,
                     });
 
-                    const form = new FormData();
-                    form.append('file', {
-                        uri: asset.uri,
-                        name: asset.filename,
-                        type: asset.mimeType,
-                    } as any);
+                    if (!uploadUrl) {
+                        updateInFlightUploadStatus(asset.assetId, 'error');
+                        setUploadErrors(prev => ({ ...prev, [asset.assetId]: 'Failed to prepare upload' }));
+                        console.error("useMedia: uploadAssets failed", 'Failed to prepare upload');
+                        continue;
+                    }
 
-                    const response = await axios.post(uploadUrl, form);
+                    let response;
+                    
+                    // On Android, use FileSystem.uploadAsync for proper file handling
+                    if (Platform.OS === 'android') {
+                        const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+                        if (!fileInfo.exists) {
+                            updateInFlightUploadStatus(asset.assetId, 'error');
+                            setUploadErrors(prev => ({ ...prev, [asset.assetId]: 'File not found' }));
+                            console.error("useMedia: File not found", asset.uri);
+                            continue;
+                        }
+                        
+                        // Use FileSystem.uploadAsync for Android
+                        const uploadResult = await FileSystem.uploadAsync(uploadUrl, asset.uri, {
+                            httpMethod: 'POST',
+                            uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+                            fieldName: 'file',
+                            mimeType: asset.mimeType,
+                        });
+                        
+                        response = {
+                            status: uploadResult.status,
+                            data: uploadResult.body ? JSON.parse(uploadResult.body) : null,
+                        };
+                    } else {
+                        // iOS can use axios with FormData
+                        const form = new FormData();
+                        form.append('file', {
+                            uri: asset.uri,
+                            name: asset.filename,
+                            type: asset.mimeType,
+                        } as any);
+                        
+                        response = await axios.post(uploadUrl, form, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data',
+                            },
+                        });
+                    }
 
                     if (!response.data || response.status !== 200) {
                         updateInFlightUploadStatus(asset.assetId, 'error');

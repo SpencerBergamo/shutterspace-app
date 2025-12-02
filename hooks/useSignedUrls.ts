@@ -17,7 +17,7 @@ interface UseSignedUrlsProps {
 
 interface UseSignedUrlsResult {
     requesting: boolean;
-    thumbnail: string | undefined;
+    thumbnail: string | undefined | null;
     requestingVideo: boolean;
     requestVideo: () => Promise<string | undefined>;
 }
@@ -29,7 +29,7 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
 
     const [requesting, setRequesting] = useState<boolean>(true);
     const [requestingVideo, setRequestingVideo] = useState<boolean>(false);
-    const [thumbnail, setThumbnail] = useState<string | undefined>();
+    const [thumbnail, setThumbnail] = useState<string | undefined | null>(undefined);
 
     const requestVideo = useCallback(async (): Promise<string | undefined> => {
         try {
@@ -89,22 +89,21 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
                     return;
                 };
 
-                let requestUrl: string | undefined;
+                let requestUrl: string | undefined | null;
                 if (type === 'image') {
                     requestUrl = await requestImageURL({ albumId, imageId: cloudflareId });
                 } else if (type === 'video') {
                     requestUrl = await requestVideoThumbnailURL({ albumId, videoUID: cloudflareId });
-
                 } else {
                     setRequesting(false);
-                    setThumbnail(undefined);
+                    setThumbnail(null);
                     throw new Error("Unsupported media type");
                 }
 
                 setThumbnail(requestUrl);
             } catch (e) {
                 console.error('Error requesting thumbnail: ', e);
-                setThumbnail(undefined);
+                setThumbnail(null);
             } finally {
                 setRequesting(false);
             }
