@@ -2,12 +2,12 @@ import { useAppTheme } from '@/context/AppThemeContext';
 import { api } from '@/convex/_generated/api';
 import useSignedUrls from '@/hooks/useSignedUrls';
 import { Album } from '@/types/Album';
+import { formatAlbumData } from '@/utils/dateFormatters';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-
 
 interface AlbumCardProps {
     album: Album;
@@ -58,7 +58,7 @@ export default function AlbumCover({ album, width, height }: AlbumCardProps) {
             </Text>
 
             <Text style={[styles.albumDate, { color: colors.text + '80' }]}>
-                {new Date(album._creationTime).toLocaleDateString()}
+                {formatAlbumData(album._creationTime)}
             </Text>
         </Pressable>
     );

@@ -1,5 +1,18 @@
 
 
+export function formatAlbumData(creationTime: number): string {
+    const date = new Date(creationTime);
+    const currentYear = new Date().getFullYear();
+    const dateYear = date.getFullYear();
+    const options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric' };
+
+    if (dateYear !== currentYear) {
+        options.year = 'numeric';
+    }
+
+    return date.toLocaleDateString('en-US', options);
+}
+
 export function formatDateRange(start: Date, end: Date) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentYear = new Date().getFullYear();
