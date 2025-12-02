@@ -6,11 +6,10 @@ import { useProfile } from "@/context/ProfileContext";
 import useFabStyles from "@/hooks/useFabStyles";
 import getGridLayout from "@/utils/getGridLyout";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { router, Stack } from "expo-router";
 import { Plus } from "lucide-react-native";
 import { useMemo } from "react";
-import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { FlatList, Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
     const { colors } = useAppTheme();
@@ -28,7 +27,7 @@ export default function HomeScreen() {
                     <Image
                         source={ASSETS.logo}
                         style={{ height: 32, width: 32 }}
-                        contentFit="contain"
+                        resizeMode="contain"
                     />
                 ),
                 headerTitle: '',
