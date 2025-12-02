@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shutterspace",
     "slug": "Shutterspace",
-    "version": "1.0.7",
+    "version": "1.0.9",
     "orientation": "default",
     "icon": "./assets/brand/ios/ios-light.png",
     "scheme": "shutterspace",
@@ -45,7 +45,8 @@
       "permissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.ACCESS_MEDIA_LOCATION"
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "com.google.android.gms.permission.AD_ID"
       ],
       "intentFilters": [
         {
@@ -75,9 +76,11 @@
       "output": "static"
     },
     "plugins": [
+      [
+        "@react-native-google-signin/google-signin"
+      ],
       "expo-router",
       "@react-native-firebase/app",
-      "@react-native-google-signin/google-signin",
       "expo-apple-authentication",
       [
         "expo-contacts",

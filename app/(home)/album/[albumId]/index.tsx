@@ -1,6 +1,6 @@
 import AlbumDeletionAlert from "@/components/albums/AlbumDeletionAlert";
 import AlbumInfoCard from "@/components/albums/AlbumInfoCard";
-import MediaTile from "@/components/media/mediaTile";
+import GalleryTile from "@/components/media/GalleryTile";
 import { MAX_WIDTH } from "@/constants/styles";
 import { useAlbums } from "@/context/AlbumsContext";
 import { useAppTheme } from "@/context/AppThemeContext";
@@ -139,25 +139,29 @@ export default function AlbumScreen() {
     }, [album]);
 
     const renderMedia = useCallback(({ item, index }: { item: Media, index: number }) => {
-        const inFlightUri: string | undefined = inFlightUploads[item.assetId] ?? undefined;
-        if (inFlightUri) console.log("inFlight: ", inFlightUri);
+        const mediaId = item._id;
+        const inFlightUri: string | undefined = inFlightUploads[mediaId] ?? undefined;
+        console.log(`inFlight: ${index}: ${!!inFlightUri}`);
 
-        return <MediaTile
-            media={item}
-            itemSize={itemSize}
-            onPress={() => {
-                router.push({
-                    pathname: '../viewer/[mediaId]',
-                    params: { albumId: albumId, index: index.toString() },
-                })
-            }}
-            onLongPress={() => { }}
-            onReady={() => {
-                removeInFlightUpload(item.assetId);
-            }}
-            retry={() => { }}
-            placeholderUri={inFlightUri}
-        />
+        return (
+            <GalleryTile
+                media={item}
+                itemSize={itemSize}
+                placeholder={inFlightUri}
+                onPress={() => {
+                    router.push({
+                        pathname: '../viewer/[mediaId]',
+                        params: { mediaId: albumId, index: index.toString() },
+                    })
+                }}
+                onLongPress={() => { }}
+                onRetry={() => { }}
+                onReady={() => {
+                    removeInFlightUpload(item.assetId);
+                }}
+            />
+        );
+
     }, [media, inFlightUploads, removeInFlightUpload]);
 
     if (!album) return (
