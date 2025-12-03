@@ -1,14 +1,15 @@
 import OpenInvitesField from "@/components/albums/OpenInvitesField";
-import { TextInputStyles } from "@/constants/styles";
+import { MAX_WIDTH, TextInputStyles } from "@/constants/styles";
 import { useAppTheme } from "@/context/AppThemeContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { usePreventRemove, useTheme } from "@react-navigation/native";
+import { validateAlbumTitle } from "@/utils/validators";
+import { useTheme } from "@react-navigation/native";
 import { useAction } from "convex/react";
-import { router, useNavigation } from "expo-router";
+import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { ActivityIndicator, Alert, InteractionManager, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, InteractionManager, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 type FormData = {
@@ -20,7 +21,6 @@ type FormData = {
 export default function NewAlbum() {
     const theme = useTheme();
     const { colors } = useAppTheme();
-    const navigation = useNavigation();
 
     const titleInputRef = useRef<TextInput>(null);
     const descriptionInputRef = useRef<TextInput>(null);
@@ -54,14 +54,6 @@ export default function NewAlbum() {
         return () => task.cancel();
     }, []);
 
-    usePreventRemove(isDirty, ({ data }) => {
-        Keyboard.dismiss();
-        Alert.alert("Unsaved Changes", "You have unsaved changes. Are you sure you want to leave?", [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Leave', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
-        ]);
-    });
-
     useEffect(() => {
         const task = InteractionManager.runAfterInteractions(() => {
             titleInputRef.current?.focus();
@@ -91,11 +83,18 @@ export default function NewAlbum() {
     }, []);
 
     return (
-        <View style={{ flex: 1, padding: 16, backgroundColor: colors.background }}>
+        <View style={{ flex: 1, padding: 16, backgroundColor: colors.background, alignItems: 'center' }}>
             <KeyboardAwareScrollView
+                style={{
+                    flexShrink: 1,
+                    width: '100%',
+                    maxWidth: MAX_WIDTH,
+                }}
                 contentContainerStyle={{ paddingBottom: 20 }}
                 keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
             >
+
                 <Text style={styles.inputLabel}>
                     Title
                 </Text>
@@ -105,9 +104,7 @@ export default function NewAlbum() {
                     name="title"
                     rules={{
                         required: "Title is required",
-                        validate: (value) => {
-                            return value.length > 0;
-                        }
+                        validate: validateAlbumTitle,
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput
@@ -197,6 +194,7 @@ export default function NewAlbum() {
                         <Text style={styles.buttonText}>Create Album</Text>
                     </TouchableOpacity>
                 )}
+
             </KeyboardAwareScrollView>
         </View >
     );

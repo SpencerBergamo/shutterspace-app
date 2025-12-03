@@ -4,6 +4,7 @@ import { useAlbums } from "@/context/AlbumsContext";
 import { useAppTheme } from "@/context/AppThemeContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { validateAlbumTitle, validateDescription } from "@/utils/validators";
 import { usePreventRemove, useTheme } from "@react-navigation/native";
 import { useMutation } from "convex/react";
 import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
@@ -95,9 +96,7 @@ export default function AlbumEditScreen() {
                     name="title"
                     rules={{
                         required: "Title is required",
-                        validate: (value) => {
-                            return value.length > 0;
-                        }
+                        validate: validateAlbumTitle,
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput
@@ -137,9 +136,7 @@ export default function AlbumEditScreen() {
                     name="description"
                     rules={{
                         required: false,
-                        validate: (value) => {
-                            return value.length <= 300;
-                        }
+                        validate: validateDescription,
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput

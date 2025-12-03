@@ -1,7 +1,7 @@
 import { MAX_WIDTH, TextInputStyles } from "@/constants/styles";
 import { useAppTheme } from "@/context/AppThemeContext";
 import { api } from "@/convex/_generated/api";
-import { validateEmail, validatePassword } from "@/utils/validators";
+import { passwordRules, validateEmail, validatePassword } from "@/utils/validators";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from "@react-native-firebase/auth";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -60,7 +60,6 @@ export default function SignUpScreen() {
         } catch (e) {
             console.warn('Firebase Password Signup (FAIL)', e);
         }
-
     }
 
     async function handleAppleAuth() {
@@ -135,16 +134,14 @@ export default function SignUpScreen() {
                     name="email"
                     rules={{
                         required: 'Email is required',
-                        validate: (value) => {
-                            const error = validateEmail(value);
-                            return error || true;
-                        },
+                        validate: validateEmail,
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput
                             ref={emailInputRef}
                             value={value}
                             autoFocus
+                            autoComplete="email"
                             placeholder="Email"
                             keyboardType="email-address"
                             returnKeyLabel="next"
@@ -175,15 +172,13 @@ export default function SignUpScreen() {
                         name="password"
                         rules={{
                             required: 'Password is required',
-                            validate: (value) => {
-                                const error = validatePassword(value);
-                                return error || true;
-                            },
+                            validate: validatePassword,
                         }}
                         render={({ field: { onChange, onBlur, value } }) => (
                             <TextInput
                                 ref={passwordInputRef}
                                 value={value}
+                                autoComplete="new-password"
                                 placeholder="Password"
                                 keyboardType="default"
                                 secureTextEntry={!isPasswordVisible}
@@ -194,6 +189,7 @@ export default function SignUpScreen() {
                                 onChangeText={onChange}
                                 onBlur={onBlur}
                                 onSubmitEditing={handleSubmit(handleSignup)}
+                                passwordRules={passwordRules}
                                 style={[TextInputStyles, {
                                     backgroundColor: colors.background,
                                     borderColor: colors.border,

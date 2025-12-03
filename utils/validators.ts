@@ -1,3 +1,7 @@
+import Graphemer from "graphemer";
+
+export const splitter = new Graphemer();
+
 
 export function validateEmail(email: string) {
     if (!email) return 'Email is required';
@@ -5,38 +9,45 @@ export function validateEmail(email: string) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) return 'Invalid email address';
 
-    return null;
+    return undefined;
 }
 
+export const passwordRules: string = "required: lower; required: upper; required: digit; minLength: 8; maxLength: 16;";
 export function validatePassword(password: string) {
     if (!password) return 'Password is required';
-
-    if (password.length < 8) return 'Password must be at least 8 characters';
 }
 
-export function validateConfirmPassword(password: string, confirmPassword: string) {
-    if (!confirmPassword) return 'Confirm password is required';
-    if (password !== confirmPassword) return 'Passwords do not match';
-}
-
-export function validateTitle(title: string) {
+export function validateAlbumTitle(title: string): string | undefined {
     if (!title) return 'Don\'t forget to title your album!';
 
-    return null;
+    const charCount = splitter.countGraphemes(title);
+    if (charCount > 30) return "Your title is just a bit too long";
+
+    return undefined;
 }
 
 export function validateDescription(value: string) {
-    if (value.length > 300) return 'Description must be less than 300 characters';
+    const charCount = splitter.countGraphemes(value);
+    if (charCount > 300) return 'Description must be less than 300 characters';
 
-    return null;
+    return undefined;
 }
 
 export function validateNickname(nickname: string) {
-    if (!nickname) return 'Nickname is required';
+    if (!nickname) return "Don't forget to give your profile a nickname!";
 
-    if (nickname.length < 3) return 'Nickname must be at least 3 characters';
+    const charCount = splitter.countGraphemes(nickname);
+    if (charCount > 30) return "Your nickname is just a bit too long";
 
-    if (nickname.length > 30) return 'Nickname must be less than 30 characters';
-
-    return null;
+    return undefined;
 }
+
+// export function validateNickname(nickname: string) {
+//     if (!nickname) return 'Nickname is required';
+
+//     if (nickname.length < 3) return 'Nickname must be at least 3 characters';
+
+//     if (nickname.length > 30) return 'Nickname must be less than 30 characters';
+
+//     return null;
+// }

@@ -1,6 +1,6 @@
 import { MAX_WIDTH, TextInputStyles } from "@/constants/styles";
 import { useAppTheme } from "@/context/AppThemeContext";
-import { validateEmail } from "@/utils/validators";
+import { validateEmail, validatePassword } from "@/utils/validators";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential, signInWithEmailAndPassword } from "@react-native-firebase/auth";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -113,16 +113,14 @@ export default function SignInScreen() {
                     name="email"
                     rules={{
                         required: 'Email is required',
-                        validate: (value) => {
-                            const error = validateEmail(value);
-                            return error || true;
-                        },
+                        validate: validateEmail,
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput
                             ref={emailInputRef}
                             value={value}
                             autoFocus
+                            autoComplete="email"
                             placeholder="Email"
                             keyboardType="email-address"
                             returnKeyLabel="next"
@@ -153,15 +151,14 @@ export default function SignInScreen() {
                         name="password"
                         rules={{
                             required: 'Password is required',
-                            validate: (value) => {
-                                return value.length > 0 ? true : 'Password is required';
-                            }
+                            validate: validatePassword
                         }}
                         render={({ field: { onChange, onBlur, value } }) => (
 
                             <TextInput
                                 ref={passwordInputRef}
                                 value={value}
+                                autoComplete="current-password"
                                 placeholder="Password"
                                 keyboardType="default"
                                 secureTextEntry={!isPasswordVisible}
