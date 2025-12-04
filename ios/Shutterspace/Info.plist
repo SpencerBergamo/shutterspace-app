@@ -71,6 +71,12 @@
     <string>Shutterspace uses contacts to share links via SMS.</string>
     <key>NSFaceIDUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Shutterspace needs access to your microphone to let you take videos.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
@@ -84,6 +90,10 @@
     <key>UIAppFonts</key>
     <array>
       <string>SansitaOne.ttf</string>
+    </array>
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>fetch</string>
     </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>

@@ -9,7 +9,7 @@ type AllowedMimeTypes =
     | 'image/png'
     | 'image/heic';
 
-interface ValidatedAsset extends ImagePickerAsset {
+export interface ValidatedAsset extends ImagePickerAsset {
     assetId: string;
     filename: string;
     mimeType: string;

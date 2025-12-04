@@ -32,21 +32,25 @@ export default function GalleryTile({ media, itemSize, placeholder, onPress, onL
 
     if (imageError) {
         return (
-            <View style={[styles.container, { flexDirection: 'column', gap: 4 }]}>
+            <Pressable
+                disabled={!isOwner}
+                onPress={() => onRetry(mediaId)}
+                style={{
+                    marginBottom: 1,
+                    width: itemSize,
+                    height: itemSize,
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: "#EEEEEEFF",
+                    gap: 16,
+                }}>
                 <Ionicons name="alert-circle-outline" size={24} color="red" />
 
                 {isOwner && (
-                    <View style={{ flexDirection: 'row', gap: 4 }}>
-                        <Text>Retry</Text>
-                        <Pressable
-                            style={{}}
-                            onPress={() => onRetry(mediaId)}
-                        >
-                            <Ionicons name="refresh-outline" size={24} color="white" />
-                        </Pressable>
-                    </View>
+                    <Text style={{}}>Tap for Details</Text>
                 )}
-            </View>
+            </Pressable>
         );
     }
 
@@ -85,7 +89,7 @@ export default function GalleryTile({ media, itemSize, placeholder, onPress, onL
 
             {requesting && (
                 <View style={styles.uploadingOverlay}>
-                    <ActivityIndicator size="small" color="white" />
+                    <ActivityIndicator size="small" color="black" />
                 </View>
             )}
         </Pressable>
@@ -97,7 +101,7 @@ const styles = StyleSheet.create({
         marginBottom: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: "#DEDEDEFF",
+        backgroundColor: "#EEEEEEFF",
     },
 
     playIconPosition: {

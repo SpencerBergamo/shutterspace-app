@@ -21,15 +21,12 @@ export const prepareUpload = action({
             address: v.optional(v.string()),
         })),
         isLast: v.boolean(),
-    }, handler: async (ctx, { albumId, assetId, filename, type, width, height, duration, size, dateTaken, location, isLast = false }): Promise<string | null> => {
+    }, handler: async (ctx, { albumId, assetId, filename, type, width, height, duration, size, dateTaken, location, isLast = false }): Promise<string> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
 
         const profile = await ctx.runQuery(api.profile.getProfile);
-        if (!profile) {
-            console.error("prepareUpload media.ts: no profile");
-            return null;
-        };
+        if (!profile) throw new Error("User Not Found");
 
         let uploadUrl: string | undefined;
         let identifier: MediaIdentifier | undefined;
@@ -56,13 +53,14 @@ export const prepareUpload = action({
                 width: width ?? undefined,
                 height: height ?? undefined,
             }
-
         } else {
-            throw new Error("invalid media type");
+            throw new Error("Invalid Media Type");
         }
 
-        if (!uploadUrl) throw new Error('uploadMedia media.ts: no uploadUrl');
-        if (!identifier) throw new Error("uploadMedia media.ts: no identifier");
+        if (!uploadUrl || !identifier) {
+            console.error(`UploadURL or Identifier is missing: \nUploadURL: ${uploadUrl}\nIdentifier: ${identifier}`);
+            throw new Error("Something went wrong");
+        }
 
         const mediaId = await ctx.runMutation(internal.media.createMedia, {
             albumId,

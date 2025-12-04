@@ -11,9 +11,11 @@ import useFabStyles from "@/hooks/useFabStyles";
 import { useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
 import { formatAlbumData } from "@/utils/formatters";
+import { validateAssets } from "@/utils/mediaHelper";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery } from "convex/react";
+import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Images } from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -39,7 +41,7 @@ export default function AlbumScreen() {
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbum } = useAlbums();
     const album = getAlbum(albumId);
-    const { media, selectAndUploadAssets, inFlightUploads, removeInFlightUpload, } = useMedia(albumId);
+    const { media, uploadMedia, inFlightUploads, removeInFlightUpload, } = useMedia(albumId);
 
     // Refs
     const flatListRef = useRef<FlatList>(null);
@@ -56,6 +58,39 @@ export default function AlbumScreen() {
     const leaveAlbum = useMutation(api.albumMembers.leaveAlbum);
     const deleteAlbum = useMutation(api.albums.deleteAlbum);
     const cancelDeletion = useMutation(api.albums.cancelAlbumDeletion);
+
+    const handleMediaUpload = useCallback(async () => {
+        try {
+            const picker = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images', 'videos'],
+                allowsMultipleSelection: true,
+                exif: true,
+                videoMaxDuration: 60,
+            });
+
+            if (picker.canceled || !picker.assets || picker.assets.length === 0) return;
+
+            const { invalid, valid } = validateAssets(picker.assets);
+
+            if (invalid.length > 0) {
+                console.warn("Invalid assets: ", invalid.length);
+            }
+
+            await uploadMedia(valid);
+        } catch (e) {
+            console.error("Failed to upload media: ", e);
+            Alert.alert("Error", "Some photos failed to upload. Please try again.");
+        }
+    }, [albumId]);
+
+    const handleMediaRetry = useCallback(async (mediaId: Id<'media'>) => {
+        try {
+            throw new Error("Not implemented");
+        } catch (e) {
+            console.error("Failed to retry media upload: ", e);
+            Alert.alert("Failed Upload", "Failed to retry the upload. Please try again.");
+        }
+    }, [albumId]);
 
     const handleSettingsPress = useCallback(() => {
         settingsModalRef.current?.present();
@@ -131,9 +166,8 @@ export default function AlbumScreen() {
     }, [albumId, cancelDeletion]);
 
     const renderMedia = useCallback(({ item, index }: { item: Media, index: number }) => {
-        const mediaId = item._id;
-        const inFlightUri: string | undefined = inFlightUploads[mediaId] ?? undefined;
-        console.log(`inFlight: ${index}: ${!!inFlightUri}`);
+        const inFlightUri: string | undefined = inFlightUploads[item.assetId] ?? undefined;
+        if (inFlightUri) console.log("inFlight: ", index, item.filename);
 
         return (
             <GalleryTile
@@ -147,7 +181,13 @@ export default function AlbumScreen() {
                     })
                 }}
                 onLongPress={() => { }}
-                onRetry={() => { }}
+                onRetry={(mediaId) => {
+                    Alert.alert("Failed Upload", "Would you like to retry the upload?", [
+                        { text: "Retry", onPress: () => handleMediaRetry(mediaId) },
+                        { text: "Delete", style: 'destructive', onPress: () => { } },
+                        { text: "Cancel", style: 'cancel' },
+                    ]);
+                }}
                 onReady={() => {
                     removeInFlightUpload(item.assetId);
                 }}
@@ -218,7 +258,7 @@ export default function AlbumScreen() {
             <View style={position}>
                 <TouchableOpacity
                     style={button}
-                    onPress={selectAndUploadAssets}
+                    onPress={handleMediaUpload}
                 >
                     <Ionicons name="add" size={iconSize} color="white" />
                 </TouchableOpacity>

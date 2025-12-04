@@ -129,7 +129,8 @@
         "expo-image-picker",
         {
           "photosPermission": "Shutterspace needs access to your photos to let you share them.",
-          "cameraPermission": "Shutterspace needs access to your camera to let you take photos and videos."
+          "cameraPermission": "Shutterspace needs access to your camera to let you take photos and videos.",
+          "microphonePermission": "Shutterspace needs access to your microphone to let you take videos."
         }
       ],
       [
