@@ -176,6 +176,20 @@ export const deleteMedia = mutation({
     }
 });
 
+export const updateMediaStatus = internalMutation({
+    args: {
+        mediaId: v.id('media'),
+        status: v.union(
+            v.literal('pending'),
+            v.literal('ready'),
+            v.literal('error'),
+        ),
+    },
+    handler: async (ctx, { mediaId, status }) => {
+        await ctx.db.patch(mediaId, { status });
+    },
+})
+
 export const updateMediaVideoStatus = internalMutation({
     args: {
         videoUid: v.string(),

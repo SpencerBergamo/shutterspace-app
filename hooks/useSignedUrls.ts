@@ -18,6 +18,7 @@ interface UseSignedUrlsProps {
 interface UseSignedUrlsResult {
     requesting: boolean;
     thumbnail: string | undefined | null;
+    handleImageError: () => Promise<void>;
     requestingVideo: boolean;
     requestVideo: () => Promise<string | undefined>;
 }
@@ -69,6 +70,19 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
         }
     }, [requestVideoPlaybackURL, media]);
 
+    const handleImageError = useCallback(async () => {
+        setRequesting(true);
+
+        try {
+            throw new Error("Not implemented");
+        } catch (e) {
+            console.error("Error handling image error: ", e);
+            setThumbnail(null);
+        } finally {
+            setRequesting(false);
+        }
+    }, [media]);
+
     useEffect(() => {
         (async () => {
             if (!media) {
@@ -111,5 +125,5 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
     }, [media, requestImageURL, requestVideoThumbnailURL]);
 
 
-    return { requesting, thumbnail, requestingVideo, requestVideo };
+    return { requesting, thumbnail, handleImageError, requestingVideo, requestVideo };
 }

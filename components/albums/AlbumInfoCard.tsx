@@ -23,7 +23,7 @@ export default function AlbumInfoCard({ album, cover }: AlbumInfoCardProps) {
                 </View>
             )}
 
-            {cover ? (
+            {coverUrl && cover ? (
                 <Image
                     source={{ uri: coverUrl, cacheKey: cover._id }}
                     style={styles.cover}

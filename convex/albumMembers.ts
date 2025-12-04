@@ -10,6 +10,7 @@ export const getMembership = query({
         albumId: v.id("albums"),
     }, handler: async (ctx, { albumId }): Promise<MemberRole> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) throw new Error("User Not Found");
 
         const membership = await ctx.db.query('albumMembers')
             .withIndex('by_album_profileId', q => q.eq('albumId', albumId)

@@ -5,7 +5,6 @@ import { Media } from "@/types/Media";
 import { formatVideoDuration } from "@/utils/formatters";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from "expo-image";
-import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
 interface GalleryTileProps {
@@ -20,9 +19,7 @@ interface GalleryTileProps {
 
 export default function GalleryTile({ media, itemSize, placeholder, onPress, onLongPress, onRetry, onReady }: GalleryTileProps) {
     const { profileId } = useProfile();
-    const { requesting, thumbnail } = useSignedUrls({ media });
-
-    const [imageError, setImageError] = useState<string | null>(null);
+    const { requesting, thumbnail, handleImageError } = useSignedUrls({ media });
 
     const mediaId = media._id;
     const type = media.identifier.type;
@@ -30,7 +27,7 @@ export default function GalleryTile({ media, itemSize, placeholder, onPress, onL
     const duration = type === 'video' ? media.identifier.duration : null;
     const isOwner = profileId === media.createdBy;
 
-    if (imageError) {
+    if (media.status === 'error') {
         return (
             <Pressable
                 disabled={!isOwner}
@@ -48,7 +45,7 @@ export default function GalleryTile({ media, itemSize, placeholder, onPress, onL
                 <Ionicons name="alert-circle-outline" size={24} color="red" />
 
                 {isOwner && (
-                    <Text style={{}}>Tap for Details</Text>
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: "#333333" }}>Tap for Details</Text>
                 )}
             </Pressable>
         );
@@ -68,12 +65,9 @@ export default function GalleryTile({ media, itemSize, placeholder, onPress, onL
                     contentFit="cover"
                     cachePolicy={'memory-disk'}
                     onError={(e) => {
-                        setImageError(e.error);
+                        handleImageError();
                     }}
-                    onDisplay={() => {
-                        onReady(mediaId);
-                        setImageError(null);
-                    }}
+                    onDisplay={() => onReady(mediaId)}
                 />
             )}
 

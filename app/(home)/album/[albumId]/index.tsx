@@ -59,38 +59,17 @@ export default function AlbumScreen() {
     const deleteAlbum = useMutation(api.albums.deleteAlbum);
     const cancelDeletion = useMutation(api.albums.cancelAlbumDeletion);
 
-    const handleMediaUpload = useCallback(async () => {
-        try {
-            const picker = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images', 'videos'],
-                allowsMultipleSelection: true,
-                exif: true,
-                videoMaxDuration: 60,
-            });
-
-            if (picker.canceled || !picker.assets || picker.assets.length === 0) return;
-
-            const { invalid, valid } = validateAssets(picker.assets);
-
-            if (invalid.length > 0) {
-                console.warn("Invalid assets: ", invalid.length);
-            }
-
-            await uploadMedia(valid);
-        } catch (e) {
-            console.error("Failed to upload media: ", e);
-            Alert.alert("Error", "Some photos failed to upload. Please try again.");
-        }
-    }, [albumId]);
-
     const handleMediaRetry = useCallback(async (mediaId: Id<'media'>) => {
         try {
+            const item = media.find(m => m._id === mediaId);
+            if (!item) throw new Error("Media not found");
+
             throw new Error("Not implemented");
         } catch (e) {
             console.error("Failed to retry media upload: ", e);
             Alert.alert("Failed Upload", "Failed to retry the upload. Please try again.");
         }
-    }, [albumId]);
+    }, [albumId, media]);
 
     const handleSettingsPress = useCallback(() => {
         settingsModalRef.current?.present();
@@ -114,10 +93,6 @@ export default function AlbumScreen() {
             setIsCreatingInvite(false);
         }
     }, [album, inviteCode, isCreatingInvite]);
-
-    const handleViewMembers = useCallback(() => {
-        settingsModalRef.current?.dismiss();
-    }, []);
 
     const handleLeaveAlbum = useCallback(async () => {
         setIsLeavingAlbum(true);
@@ -165,6 +140,30 @@ export default function AlbumScreen() {
         }
     }, [albumId, cancelDeletion]);
 
+    const handleMediaUpload = useCallback(async () => {
+        try {
+            const picker = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images', 'videos'],
+                allowsMultipleSelection: true,
+                exif: true,
+                videoMaxDuration: 60,
+            });
+
+            if (picker.canceled || !picker.assets || picker.assets.length === 0) return;
+
+            const { invalid, valid } = validateAssets(picker.assets);
+
+            if (invalid.length > 0) {
+                console.warn("Invalid assets: ", invalid.length);
+            }
+
+            await uploadMedia(valid);
+        } catch (e) {
+            console.error("Failed to upload media: ", e);
+            Alert.alert("Error", "Some photos failed to upload. Please try again.");
+        }
+    }, [albumId]);
+
     const renderMedia = useCallback(({ item, index }: { item: Media, index: number }) => {
         const inFlightUri: string | undefined = inFlightUploads[item.assetId] ?? undefined;
         if (inFlightUri) console.log("inFlight: ", index, item.filename);
@@ -182,7 +181,7 @@ export default function AlbumScreen() {
                 }}
                 onLongPress={() => { }}
                 onRetry={(mediaId) => {
-                    Alert.alert("Failed Upload", "Would you like to retry the upload?", [
+                    Alert.alert("Upload Failed", "This asset failed to upload. Would you like to retry?", [
                         { text: "Retry", onPress: () => handleMediaRetry(mediaId) },
                         { text: "Delete", style: 'destructive', onPress: () => { } },
                         { text: "Cancel", style: 'cancel' },
@@ -367,7 +366,9 @@ export default function AlbumScreen() {
 
                         <TouchableOpacity
                             style={styles.settingsOption}
-                            onPress={handleViewMembers}
+                            onPress={() => {
+                                settingsModalRef.current?.dismiss();
+                            }}
                         >
                             <View style={[styles.optionIcon, { backgroundColor: '#F0E6FF' }]}>
                                 <Ionicons name="people" size={20} color="#8E44AD" />

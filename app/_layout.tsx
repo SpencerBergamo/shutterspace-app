@@ -94,13 +94,13 @@ export default function RootLayout() {
             <SafeAreaProvider>
                 <GestureHandlerRootView style={{ flex: 1 }}>
                     <KeyboardProvider>
-                        <ActionSheetProvider>
-                            <BottomSheetModalProvider>
-                                <AppThemeProvider>
+                        <AppThemeProvider>
+                            <ActionSheetProvider>
+                                <BottomSheetModalProvider>
                                     <AppLayout onAuthReady={() => setAuthReady(true)} />
-                                </AppThemeProvider>
-                            </BottomSheetModalProvider>
-                        </ActionSheetProvider>
+                                </BottomSheetModalProvider>
+                            </ActionSheetProvider>
+                        </AppThemeProvider>
                     </KeyboardProvider>
                 </GestureHandlerRootView>
             </SafeAreaProvider>
