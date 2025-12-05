@@ -19,7 +19,7 @@ interface GalleryTileProps {
 
 export default function GalleryTile({ media, itemSize, placeholder, onPress, onLongPress, onRetry, onReady }: GalleryTileProps) {
     const { profileId } = useProfile();
-    const { requesting, thumbnail, handleImageError } = useSignedUrls({ media });
+    const { requesting, thumbnail } = useSignedUrls({ media });
 
     const mediaId = media._id;
     const type = media.identifier.type;
@@ -61,12 +61,11 @@ export default function GalleryTile({ media, itemSize, placeholder, onPress, onL
                 <Image
                     source={{ uri: thumbnail, cacheKey: mediaId }}
                     placeholder={placeholder}
+                    transition={200}
                     style={{ width: '100%', height: '100%' }}
                     contentFit="cover"
                     cachePolicy={'memory-disk'}
-                    onError={(e) => {
-                        handleImageError();
-                    }}
+                    onError={(e) => { }}
                     onDisplay={() => onReady(mediaId)}
                 />
             )}

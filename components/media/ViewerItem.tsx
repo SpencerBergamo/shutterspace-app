@@ -46,32 +46,7 @@ export default function ViewerItem({ media, isViewable }: ViewerItemProps) {
         );
     }
 
-    const renderImage = useCallback(() => {
-        return (
-            <View style={styles.container}>
-                <Image
-                    source={{ uri: thumbnail, cacheKey: media._id }}
-                    style={styles.image}
-                    contentFit="contain"
-                    cachePolicy={'memory-disk'}
-                />
-
-                {type === 'video' && !isPlaying && (
-                    <Pressable
-                        onPress={handleRequestVideo}
-                        style={styles.playButtonPosition}
-                        disabled={requestingVideo}
-                    >
-                        <View style={styles.playButton}>
-                            {requestingVideo ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="play-outline" size={32} color="white" />}
-                        </View>
-                    </Pressable>
-                )}
-            </View>
-        );
-    }, [thumbnail, type, isPlaying, handleRequestVideo, requestingVideo]);
-
-    const renderVideo = useCallback(() => {
+    if (videoUrl) {
         return (
             <View style={styles.container}>
                 <Video
@@ -87,9 +62,30 @@ export default function ViewerItem({ media, isViewable }: ViewerItemProps) {
                 />
             </View>
         );
-    }, [videoUrl, isPlaying]);
+    }
 
-    return videoUrl ? renderVideo() : renderImage();
+    return (
+        <View style={styles.container}>
+            <Image
+                source={{ uri: thumbnail, cacheKey: media._id }}
+                style={styles.image}
+                contentFit="contain"
+                cachePolicy={'memory-disk'}
+            />
+
+            {type === 'video' && !isPlaying && (
+                <Pressable
+                    onPress={handleRequestVideo}
+                    style={styles.playButtonPosition}
+                    disabled={requestingVideo}
+                >
+                    <View style={styles.playButton}>
+                        {requestingVideo ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="play-outline" size={32} color="white" />}
+                    </View>
+                </Pressable>
+            )}
+        </View>
+    );
 }
 
 export const styles = StyleSheet.create({

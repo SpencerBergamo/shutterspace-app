@@ -70,44 +70,15 @@ export const getVideoPlaybackURL = action({
     }
 });
 
-export const requestAlbumCoverURL = action({
-    args: {
-        identifier: v.union(
-            v.object({
-                type: v.literal('image'),
-                imageId: v.string(),
-                width: v.number(),
-                height: v.number(),
-            }),
-            v.object({
-                type: v.literal('video'),
-                videoUid: v.string(),
-                duration: v.number(),
-                width: v.optional(v.number()),
-                height: v.optional(v.number()),
-            }),
-        ),
-    },
-    handler: async (ctx, { identifier }): Promise<string> => {
+// ------------ Internal ------------
 
-        const type = identifier.type;
-        const cloudflareId = type === 'video' ? identifier.videoUid : identifier.imageId;
-
-        // Generate the appropriate URL based on media type
-        if (type === 'image') {
-            // Use a longer expiry for public album covers (24 hours)
-            // return await ctx.runAction(internal.cloudflare.imageDeliveryURL, {
-            //     imageId: cloudflareId,
-            //     expires: Math.floor(Date.now() / 1000) + 60 * 60 * 24
-            // });
-        } else if (type === 'video') {
-            const token = await ctx.runAction(internal.cloudflare.constructSignature, { videoUID: cloudflareId });
-            return `${DELIVERY_BASE_URL}/${token}/thumbnails/thumbnail.jpg`;
-        }
-
-        throw new Error('Unsupported media type');
-    },
-});
+export const getPublicThumbnail = internalAction({
+    args: { videoUID: v.string() },
+    handler: async (ctx, { videoUID }): Promise<string> => {
+        const token = await ctx.runAction(internal.cloudflare.constructSignature, { videoUID });
+        return `${DELIVERY_BASE_URL}/${token}/thumbnails/thumbnail.jpg`;
+    }
+})
 
 export const constructSignature = internalAction({
     args: {

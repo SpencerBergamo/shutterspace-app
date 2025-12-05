@@ -1,5 +1,4 @@
 import { Album } from "@/types/Album";
-import { Media } from "@/types/Media";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
@@ -162,19 +161,42 @@ export const cancelAlbumDeletion = mutation({
     }
 })
 
-// Public Album Cover Query
-export const getAlbumCover = query({
-    args: { albumId: v.id('albums') },
-    handler: async (ctx, { albumId }): Promise<Media | undefined> => {
-        const album = await ctx.db.get(albumId);
-        if (!album) throw new Error('Album not found');
+export const getAlbumCover = action({
+    args: {
+        albumId: v.id('albums'),
+        identifier: v.union(
+            v.object({
+                type: v.literal('image'),
+                imageId: v.string(),
+                width: v.number(),
+                height: v.number(),
+            }),
+            v.object({
+                type: v.literal('video'),
+                videoUid: v.string(),
+                duration: v.number(),
+                width: v.optional(v.number()),
+                height: v.optional(v.number()),
+            }),
+        ),
+    },
+    handler: async (ctx, { albumId, identifier }): Promise<string> => {
+        const type = identifier.type;
 
-        if (album.thumbnail) {
-            return await ctx.db.get(album.thumbnail) ?? undefined;
+        if (type === 'image') {
+            const imageId = identifier.imageId;
+
+            return await ctx.runAction(internal.r2.getPublicObject, {
+                objectKey: `album/${albumId}/${imageId}`
+            })
+        } else if (type === 'video') {
+            return await ctx.runAction(internal.cloudflare.getPublicThumbnail, {
+                videoUID: identifier.videoUid
+            });
         }
 
-        return undefined;
-    }
+        throw new Error('Unsupported media type');
+    },
 })
 
 // --- Internal ---

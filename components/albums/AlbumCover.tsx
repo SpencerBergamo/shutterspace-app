@@ -6,26 +6,30 @@ import { formatAlbumData } from '@/utils/formatters';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-interface AlbumCardProps {
+interface AlbumCoverProps {
     album: Album;
     width: number;
     height: number;
+    onPress: () => void;
 }
 
-export default function AlbumCover({ album, width, height }: AlbumCardProps) {
+export default function AlbumCover({ album, width, height, onPress }: AlbumCoverProps) {
     const { colors } = useAppTheme();
-    const albumCover = useQuery(api.albums.getAlbumCover, { albumId: album._id });
+
+    const albumCover = useQuery(api.media.getAlbumCoverMedia, { albumId: album._id });
     const { requesting, thumbnail: uri } = useSignedUrls({ media: albumCover ?? undefined });
+
     const [imageError, setImageError] = useState(false);
+
+
 
     return (
         <Pressable
             style={[styles.container, { width, height }]}
-            onPress={() => router.push(`album/${album._id}`)}
+            onPress={onPress}
         >
             {requesting ? (
                 <View style={[styles.thumbnail, styles.placeholder]}>

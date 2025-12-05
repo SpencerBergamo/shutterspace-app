@@ -1,4 +1,4 @@
-import AlbumCard from "@/components/albums/AlbumCover";
+import AlbumCover from "@/components/albums/AlbumCover";
 import { ASSETS } from "@/constants/assets";
 import { MAX_WIDTH } from "@/constants/styles";
 import { useAlbums } from '@/context/AlbumsContext';
@@ -86,10 +86,11 @@ export default function HomeScreen() {
                     </View>
                 }
                 renderItem={({ item }) => (
-                    <AlbumCard
+                    <AlbumCover
                         album={item}
                         width={gridConfig.tileWidth}
                         height={gridConfig.tileHeight}
+                        onPress={() => router.push(`/album/${item._id}`)}
                     />
                 )}
             />

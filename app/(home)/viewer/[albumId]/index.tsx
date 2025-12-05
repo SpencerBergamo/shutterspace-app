@@ -9,6 +9,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function MediaViewerScreen() {
     const { albumId, index } = useLocalSearchParams<{ albumId: Id<'albums'>, index: string }>();
+    console.log(!!albumId, index);
     const { media } = useMedia(albumId);
 
     // Scroll View State

@@ -5,7 +5,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v } from "convex/values";
 import { v4 as uuidv4 } from 'uuid';
 import { api } from "./_generated/api";
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 
 const s3 = new S3Client({
     region: 'auto',
@@ -55,4 +55,14 @@ export const getImageURL = action({
 
         return url;
     },
+})
+
+export const getPublicObject = internalAction({
+    args: { objectKey: v.string() },
+    handler: async (ctx, { objectKey }): Promise<string> => {
+        return await getSignedUrl(s3, new GetObjectCommand({
+            Bucket: "uploads",
+            Key: objectKey,
+        }), { expiresIn: 3600 });
+    }
 })

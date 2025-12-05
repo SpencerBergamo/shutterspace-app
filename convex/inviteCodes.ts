@@ -48,6 +48,7 @@ export const openInvite = query({
             .collect().then(media => media.length);
 
         return {
+            albumId: album._id,
             sender: sender.nickname,
             avatarUrl: undefined,
             title: album.title,

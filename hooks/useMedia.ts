@@ -5,6 +5,7 @@ import { Media, MediaIdentifier } from "@/types/Media";
 import { ValidatedAsset } from "@/utils/mediaHelper";
 import axios from "axios";
 import { useAction, useMutation, useQuery } from "convex/react";
+import { randomUUID } from "expo-crypto";
 import { useCallback, useState } from "react";
 
 interface UseMediaResult {
@@ -29,7 +30,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
             if (currentMedia !== undefined) {
                 const now = Date.now();
                 const newMedia: Media = {
-                    _id: crypto.randomUUID() as Id<'media'>,
+                    _id: randomUUID() as Id<'media'>,
                     _creationTime: now,
                     isDeleted: false,
                     createdBy: profileId,
@@ -75,6 +76,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
             let uploadUrl: string | undefined;
             let identifier: MediaIdentifier | undefined;
 
+
             if (asset.type === 'image') {
                 const { uploadUrl: imageUploadUrl, imageId } = await prepareImageUpload({
                     albumId,
@@ -90,8 +92,8 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                     height: asset.height,
                 }
 
-                const blob = await fetch(asset.uri).then(res => res.blob());
-                await axios.put(imageUploadUrl, blob, {
+                const buffer = await fetch(asset.uri).then(res => res.arrayBuffer());
+                await axios.put(imageUploadUrl, buffer, {
                     headers: { 'Content-Type': asset.mimeType },
                 }).catch(e => {
                     console.error('Failed to upload image to R2', e);

@@ -174,8 +174,8 @@ export default function AlbumScreen() {
                 placeholder={inFlightUri}
                 onPress={() => {
                     router.push({
-                        pathname: '../viewer/[mediaId]',
-                        params: { mediaId: albumId, index: index.toString() },
+                        pathname: '../viewer/[albumId]',
+                        params: { albumId: albumId, index: index.toString() },
                     })
                 }}
                 onLongPress={() => { }}

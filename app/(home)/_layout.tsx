@@ -43,7 +43,7 @@ function HomeLayout() {
                 headerShown: true,
             }} />
 
-            <Stack.Screen name="viewer/[mediaId]/index" options={{
+            <Stack.Screen name="viewer/[albumId]/index" options={{
                 headerShown: true,
                 animation: 'fade',
                 animationDuration: 200,

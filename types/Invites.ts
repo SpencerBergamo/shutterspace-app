@@ -13,6 +13,7 @@ export interface InviteCode {
 }
 
 export interface Invitation {
+    albumId: Id<'albums'>;
     sender: string;
     avatarUrl?: string;
     title: string;

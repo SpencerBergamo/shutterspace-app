@@ -1,28 +1,52 @@
 import { api } from "@/convex/_generated/api";
-import useAlbumCover from "@/hooks/useAlbumCover";
-import { MediaIdentifier } from "@/types/Media";
+import { Id } from "@/convex/_generated/dataModel";
 import { Ionicons } from "@expo/vector-icons";
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-function AlbumCover({ cover }: { cover: MediaIdentifier }) {
-    const { requesting, coverUrl } = useAlbumCover(cover);
+function AlbumCover({ albumId }: { albumId: Id<'albums'> }) {
+    const albumCover = useQuery(api.media.getAlbumCoverMedia, { albumId });
+    const getAlbumThumbnail = useAction(api.albums.getAlbumCover);
+
+    const [uri, setUri] = useState<string | undefined | null>(undefined);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                if (albumCover) {
+                    const url = await getAlbumThumbnail({ albumId, identifier: albumCover.identifier });
+                    setUri(url);
+                }
+            } catch (e) {
+                console.error("Error requesting album cover: ", e);
+                setUri(null);
+            }
+        })();
+    }, [albumCover, albumId]);
+
+    if (uri === null) {
+        return (
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '60%', justifyContent: 'center', alignItems: 'center' }}>
+                <Ionicons name="image-outline" size={40} color="grey" />
+            </View>
+        );
+    };
 
     return (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '60%' }}>
-            {requesting ? (
+            {uri === undefined ? (
                 <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="small" color="grey" />
                 </View>
             ) : (
                 <View style={{ width: '100%', height: '100%' }}>
                     <Image
-                        source={{ uri: coverUrl }}
+                        source={{ uri }}
                         style={{ width: '100%', height: '100%' }}
                         contentFit="cover"
                     />
@@ -44,6 +68,7 @@ export default function InviteScreen() {
 
     // Convex
     const invitation = useQuery(api.inviteCodes.openInvite, code ? { code } : "skip");
+
     const acceptInvite = useMutation(api.inviteCodes.acceptInvite);
 
     const albumCover = invitation?.cover;
@@ -63,7 +88,7 @@ export default function InviteScreen() {
                 setIsAcceptingInvite(false);
             }
         } else if (!isAuthenticated && invitation) {
-            router.push('/sign-in?redirect=/invite/' + code);
+            router.replace('/sign-up');
         }
 
     }, [isAuthenticated, invitation, code, acceptInvite]);
@@ -104,9 +129,7 @@ export default function InviteScreen() {
                 headerTitle: invitation?.title ?? 'Loading...',
             }} />
 
-            {albumCover && <AlbumCover
-                cover={albumCover}
-            />}
+            {albumCover && <AlbumCover albumId={invitation.albumId} />}
 
             <ScrollView
                 style={{ flex: 1 }}

@@ -1,3 +1,4 @@
+import { Media } from "@/types/Media";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { internalMutation, mutation, query } from "./_generated/server";
@@ -16,6 +17,17 @@ export const getMediaForAlbum = query({
             .collect();
     }
 });
+
+export const getAlbumCoverMedia = query({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }): Promise<Media | null> => {
+        const album = await ctx.db.get(albumId);
+        if (!album) return null;
+        if (!album.thumbnail) return null;
+
+        return await ctx.db.get(album.thumbnail) ?? null;
+    }
+})
 
 export const createMedia = mutation({
     args: {
@@ -60,7 +72,7 @@ export const createMedia = mutation({
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new Error("User Profile Not Found");
 
-        await ctx.db.insert("media", {
+        const mediaId = await ctx.db.insert("media", {
             albumId: args.albumId,
             createdBy: profile._id,
             assetId: args.assetId,
@@ -72,6 +84,12 @@ export const createMedia = mutation({
             status: args.status,
             isDeleted: false,
         });
+
+        if (args.setThumbnail) {
+            await ctx.db.patch(args.albumId, {
+                thumbnail: mediaId,
+            })
+        }
     },
 })
 
