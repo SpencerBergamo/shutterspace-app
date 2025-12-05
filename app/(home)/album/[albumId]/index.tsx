@@ -18,8 +18,9 @@ import { useMutation, useQuery } from "convex/react";
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Images } from "lucide-react-native";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Dimensions, FlatList, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const NUM_COLUMNS = 3;
@@ -47,6 +48,9 @@ export default function AlbumScreen() {
     const flatListRef = useRef<FlatList>(null);
     const settingsModalRef = useRef<BottomSheetModal>(null);
 
+    // Animation
+    const headerHeight = useSharedValue(0);
+
     // States
     const [isCreatingInvite, setIsCreatingInvite] = useState(false);
     const [isLeavingAlbum, setIsLeavingAlbum] = useState(false);
@@ -58,6 +62,20 @@ export default function AlbumScreen() {
     const leaveAlbum = useMutation(api.albumMembers.leaveAlbum);
     const deleteAlbum = useMutation(api.albums.deleteAlbum);
     const cancelDeletion = useMutation(api.albums.cancelAlbumDeletion);
+
+    // Animate header based on in-flight uploads
+    const numInFlightUploads = Object.keys(inFlightUploads).length;
+    useEffect(() => {
+        headerHeight.value = withTiming(numInFlightUploads > 0 ? 60 : 0, { duration: 300 });
+    }, [numInFlightUploads]);
+
+    const animatedHeaderStyle = useAnimatedStyle(() => {
+        return {
+            height: headerHeight.value,
+            opacity: withTiming(numInFlightUploads > 0 ? 1 : 0, { duration: 300 }),
+            overflow: 'hidden',
+        };
+    });
 
     const handleMediaRetry = useCallback(async (mediaId: Id<'media'>) => {
         try {
@@ -156,6 +174,8 @@ export default function AlbumScreen() {
                 console.warn("Invalid assets: ", invalid.length);
             }
 
+
+
             await uploadMedia(valid);
         } catch (e) {
             console.error("Failed to upload media: ", e);
@@ -249,6 +269,16 @@ export default function AlbumScreen() {
                         <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
                     </View>
                 }
+                ListHeaderComponent={() => (
+                    <Animated.View style={[animatedHeaderStyle, styles.uploadHeader]}>
+                        <View style={styles.uploadHeaderContent}>
+                            <Ionicons name="cloud-upload-outline" size={24} color={colors.primary || "#007AFF"} />
+                            <Text style={styles.uploadHeaderText}>
+                                Uploading {numInFlightUploads} {numInFlightUploads === 1 ? 'item' : 'items'}...
+                            </Text>
+                        </View>
+                    </Animated.View>
+                )}
                 renderItem={renderMedia}
             />
 
@@ -528,6 +558,25 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+
+    // Upload Header Styles
+    uploadHeader: {
+        backgroundColor: '#F0F8FF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
+    },
+    uploadHeaderContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+        paddingVertical: 16,
+    },
+    uploadHeaderText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#333',
     },
 
     // Modal Styles

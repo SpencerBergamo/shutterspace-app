@@ -3,7 +3,7 @@
 import axios from "axios";
 import { v } from "convex/values";
 import crypto from 'crypto';
-import { api, internal } from "./_generated/api";
+import { api } from "./_generated/api";
 import { action, internalAction } from "./_generated/server";
 
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
@@ -49,7 +49,7 @@ export const getVideoThumbnailURL = action({
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
 
-        const token = await ctx.runAction(internal.cloudflare.constructSignature, { videoUID });
+        const token = await constructSig(videoUID);
 
         return `${DELIVERY_BASE_URL}/${token}/thumbnails/thumbnail.jpg`;
     }
@@ -64,7 +64,7 @@ export const getVideoPlaybackURL = action({
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
 
-        const token = await ctx.runAction(internal.cloudflare.constructSignature, { videoUID });
+        const token = await constructSig(videoUID);
 
         return `${DELIVERY_BASE_URL}/${token}/manifest/video.m3u8`;
     }
@@ -75,54 +75,47 @@ export const getVideoPlaybackURL = action({
 export const getPublicThumbnail = internalAction({
     args: { videoUID: v.string() },
     handler: async (ctx, { videoUID }): Promise<string> => {
-        const token = await ctx.runAction(internal.cloudflare.constructSignature, { videoUID });
+        const token = await constructSig(videoUID);
         return `${DELIVERY_BASE_URL}/${token}/thumbnails/thumbnail.jpg`;
     }
 })
 
-export const constructSignature = internalAction({
-    args: {
-        videoUID: v.string(),
-    },
-    handler: async (_ctx, { videoUID }) => {
+async function constructSig(videoUID: string) {
+    const base64PEM = process.env.CLOUDFLARE_STREAM_PEM;
+    const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;
 
-        const base64PEM = process.env.CLOUDFLARE_STREAM_PEM;
-        const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;
+    if (!base64PEM || !keyID) throw new Error('Missing PEM or Key ID');
 
-        if (!base64PEM || !keyID) throw new Error('Missing PEM or Key ID');
+    const pem = Buffer.from(base64PEM, 'base64').toString('utf8');
+    const expiresIn = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
 
-        const pem = Buffer.from(base64PEM, 'base64').toString('utf8');
-        const expiresIn = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
+    const header = {
+        alg: 'RS256',
+        kid: keyID,
+    };
 
-        const header = {
-            alg: 'RS256',
-            kid: keyID,
-        };
+    const payload = {
+        sub: videoUID,
+        kid: keyID,
+        exp: expiresIn,
+    };
 
-        const payload = {
-            sub: videoUID,
-            kid: keyID,
-            exp: expiresIn,
-        };
+    const b64url = (buf: Buffer): string => {
+        return buf
+            .toString('base64')
+            .replace(/=/g, "")
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_");
+    }
 
-        const b64url = (buf: Buffer): string => {
-            return buf
-                .toString('base64')
-                .replace(/=/g, "")
-                .replace(/\+/g, "-")
-                .replace(/\//g, "_");
-        }
+    const encodedHeader = b64url(Buffer.from(JSON.stringify(header)));
+    const encodedPayload = b64url(Buffer.from(JSON.stringify(payload)));
+    const signingInput = `${encodedHeader}.${encodedPayload}`;
 
-        const encodedHeader = b64url(Buffer.from(JSON.stringify(header)));
-        const encodedPayload = b64url(Buffer.from(JSON.stringify(payload)));
-        const signingInput = `${encodedHeader}.${encodedPayload}`;
+    const signer = crypto.createSign('RSA-SHA256');
+    signer.update(signingInput);
+    const signatureBuffer = signer.sign(pem);
+    const signature = b64url(signatureBuffer);
 
-        const signer = crypto.createSign('RSA-SHA256');
-        signer.update(signingInput);
-        const signatureBuffer = signer.sign(pem);
-        const signature = b64url(signatureBuffer);
-
-        return `${signingInput}.${signature}`;
-    },
-});
-
+    return `${signingInput}.${signature}`;
+}

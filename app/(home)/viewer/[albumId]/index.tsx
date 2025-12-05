@@ -3,18 +3,19 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useMedia } from "@/hooks/useMedia";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function MediaViewerScreen() {
     const { albumId, index } = useLocalSearchParams<{ albumId: Id<'albums'>, index: string }>();
-    console.log(!!albumId, index);
     const { media } = useMedia(albumId);
 
     // Scroll View State
     const initialIndex = parseInt(index);
     const [currentIndex, setCurrentIndex] = useState<number>(initialIndex);
+    const [isZoomed, setIsZoomed] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
 
     const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -37,14 +38,14 @@ export default function MediaViewerScreen() {
     }, [initialIndex]);
 
     return (
-        <View style={styles.container}>
+        <GestureHandlerRootView style={styles.container}>
             <Stack.Screen
                 options={{
                     headerTitle: `${currentIndex + 1} / ${media.length}`,
                     headerTransparent: true,
                     headerTintColor: 'white',
                     headerStyle: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                        backgroundColor: 'transparent',
                     },
                 }}
             />
@@ -53,6 +54,7 @@ export default function MediaViewerScreen() {
                 ref={scrollViewRef}
                 horizontal
                 pagingEnabled
+                scrollEnabled={!isZoomed}
                 showsHorizontalScrollIndicator={false}
                 onScroll={onScroll}
                 scrollEventThrottle={16}
@@ -63,10 +65,11 @@ export default function MediaViewerScreen() {
                         key={item._id}
                         media={item}
                         isViewable={currentIndex === index}
+                        onZoomChange={setIsZoomed}
                     />
                 ))}
             </ScrollView>
-        </View>
+        </GestureHandlerRootView>
     );
 }
 

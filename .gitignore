@@ -4,7 +4,7 @@
 node_modules/
 
 android/
-ios/
+# ios/
 credentials/
 credentials.json
 
