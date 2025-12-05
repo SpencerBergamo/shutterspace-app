@@ -1,7 +1,10 @@
 'use node';
 
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { v } from "convex/values";
+import { v4 as uuidv4 } from 'uuid';
+import { api } from "./_generated/api";
 import { action } from "./_generated/server";
 
 const s3 = new S3Client({
@@ -13,17 +16,43 @@ const s3 = new S3Client({
     },
 });
 
+export const prepareImageUpload = action({
+    args: {
+        albumId: v.id('albums'),
+        filename: v.string(),
+        contentType: v.string(),
+    },
+    handler: async (ctx, { albumId, filename, contentType }): Promise<{ uploadUrl: string, imageId: string }> => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership === 'not-a-member') throw new Error("Not a member of this album");
 
-export const getUploadURL = action({
-    args: {},
-    handler: async () => {
+        const imageId = `${uuidv4()}.${filename.split('.').pop()}`; // should be uuidv4 + file extension
+        console.log("imageId: ", imageId);
 
-
-        const url = await getSignedUrl(s3, new PutObjectCommand({
-            Bucket: '',
-            Key: '',
+        const uploadUrl = await getSignedUrl(s3, new PutObjectCommand({
+            Bucket: "uploads",
+            Key: `album/${albumId}/${imageId}`,
+            ContentType: contentType,
         }), { expiresIn: 3600 });
 
+        return { uploadUrl, imageId };
+    }
+})
 
+export const getImageURL = action({
+    args: {
+        albumId: v.id('albums'),
+        imageId: v.string(),
+    },
+    handler: async (ctx, { albumId, imageId }): Promise<string> => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership === 'not-a-member') throw new Error("Not a member of this album");
+
+        const url = await getSignedUrl(s3, new GetObjectCommand({
+            Bucket: "uploads",
+            Key: `album/${albumId}/${imageId}`,
+        }), { expiresIn: 3600 });
+
+        return url;
     },
 })

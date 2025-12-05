@@ -1,94 +1,25 @@
 import { v } from "convex/values";
-import { MediaIdentifier } from "../types/Media";
-import { api, internal } from "./_generated/api";
-import { action, internalMutation, mutation, query } from "./_generated/server";
+import { api } from "./_generated/api";
+import { internalMutation, mutation, query } from "./_generated/server";
 
-export const prepareUpload = action({
+export const getMediaForAlbum = query({
     args: {
-        albumId: v.id('albums'),
-        assetId: v.string(),
-        filename: v.string(),
-        type: v.union(v.literal('image'), v.literal('video')),
-        width: v.optional(v.number()),
-        height: v.optional(v.number()),
-        duration: v.optional(v.number()),
-        size: v.optional(v.number()),
-        dateTaken: v.optional(v.string()),
-        location: v.optional(v.object({
-            lat: v.number(),
-            lng: v.number(),
-            name: v.optional(v.string()),
-            address: v.optional(v.string()),
-        })),
-        isLast: v.boolean(),
-    }, handler: async (ctx, { albumId, assetId, filename, type, width, height, duration, size, dateTaken, location, isLast = false }): Promise<string> => {
-        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        albumId: v.id("albums"),
+        profileId: v.id('profiles'),
+    }, handler: async (ctx, args) => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId: args.albumId });
         if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
 
-        const profile = await ctx.runQuery(api.profile.getProfile);
-        if (!profile) throw new Error("User Not Found");
-
-        let uploadUrl: string | undefined;
-        let identifier: MediaIdentifier | undefined;
-
-        if (type === 'image') {
-            const response = await ctx.runAction(internal.cloudflare.requestImageUploadURL, { filename });
-
-            uploadUrl = response.result.uploadURL;
-            identifier = {
-                type: 'image',
-                imageId: response.result.id,
-                width: width ?? 0,
-                height: height ?? 0,
-            }
-
-        } else if (type === 'video') {
-            const response = await ctx.runAction(internal.cloudflare.requestVideoUploadURL, { filename });
-
-            uploadUrl = response.result.uploadURL;
-            identifier = {
-                type: 'video',
-                videoUid: response.result.uid,
-                duration: duration ?? 0,
-                width: width ?? undefined,
-                height: height ?? undefined,
-            }
-        } else {
-            throw new Error("Invalid Media Type");
-        }
-
-        if (!uploadUrl || !identifier) {
-            console.error(`UploadURL or Identifier is missing: \nUploadURL: ${uploadUrl}\nIdentifier: ${identifier}`);
-            throw new Error("Something went wrong");
-        }
-
-        const mediaId = await ctx.runMutation(internal.media.createMedia, {
-            albumId,
-            uploaderId: profile._id,
-            assetId,
-            filename,
-            identifier,
-            size,
-            dateTaken,
-            location,
-            status: type === 'video' ? 'pending' : 'ready',
-        });
-
-        if (isLast) {
-            await ctx.runMutation(internal.albums.updateThumbnail, {
-                albumId,
-                thumbnail: mediaId,
-            })
-        }
-
-        return uploadUrl;
+        return await ctx.db.query('media')
+            .withIndex('by_albumId', q => q.eq('albumId', args.albumId))
+            .order('desc')
+            .collect();
     }
 });
 
-export const createMedia = internalMutation({
+export const createMedia = mutation({
     args: {
         albumId: v.id('albums'),
-        uploaderId: v.id('profiles'),
         assetId: v.string(),
         filename: v.string(),
         identifier: v.union(
@@ -106,6 +37,13 @@ export const createMedia = internalMutation({
                 height: v.optional(v.number()),
             }),
         ),
+        setThumbnail: v.optional(v.boolean()),
+        status: v.union(
+            v.literal('pending'),
+            v.literal('ready'),
+            v.literal('error'),
+        ),
+
         size: v.optional(v.number()),
         dateTaken: v.optional(v.string()),
         location: v.optional(v.object({
@@ -114,15 +52,17 @@ export const createMedia = internalMutation({
             name: v.optional(v.string()),
             address: v.optional(v.string()),
         })),
-        status: v.union(
-            v.literal('pending'),
-            v.literal('ready'),
-            v.literal('error'),
-        ),
-    }, handler: async (ctx, args) => {
-        return await ctx.db.insert("media", {
+    },
+    handler: async (ctx, args) => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId: args.albumId });
+        if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
+
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) throw new Error("User Profile Not Found");
+
+        await ctx.db.insert("media", {
             albumId: args.albumId,
-            createdBy: args.uploaderId,
+            createdBy: profile._id,
             assetId: args.assetId,
             filename: args.filename,
             identifier: args.identifier,
@@ -132,28 +72,8 @@ export const createMedia = internalMutation({
             status: args.status,
             isDeleted: false,
         });
-    }
-});
-
-// TODO: add comments and likes to the query later
-export const getMediaForAlbum = query({
-    args: {
-        albumId: v.id("albums"),
-        profileId: v.id('profiles'),
-    }, handler: async (ctx, args) => {
-        const membership = await ctx.db.query('albumMembers')
-            .withIndex('by_album_profileId', q => q.eq('albumId', args.albumId)
-                .eq('profileId', args.profileId))
-            .first();
-
-        if (!membership) throw new Error('You are not a member of this album');
-
-        return await ctx.db.query('media')
-            .withIndex('by_albumId', q => q.eq('albumId', args.albumId))
-            .order('desc')
-            .collect();
-    }
-});
+    },
+})
 
 export const deleteMedia = mutation({
     args: {

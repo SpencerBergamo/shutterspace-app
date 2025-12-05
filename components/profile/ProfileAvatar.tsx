@@ -1,4 +1,4 @@
-import useAppStyles from "@/hooks/useAppStyles";
+import { useAppTheme } from "@/context/AppThemeContext";
 import { Image } from "expo-image";
 import { ColorValue, StyleSheet, Text, TouchableOpacity } from "react-native";
 
@@ -13,13 +13,13 @@ interface ProfileAvatarProps {
 }
 
 export default function ProfileAvatar({ avatarUrl, nickname, size, borderRadius, onPress }: ProfileAvatarProps) {
-    const appStyles = useAppStyles();
+    const { colors } = useAppTheme();
 
     return (
         <TouchableOpacity onPress={onPress} style={[styles.container, {
             width: size,
             height: size,
-            backgroundColor: appStyles.colorScheme.accent,
+            backgroundColor: colors.secondary + '60',
             borderRadius: borderRadius || 16,
         }]}>
             {avatarUrl && avatarUrl !== '' ? (

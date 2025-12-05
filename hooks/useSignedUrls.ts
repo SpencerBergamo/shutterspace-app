@@ -24,9 +24,9 @@ interface UseSignedUrlsResult {
 }
 
 export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedUrlsResult {
-    const requestImageURL = useAction(api.cloudflare.requestImageURL);
-    const requestVideoThumbnailURL = useAction(api.cloudflare.requestVideoThumbnailURL);
-    const requestVideoPlaybackURL = useAction(api.cloudflare.requestVideoPlaybackURL);
+    const getImageURL = useAction(api.r2.getImageURL);
+    const getVideoThumbnailURL = useAction(api.cloudflare.getVideoThumbnailURL);
+    const getVideoPlaybackURL = useAction(api.cloudflare.getVideoPlaybackURL);
 
     const [requesting, setRequesting] = useState<boolean>(true);
     const [requestingVideo, setRequestingVideo] = useState<boolean>(false);
@@ -48,7 +48,7 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
                 if (entity && entity.expiresAt > Date.now()) return entity.url;
             }
 
-            const url = await requestVideoPlaybackURL({ albumId, videoUID: cloudflareId });
+            const url = await getVideoPlaybackURL({ albumId, videoUID: cloudflareId });
             if (url) {
                 const newEntity: VideoCache = {
                     url,
@@ -56,6 +56,7 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
                     expiresAt: Date.now() + 1000 * 60 * 60, // 1 hour
                 }
 
+                // replace existing item in cache with new one
                 await AsyncStorage.setItem(media._id.toString(), JSON.stringify(newEntity));
                 setRequestingVideo(false);
                 return url;
@@ -68,7 +69,7 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
         } finally {
             setRequestingVideo(false);
         }
-    }, [requestVideoPlaybackURL, media]);
+    }, [media, getVideoPlaybackURL]);
 
     const handleImageError = useCallback(async () => {
         setRequesting(true);
@@ -105,13 +106,13 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
 
                 let requestUrl: string | undefined | null;
                 if (type === 'image') {
-                    requestUrl = await requestImageURL({ albumId, imageId: cloudflareId });
+                    requestUrl = await getImageURL({ albumId, imageId: cloudflareId });
                 } else if (type === 'video') {
-                    requestUrl = await requestVideoThumbnailURL({ albumId, videoUID: cloudflareId });
+                    requestUrl = await getVideoThumbnailURL({ albumId, videoUID: cloudflareId });
                 } else {
                     setRequesting(false);
                     setThumbnail(null);
-                    throw new Error("Unsupported media type");
+                    return;
                 }
 
                 setThumbnail(requestUrl);
@@ -122,7 +123,7 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
                 setRequesting(false);
             }
         })();
-    }, [media, requestImageURL, requestVideoThumbnailURL]);
+    }, [media, getImageURL, getVideoThumbnailURL]);
 
 
     return { requesting, thumbnail, handleImageError, requestingVideo, requestVideo };

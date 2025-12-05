@@ -150,7 +150,6 @@ export default function AlbumScreen() {
             });
 
             if (picker.canceled || !picker.assets || picker.assets.length === 0) return;
-
             const { invalid, valid } = validateAssets(picker.assets);
 
             if (invalid.length > 0) {

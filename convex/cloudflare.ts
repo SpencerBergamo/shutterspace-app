@@ -10,80 +10,37 @@ const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const UPLOAD_BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}`;
 const DELIVERY_BASE_URL = `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com`;
 
-
-// ------------------------------------------------------------
-// UploadURLs
-// ------------------------------------------------------------
-
-export const requestImageUploadURL = internalAction({
+export const prepareVideoUpload = action({
     args: {
+        albumId: v.id('albums'),
         filename: v.string(),
-    }, handler: async (_ctx, { filename }) => {
+    },
+    handler: async (ctx, { albumId, filename }): Promise<{ uploadURL: string, uid: string }> => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership === 'not-a-member') throw new Error("Not a member of this album");
 
-        const url = `${UPLOAD_BASE_URL}/images/v2/direct_upload`;
-        const form = new FormData();
-        form.append('requireSignedURLs', 'true');
-        form.append('metadata', JSON.stringify({ filename }));
-
-        const response = await axios.post(url, form, {
+        const url = `${UPLOAD_BASE_URL}/stream/direct_upload`;
+        const response = await axios.post(url, {
+            maxDurationSeconds: 60,
+            requireSignedURLs: true,
+            meta: { name: filename },
+        }, {
             headers: {
                 Authorization: `Bearer ${API_TOKEN}`,
             }
-        });
+        })
 
-        return response.data;
-    }
-});
+        if (!response.data || response.status !== 200) {
+            console.warn("Cloudflare video upload error: ", response.data);
+            throw new Error("Invalid response");
+        };
 
-export const requestVideoUploadURL = internalAction({
-    args: {
-        filename: v.string(),
-    }, handler: async (_ctx, { filename }) => {
-        try {
-            const url = `${UPLOAD_BASE_URL}/stream/direct_upload`;
+        const { uploadURL, uid }: { uploadURL: string, uid: string } = response.data.result;
+        return { uploadURL, uid };
+    },
+})
 
-            const response = await axios.post(url, {
-                maxDurationSeconds: 60,
-                requireSignedURLs: true,
-                meta: { name: filename },
-            }, {
-                headers: {
-                    Authorization: `Bearer ${API_TOKEN}`
-                }
-            });
-
-            if (!response.data || response.status !== 200) {
-                console.warn("Cloudflare video upload error: ", response.data);
-                throw new Error("Invalid response");
-            };
-
-            return response.data;
-        } catch (e) {
-            if (axios.isAxiosError(e)) {
-                console.error("Cloudflare video upload error: ", e.response?.data);
-            }
-            throw e;
-        }
-    }
-});
-
-// ------------------------------------------------------------
-// Cloudflare Delivery URLs/Tokens
-// ------------------------------------------------------------
-
-export const requestImageURL = action({
-    args: {
-        albumId: v.id('albums'),
-        imageId: v.string(), // image_id
-    }, handler: async (ctx, { albumId, imageId }): Promise<string> => {
-        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-        if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
-
-        return await ctx.runAction(internal.cloudflare.imageDeliveryURL, { imageId });
-    }
-});
-
-export const requestVideoThumbnailURL = action({
+export const getVideoThumbnailURL = action({
     args: {
         albumId: v.id('albums'),
         videoUID: v.string(),
@@ -92,13 +49,13 @@ export const requestVideoThumbnailURL = action({
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
 
-        const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, { videoUID });
+        const token = await ctx.runAction(internal.cloudflare.constructSignature, { videoUID });
 
         return `${DELIVERY_BASE_URL}/${token}/thumbnails/thumbnail.jpg`;
     }
 });
 
-export const requestVideoPlaybackURL = action({
+export const getVideoPlaybackURL = action({
     args: {
         albumId: v.id('albums'),
         videoUID: v.string(),
@@ -107,7 +64,7 @@ export const requestVideoPlaybackURL = action({
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
 
-        const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, { videoUID });
+        const token = await ctx.runAction(internal.cloudflare.constructSignature, { videoUID });
 
         return `${DELIVERY_BASE_URL}/${token}/manifest/video.m3u8`;
     }
@@ -139,51 +96,24 @@ export const requestAlbumCoverURL = action({
         // Generate the appropriate URL based on media type
         if (type === 'image') {
             // Use a longer expiry for public album covers (24 hours)
-            return await ctx.runAction(internal.cloudflare.imageDeliveryURL, {
-                imageId: cloudflareId,
-                expires: Math.floor(Date.now() / 1000) + 60 * 60 * 24
-            });
+            // return await ctx.runAction(internal.cloudflare.imageDeliveryURL, {
+            //     imageId: cloudflareId,
+            //     expires: Math.floor(Date.now() / 1000) + 60 * 60 * 24
+            // });
         } else if (type === 'video') {
-            const token = await ctx.runAction(internal.cloudflare.videoPlaybackToken, {
-                videoUID: cloudflareId,
-                expires: Math.floor(Date.now() / 1000) + 60 * 60 * 24
-            });
+            const token = await ctx.runAction(internal.cloudflare.constructSignature, { videoUID: cloudflareId });
             return `${DELIVERY_BASE_URL}/${token}/thumbnails/thumbnail.jpg`;
         }
 
         throw new Error('Unsupported media type');
     },
-})
-
-// ------------------------------------------------------------
-// Internal Actions
-// ------------------------------------------------------------
-
-export const imageDeliveryURL = internalAction({
-    args: {
-        imageId: v.string(),
-        expires: v.optional(v.number()),
-    },
-    handler: async (_ctx, { imageId, expires }): Promise<string> => {
-        const sigKey = process.env.CLOUDFLARE_IMAGE_SIG_TOKEN;
-        const accountHash = process.env.CLOUDFLARE_ACCOUNT_HASH;
-
-        const expiry = expires ?? Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
-
-        const path = `/${accountHash}/${imageId}/public?exp=${expiry}`;
-
-        const sig = crypto.createHmac('sha256', sigKey).update(path).digest('hex');
-
-        return `https://imagedelivery.net${path}&sig=${sig}`;
-    }
 });
 
-export const videoPlaybackToken = internalAction({
+export const constructSignature = internalAction({
     args: {
         videoUID: v.string(),
-        expires: v.optional(v.number()),
     },
-    handler: async (_ctx, { videoUID, expires }) => {
+    handler: async (_ctx, { videoUID }) => {
 
         const base64PEM = process.env.CLOUDFLARE_STREAM_PEM;
         const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;

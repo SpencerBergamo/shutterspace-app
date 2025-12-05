@@ -38,6 +38,14 @@ export default function ViewerItem({ media, isViewable }: ViewerItemProps) {
         }
     }, [requestVideo]);
 
+    if (!thumbnail) {
+        return (
+            <View style={styles.container}>
+                <Ionicons name="alert-circle-outline" size={24} color="white" />
+            </View>
+        );
+    }
+
     const renderImage = useCallback(() => {
         return (
             <View style={styles.container}>
@@ -80,14 +88,6 @@ export default function ViewerItem({ media, isViewable }: ViewerItemProps) {
             </View>
         );
     }, [videoUrl, isPlaying]);
-
-    if (!thumbnail) {
-        return (
-            <View style={styles.container}>
-                <Ionicons name="alert-circle-outline" size={24} color="white" />
-            </View>
-        );
-    }
 
     return videoUrl ? renderVideo() : renderImage();
 }

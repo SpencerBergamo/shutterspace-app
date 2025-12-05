@@ -18,6 +18,7 @@ import type * as http from "../http.js";
 import type * as inviteCodes from "../inviteCodes.js";
 import type * as media from "../media.js";
 import type * as profile from "../profile.js";
+import type * as r2 from "../r2.js";
 import type * as shareCodes from "../shareCodes.js";
 
 import type {
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   inviteCodes: typeof inviteCodes;
   media: typeof media;
   profile: typeof profile;
+  r2: typeof r2;
   shareCodes: typeof shareCodes;
 }>;
 
