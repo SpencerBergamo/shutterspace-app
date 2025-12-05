@@ -316,6 +316,7 @@ export default function AlbumScreen() {
                     {width < MAX_WIDTH && (<AlbumInfoCard
                         album={album}
                         cover={media.find(m => m._id === album.thumbnail)}
+                        mediaCount={media.length}
                     />)}
 
                     {/* Album Info */}
@@ -418,7 +419,9 @@ export default function AlbumScreen() {
                             style={styles.settingsOption}
                             onPress={() => {
                                 settingsModalRef.current?.dismiss();
-                                // Navigate to album settings
+                                setTimeout(() => {
+                                    Alert.alert("Album Settings", "Where you will be able to change the album settings, including privacy, notifications, and more. Feature Coming Soon!");
+                                }, 200);
                             }}
                         >
                             <View style={[styles.optionIcon, { backgroundColor: '#F5F5F5' }]}>
@@ -435,7 +438,9 @@ export default function AlbumScreen() {
                             style={styles.settingsOption}
                             onPress={() => {
                                 settingsModalRef.current?.dismiss();
-                                // Navigate to download options
+                                setTimeout(() => {
+                                    Alert.alert("Download All", "Feature Coming Soon!");
+                                }, 200);
                             }}
                         >
                             <View style={[styles.optionIcon, { backgroundColor: '#E5F6FF' }]}>
@@ -593,7 +598,7 @@ const styles = StyleSheet.create({
     },
     infoRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: 8,
     },
     infoText: {

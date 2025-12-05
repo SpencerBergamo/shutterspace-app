@@ -9,9 +9,10 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 interface AlbumInfoCardProps {
     album: Album;
     cover: Media | undefined;
+    mediaCount: number;
 }
 
-export default function AlbumInfoCard({ album, cover }: AlbumInfoCardProps) {
+export default function AlbumInfoCard({ album, cover, mediaCount }: AlbumInfoCardProps) {
     const { colors } = useAppTheme();
     const { requesting, thumbnail: coverUrl } = useSignedUrls({ media: cover });
 
@@ -41,12 +42,12 @@ export default function AlbumInfoCard({ album, cover }: AlbumInfoCardProps) {
                 <View style={styles.overlayStats}>
                     <View style={styles.statBadge}>
                         <Ionicons name="images" size={14} color="white" />
-                        <Text style={styles.statText}>1</Text>
+                        <Text style={styles.statText}>{mediaCount}</Text>
                     </View>
-                    <View style={styles.statBadge}>
+                    {/* <View style={styles.statBadge}>
                         <Ionicons name="people" size={14} color="white" />
-                        <Text style={styles.statText}>1</Text>
-                    </View>
+                        <Text style={styles.statText}>{memberCount}</Text>
+                    </View> */}
                 </View>
             </View>
         </View>
