@@ -1,4 +1,4 @@
-import { MemberRole } from "@/types/Album";
+import { MemberRole } from "@/src/types/Album";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";

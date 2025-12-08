@@ -1,4 +1,4 @@
-import { Friend, Friendship } from "@/types/Friend";
+import { Friend, Friendship } from "@/src/types/Friend";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";

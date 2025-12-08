@@ -1,4 +1,4 @@
-import { Profile } from "@/types/Profile";
+import { Profile } from "@/src/types/Profile";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { internalQuery, mutation, query } from "./_generated/server";

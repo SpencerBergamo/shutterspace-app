@@ -1,5 +1,5 @@
-import { Invitation } from "@/types/Invites";
-import { MediaIdentifier } from "@/types/Media";
+import { Invitation } from "@/src/types/Invites";
+import { MediaIdentifier } from "@/src/types/Media";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";

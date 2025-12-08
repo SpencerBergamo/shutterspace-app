@@ -1,4 +1,4 @@
-import { Media } from "@/types/Media";
+import { Media } from "@/src/types/Media";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { internalMutation, mutation, query } from "./_generated/server";
