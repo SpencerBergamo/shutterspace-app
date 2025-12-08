@@ -6,14 +6,24 @@ import { ValidatedAsset } from "@/utils/mediaHelper";
 import axios from "axios";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { randomUUID } from "expo-crypto";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+export type PendingMedia = {
+    assetId: string;
+    uri: string;
+    filename: string;
+    type: 'image' | 'video';
+    width: number;
+    height: number;
+    duration?: number;
+    timestamp: number;
+};
 
 interface UseMediaResult {
     media: Media[];
+    pendingMedia: PendingMedia[];
     uploadMedia: (assets: ValidatedAsset[]) => Promise<void>;
-    addInFlightUpload: (assetId: string, uri: string) => void;
-    removeInFlightUpload: (assetId: string) => void;
-    inFlightUploads: Record<string, string>;
+    removePendingMedia: (assetId: string) => void;
     retryMediaUpload: (mediaId: Id<'media'>) => Promise<void>;
 }
 
@@ -45,19 +55,19 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
         }
     )
 
-    // InFlightUploads: { assetId: uri }
-    const [inFlightUploads, setInFlightUploads] = useState<Record<string, string>>({});
+    const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
 
-    function addInFlightUpload(assetId: string, uri: string) {
-        setInFlightUploads(prev => ({ ...prev, [assetId]: uri }));
-    }
+    const removePendingMedia = useCallback((assetId: string) => {
 
-    function removeInFlightUpload(assetId: string) {
-        setInFlightUploads(prev => {
-            const { [assetId]: _, ...rest } = prev;
-            return { ...rest };
-        });
-    }
+    }, [albumId, pendingMedia]);
+
+    // Clean up pending media when real media with matching assetId appears
+    useEffect(() => {
+        if (media.length === 0 || pendingMedia.length === 0) return;
+
+        const mediaAssetIds = new Set(media.map(m => m.assetId));
+        setPendingMedia(prev => prev.filter(p => !mediaAssetIds.has(p.assetId)));
+    }, [media]);
 
     const retryMediaUpload = useCallback(async (mediaId: Id<'media'>) => {
         try {
@@ -68,14 +78,24 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
     }, [albumId]);
 
     const uploadMedia = useCallback(async (assets: ValidatedAsset[]) => {
-        for (const asset of assets) {
+        // Add all assets as pending media immediately for optimistic UI
+        const newPending: PendingMedia[] = assets.map(asset => ({
+            assetId: asset.assetId,
+            uri: asset.uri,
+            filename: asset.filename,
+            type: asset.type,
+            width: asset.width,
+            height: asset.height,
+            duration: asset.duration ?? undefined,
+            timestamp: Date.now(),
+        }));
+        setPendingMedia(prev => [...prev, ...newPending]);
 
-            addInFlightUpload(asset.assetId, asset.uri);
+        for (const asset of assets) {
 
             const isLast = asset === assets.at(-1);
             let uploadUrl: string | undefined;
             let identifier: MediaIdentifier | undefined;
-
 
             if (asset.type === 'image') {
                 const { uploadUrl: imageUploadUrl, imageId } = await prepareImageUpload({
@@ -123,7 +143,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                     throw new Error('Failed to upload video');
                 });
             } else {
-                removeInFlightUpload(asset.assetId);
+                removePendingMedia(asset.assetId);
                 throw new Error('Invalid asset type');
             }
 
@@ -138,15 +158,17 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                 dateTaken: asset.exif?.DateTimeOriginal,
                 location: undefined,
             })
+
+            // Note: pending item will be automatically filtered out in displayItems
+            // once the real media with matching assetId appears in the query
         }
-    }, [albumId, prepareImageUpload, prepareVideoUpload, removeInFlightUpload, createMedia, addInFlightUpload]);
+    }, [albumId, prepareImageUpload, prepareVideoUpload, createMedia, removePendingMedia]);
 
     return {
         media,
+        pendingMedia,
         uploadMedia,
-        addInFlightUpload,
-        removeInFlightUpload,
-        inFlightUploads,
+        removePendingMedia,
         retryMediaUpload,
     }
 }

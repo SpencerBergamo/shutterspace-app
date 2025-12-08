@@ -1,20 +1,63 @@
+import { MAX_WIDTH } from "@/constants/styles";
 import { useAppTheme } from "@/context/AppThemeContext";
 import useSignedUrls from "@/hooks/useSignedUrls";
-import { Album } from "@/types/Album";
 import { Media } from "@/types/Media";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 interface AlbumInfoCardProps {
-    album: Album;
-    cover: Media | undefined;
+    title: string;
+    cover: Media | null;
     mediaCount: number;
 }
 
-export default function AlbumInfoCard({ album, cover, mediaCount }: AlbumInfoCardProps) {
+export default function AlbumInfoCard({ title, cover, mediaCount }: AlbumInfoCardProps) {
+    const { width } = useWindowDimensions();
     const { colors } = useAppTheme();
-    const { requesting, thumbnail: coverUrl } = useSignedUrls({ media: cover });
+    const { requesting, thumbnail: coverUrl } = useSignedUrls({ media: cover ?? undefined });
+
+    if (cover === null || coverUrl === null || width > MAX_WIDTH) {
+        return (
+            <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: colors.grey2,
+                padding: 16,
+                marginBottom: 8,
+            }}>
+                <Text
+                    style={{
+                        fontSize: 16,
+                        fontWeight: '600',
+                        color: colors.text,
+                    }}
+                >
+                    {title}
+                </Text>
+
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        gap: 8,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: colors.grey1,
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderRadius: 16,
+                    }}
+                >
+                    <Ionicons name="images" size={14} color="white" />
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: 'white' }}>{mediaCount}</Text>
+                </View>
+            </View>
+        )
+    }
 
     return (
         <View style={styles.container}>
@@ -33,12 +76,12 @@ export default function AlbumInfoCard({ album, cover, mediaCount }: AlbumInfoCar
                 />
             ) : (
                 <View style={styles.coverPlaceholder}>
-                    <Ionicons name="image-outline" size={64} color={colors.text} />
+                    <Ionicons name="image-outline" size={64} color={colors.grey1} />
                 </View>
             )}
 
             <View style={styles.coverOverlay} >
-                <Text style={styles.overlayTitle} numberOfLines={2}>{album.title}</Text>
+                <Text style={styles.overlayTitle} numberOfLines={2}>{title}</Text>
                 <View style={styles.overlayStats}>
                     <View style={styles.statBadge}>
                         <Ionicons name="images" size={14} color="white" />
@@ -73,6 +116,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
+        borderRadius: 16,
+        borderColor: 'rgba(0, 0, 0, 0.1)',
     },
     coverOverlay: {
         flexDirection: 'row',

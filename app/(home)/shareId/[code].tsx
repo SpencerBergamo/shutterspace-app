@@ -1,5 +1,4 @@
 import { useAppTheme } from "@/context/AppThemeContext";
-import { useFriends } from "@/context/FriendsContext";
 import { api } from "@/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { BlurView } from "expo-blur";
@@ -14,7 +13,7 @@ import Animated, {
     withSpring,
     withTiming,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SPRING_CONFIG = {
     damping: 20,
@@ -24,9 +23,10 @@ const SPRING_CONFIG = {
 const DISMISS_THRESHOLD = 100;
 
 export default function ShareIdScreen() {
+    const insets = useSafeAreaInsets();
     const { colors } = useAppTheme();
     const { code }: { code: string } = useLocalSearchParams<{ code: string }>();
-    const { friendships } = useFriends();
+    const friendships = useQuery(api.friendships.getFriendships);
 
     const areFriends = friendships?.some(friendship => friendship.senderId === user?._id || friendship.recipientId === user?._id);
 
@@ -96,70 +96,69 @@ export default function ShareIdScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <View style={styles.overlay}>
-                <GestureDetector gesture={tapGesture}>
-                    <Animated.View style={[styles.backdrop, animatedBackdrop]}>
-                        {Platform.OS === 'ios' ? (<BlurView intensity={20} style={StyleSheet.absoluteFillObject} />) :
-                            (<View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0, 0, 0, 0.3)' }]} />)}
-                    </Animated.View>
-                </GestureDetector>
+        <View style={[styles.overlay, { paddingBottom: insets.bottom }]}>
+            <GestureDetector gesture={tapGesture}>
+                <Animated.View style={[styles.backdrop, animatedBackdrop]}>
+                    {Platform.OS === 'ios' ? (<BlurView intensity={20} style={StyleSheet.absoluteFillObject} />) :
+                        (<View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0, 0, 0, 0.3)' }]} />)}
+                </Animated.View>
+            </GestureDetector>
 
-                <GestureDetector gesture={panGesture}>
-                    <Animated.View style={[styles.sheetContainer, animatedSheet]}>
-                        <View style={[styles.sheet, { backgroundColor: colors.background }]}>
-                            {/* Drag handle */}
-                            <View style={styles.handleContainer}>
-                                <View style={[styles.handle, { backgroundColor: colors.border }]} />
-                            </View>
-
-                            {/* Content */}
-                            {user === undefined ? (
-                                <View style={styles.loadingContainer}>
-                                    <ActivityIndicator size="large" color={colors.primary} />
-                                </View>
-                            ) : user === null ? (
-                                <View style={styles.contentContainer}>
-                                    <Text style={[styles.errorText, { color: colors.text }]}>
-                                        User not found
-                                    </Text>
-                                </View>
-                            ) : (
-                                <View style={styles.contentContainer}>
-                                    {/* Avatar */}
-                                    <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colors.border }]}>
-                                        <Text style={[styles.avatarInitial, { color: colors.text }]}>
-                                            {user.nickname?.charAt(0).toUpperCase() || '?'}
-                                        </Text>
-                                    </View>
-
-                                    {/* Nickname */}
-                                    <Text style={[styles.nickname, { color: colors.text }]}>
-                                        {user.nickname || 'Unknown User'}
-                                    </Text>
-
-                                    {/* Add Friend Button */}
-                                    <Pressable
-                                        style={({ pressed }) => [
-                                            styles.addButton,
-                                            { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
-                                        ]}
-                                        onPress={handleAddFriend}
-                                        disabled={isAddingFriend}
-                                    >
-                                        {isAddingFriend ? (
-                                            <ActivityIndicator size="small" color="white" />
-                                        ) : (
-                                            <Text style={styles.addButtonText}>{areFriends ? 'Already Friends' : 'Add Friend'}</Text>
-                                        )}
-                                    </Pressable>
-                                </View>
-                            )}
+            <GestureDetector gesture={panGesture}>
+                <Animated.View style={[styles.sheetContainer, animatedSheet]}>
+                    <View style={[styles.sheet, { backgroundColor: colors.background }]}>
+                        {/* Drag handle */}
+                        <View style={styles.handleContainer}>
+                            <View style={[styles.handle, { backgroundColor: colors.border }]} />
                         </View>
-                    </Animated.View>
-                </GestureDetector>
-            </View>
-        </SafeAreaView>
+
+                        {/* Content */}
+                        {user === undefined ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="large" color={colors.primary} />
+                            </View>
+                        ) : user === null ? (
+                            <View style={styles.contentContainer}>
+                                <Text style={[styles.errorText, { color: colors.text }]}>
+                                    User not found
+                                </Text>
+                            </View>
+                        ) : (
+                            <View style={styles.contentContainer}>
+                                {/* Avatar */}
+                                <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colors.border }]}>
+                                    <Text style={[styles.avatarInitial, { color: colors.text }]}>
+                                        {user.nickname?.charAt(0).toUpperCase() || '?'}
+                                    </Text>
+                                </View>
+
+                                {/* Nickname */}
+                                <Text style={[styles.nickname, { color: colors.text }]}>
+                                    {user.nickname || 'Unknown User'}
+                                </Text>
+
+                                {/* Add Friend Button */}
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.addButton,
+                                        { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
+                                    ]}
+                                    onPress={handleAddFriend}
+                                    disabled={isAddingFriend}
+                                >
+                                    {isAddingFriend ? (
+                                        <ActivityIndicator size="small" color="white" />
+                                    ) : (
+                                        <Text style={styles.addButtonText}>{areFriends ? 'Already Friends' : 'Add Friend'}</Text>
+                                    )}
+                                </Pressable>
+                            </View>
+                        )}
+                    </View>
+                </Animated.View>
+            </GestureDetector>
+        </View>
+
     );
 }
 

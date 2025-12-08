@@ -1,6 +1,6 @@
 'use node';
 
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v } from "convex/values";
 import { v4 as uuidv4 } from 'uuid';
@@ -65,4 +65,14 @@ export const getPublicObject = internalAction({
             Key: objectKey,
         }), { expiresIn: 3600 });
     }
+})
+
+export const deleteObject = internalAction({
+    args: { objectKey: v.string() },
+    handler: async (ctx, { objectKey }) => {
+        await s3.send(new DeleteObjectCommand({
+            Bucket: "uploads",
+            Key: objectKey,
+        }))
+    },
 })

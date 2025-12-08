@@ -54,14 +54,6 @@ export default function NewAlbum() {
         return () => task.cancel();
     }, []);
 
-    useEffect(() => {
-        const task = InteractionManager.runAfterInteractions(() => {
-            titleInputRef.current?.focus();
-        });
-
-        return () => task.cancel();
-    }, []);
-
     const handleCreate = useCallback(async (data: FormData) => {
         setIsLoading(true);
 

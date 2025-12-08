@@ -1,6 +1,5 @@
 import { AlbumsProvider, useAlbums } from "@/context/AlbumsContext";
 import { useAppTheme } from "@/context/AppThemeContext";
-import { FriendsProvider, useFriends } from "@/context/FriendsContext";
 import { ProfileProvider, useProfile } from "@/context/ProfileContext";
 // import { useTheme } from "@react-navigation/native";
 import { Stack } from "expo-router";
@@ -10,10 +9,9 @@ function HomeLayout() {
     const { colors } = useAppTheme();
 
     const { isLoading: profileLoading } = useProfile();
-    const { isLoading: friendsLoading } = useFriends();
     const { isLoading: albumsLoading } = useAlbums();
 
-    if (profileLoading || friendsLoading || albumsLoading) {
+    if (profileLoading || albumsLoading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color={colors.text} />
@@ -76,9 +74,7 @@ export default function Layout() {
     return (
         <ProfileProvider>
             <AlbumsProvider>
-                <FriendsProvider>
-                    <HomeLayout />
-                </FriendsProvider>
+                <HomeLayout />
             </AlbumsProvider>
         </ProfileProvider>
     );

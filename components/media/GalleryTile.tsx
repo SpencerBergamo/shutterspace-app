@@ -10,14 +10,13 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 interface GalleryTileProps {
     media: Media;
     itemSize: number;
-    placeholder: string;
     onPress: (mediaId: Id<'media'>) => void;
     onLongPress: (mediaId: Id<'media'>) => void;
     onRetry: (mediaId: Id<'media'>) => void;
     onReady: (mediaId: Id<'media'>) => void;
 }
 
-export default function GalleryTile({ media, itemSize, placeholder, onPress, onLongPress, onRetry, onReady }: GalleryTileProps) {
+export default function GalleryTile({ media, itemSize, onPress, onLongPress, onRetry, onReady }: GalleryTileProps) {
     const { profileId } = useProfile();
     const { requesting, thumbnail } = useSignedUrls({ media });
 
@@ -60,7 +59,6 @@ export default function GalleryTile({ media, itemSize, placeholder, onPress, onL
             {thumbnail && (
                 <Image
                     source={{ uri: thumbnail, cacheKey: mediaId }}
-                    placeholder={placeholder}
                     transition={200}
                     style={{ width: '100%', height: '100%' }}
                     contentFit="cover"
@@ -117,7 +115,6 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
         justifyContent: 'center',
         alignItems: 'center',
     },

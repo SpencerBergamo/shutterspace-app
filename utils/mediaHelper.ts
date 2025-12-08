@@ -1,5 +1,5 @@
 import { ImagePickerAsset } from "expo-image-picker";
-import { nanoid } from "nanoid";
+import { v4 as uuidv4 } from 'uuid';
 
 type AllowedMimeTypes =
     | 'video/mp4'
@@ -61,7 +61,7 @@ export const validateAssets = (assets: ImagePickerAsset[]) => {
     let valid: ValidatedAsset[] = [];
 
     for (const asset of assets) {
-        const assetId = asset.assetId || nanoid();
+        const assetId = asset.assetId || uuidv4();
         const type = asset.type === 'video' ? 'video' : 'image';
 
         const mimeType = getMimeType(asset);

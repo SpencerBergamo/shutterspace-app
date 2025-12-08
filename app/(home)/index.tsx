@@ -1,25 +1,131 @@
 import AlbumCover from "@/components/albums/AlbumCover";
 import { ASSETS } from "@/constants/assets";
-import { MAX_WIDTH } from "@/constants/styles";
 import { useAlbums } from '@/context/AlbumsContext';
 import { useAppTheme } from "@/context/AppThemeContext";
 import { useProfile } from "@/context/ProfileContext";
+import { api } from "@/convex/_generated/api";
 import useFabStyles from "@/hooks/useFabStyles";
-import getGridLayout from "@/utils/getGridLyout";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "convex/react";
 import { router, Stack } from "expo-router";
+import * as Orientation from 'expo-screen-orientation';
 import { Plus } from "lucide-react-native";
-import { useMemo } from "react";
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FlatList, Image, Modal, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function HomeScreen() {
+    // Layout
     const { colors } = useAppTheme();
-    const { profile } = useProfile();
     const { position, button, iconSize } = useFabStyles();
     const { width } = useWindowDimensions();
-    const { albums } = useAlbums();
+    // const gridConfig = useMemo(() => getGridLayout({ width, columns: width > MAX_WIDTH ? 3 : 2, gap: 16, aspectRatio: 1 }), [width, MAX_WIDTH]);
+    const [orientation, setOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
 
-    const gridConfig = useMemo(() => getGridLayout({ width, columns: width > MAX_WIDTH ? 3 : 2, gap: 16, aspectRatio: 1 }), [width, MAX_WIDTH]);
+    // Data
+    const { profile } = useProfile();
+    const { albums } = useAlbums();
+    const friendships = useQuery(api.friendships.getFriendships);
+
+    // Constants
+    const shareUrl = `https://shutterspace.app/shareId/${profile.shareCode}`;
+
+    useEffect(() => {
+        const subscription = Orientation.addOrientationChangeListener((event) => {
+            setOrientation(event.orientationInfo.orientation);
+        })
+
+        Orientation.getOrientationAsync().then(setOrientation);
+
+        return () => {
+            Orientation.removeOrientationChangeListener(subscription);
+        };
+    }, []);
+
+    const gridConfig = useMemo(() => {
+        const gap = 16;
+        const isTable = Platform.OS === 'ios'
+            ? width >= 768
+            : width >= 600;
+
+        const isPortrait = orientation === Orientation.Orientation.PORTRAIT_UP ||
+            orientation === Orientation.Orientation.PORTRAIT_DOWN;
+
+        let numColumns: number;
+
+        if (isTable) {
+            numColumns = isPortrait ? 4 : 6;
+        } else {
+            numColumns = isPortrait ? 2 : 3;
+        }
+
+        const itemSize = (width - (gap * (numColumns + 1))) / numColumns;
+
+        return {
+            itemSize,
+            numColumns,
+            gap,
+        }
+    }, [width, orientation]);
+
+    const renderHeader = useCallback(() => {
+        if (friendships && friendships?.length > 0) return null;
+
+        // Share Profile Card
+        return (
+            <TouchableOpacity
+                style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: colors.grey2,
+                    borderRadius: 12,
+                    padding: 12,
+                }}
+                onPress={async () => await Share.share({ url: shareUrl })}
+            >
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                }}>
+                    <View style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        backgroundColor: colors.grey1,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}>
+                        <Ionicons name="qr-code" size={20} color="white" />
+                    </View>
+                    <View style={{
+                        flex: 1,
+                        flexDirection: 'column',
+                        gap: 4,
+                    }}>
+                        <Text style={{
+                            fontSize: 16,
+                            fontWeight: '600',
+                            color: colors.text,
+                        }}>
+                            Share Profile
+                        </Text>
+                        <Text style={{
+                            fontSize: 14,
+                            fontWeight: '400',
+                            color: colors.text + '80',
+                        }} >
+                            Share via QR Code or Link
+                        </Text>
+                    </View>
+
+
+                    <Ionicons name="chevron-forward" size={24} color={colors.grey1} />
+                </View>
+            </TouchableOpacity>
+        );
+    }, []);
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -57,12 +163,16 @@ export default function HomeScreen() {
             }} />
 
             <FlatList
+                key={gridConfig.numColumns}
                 data={albums}
                 keyExtractor={(item) => item._id}
                 numColumns={gridConfig.numColumns}
-                columnWrapperStyle={gridConfig.columnWrapperStyle}
-                contentContainerStyle={gridConfig.contentContainerStyle}
-                style={{ padding: 16 }}
+                columnWrapperStyle={{
+                    gap: gridConfig.gap,
+                    justifyContent: 'flex-start',
+                    alignItems: 'flex-start',
+                }}
+                contentContainerStyle={{ paddingHorizontal: gridConfig.gap, gap: gridConfig.gap }}
                 scrollEnabled={albums.length > 0}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
@@ -85,11 +195,15 @@ export default function HomeScreen() {
                         </View>
                     </View>
                 }
+                ListHeaderComponent={renderHeader}
+                ListHeaderComponentStyle={{
+                    paddingVertical: 16,
+                }}
                 renderItem={({ item }) => (
                     <AlbumCover
                         album={item}
-                        width={gridConfig.tileWidth}
-                        height={gridConfig.tileHeight}
+                        width={gridConfig.itemSize}
+                        height={gridConfig.itemSize}
                         onPress={() => router.push(`/album/${item._id}`)}
                     />
                 )}
@@ -103,6 +217,15 @@ export default function HomeScreen() {
                     <Ionicons name="add" size={iconSize} color="white" />
                 </TouchableOpacity>
             </View>
+
+            <Modal
+                visible={false}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => { }}
+            >
+
+            </Modal>
         </View>
     );
 }

@@ -1,5 +1,4 @@
 import { useAppTheme } from "@/context/AppThemeContext";
-import { useFriends } from "@/context/FriendsContext";
 import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -57,7 +56,7 @@ export default function FriendsListScreen() {
     const { position, button, iconSize } = useFabStyles();
     const { colors } = useAppTheme();
     const { profile } = useProfile();
-    const { friendships } = useFriends();
+    const friendships = useQuery(api.friendships.getFriendships);
 
     const friendshipList = useMemo(() => {
         //ignore blocked friendshps
@@ -134,7 +133,7 @@ export default function FriendsListScreen() {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <FlatList
                 data={friendshipList}
-                initialNumToRender={friendshipList.length}
+                initialNumToRender={friendshipList?.length}
                 keyExtractor={(item) => item._id}
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={

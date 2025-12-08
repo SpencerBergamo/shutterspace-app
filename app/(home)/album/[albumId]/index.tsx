@@ -1,55 +1,86 @@
 import AlbumDeletionAlert from "@/components/albums/AlbumDeletionAlert";
 import AlbumInfoCard from "@/components/albums/AlbumInfoCard";
 import GalleryTile from "@/components/media/GalleryTile";
-import { MAX_WIDTH } from "@/constants/styles";
+import PendingGalleryTile from "@/components/media/PendingGalleryTile";
 import { useAlbums } from "@/context/AlbumsContext";
 import { useAppTheme } from "@/context/AppThemeContext";
 import { useProfile } from "@/context/ProfileContext";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import useFabStyles from "@/hooks/useFabStyles";
-import { useMedia } from "@/hooks/useMedia";
+import { PendingMedia, useMedia } from "@/hooks/useMedia";
 import { Media } from "@/types/Media";
 import { formatAlbumData } from "@/utils/formatters";
 import { validateAssets } from "@/utils/mediaHelper";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery } from "convex/react";
+import { } from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from "expo-router";
+import * as Orientation from 'expo-screen-orientation';
 import { Images } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Dimensions, FlatList, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { Alert, FlatList, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const NUM_COLUMNS = 3;
-const GAP = 1;
+const GAP = 2;
 
 export default function AlbumScreen() {
 
     // Layout
+    const [orientation, setOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
     const { width } = useWindowDimensions();
-
     const { colors } = useAppTheme();
     const { position, button, iconSize } = useFabStyles();
-    const itemSize: number = useMemo(() => {
-        return (SCREEN_WIDTH - (GAP * 2)) / NUM_COLUMNS;
-    }, [width]);
+
+    // Orientation Subscription
+    useEffect(() => {
+        const subscription = Orientation.addOrientationChangeListener((event) => {
+            setOrientation(event.orientationInfo.orientation);
+        });
+
+        Orientation.getOrientationAsync().then(setOrientation);
+
+        return () => {
+            Orientation.removeOrientationChangeListener(subscription);
+        };
+    }, []);
+
+    // Grid Layout
+    const gridConfig = useMemo(() => {
+        const isTablet = Platform.OS === 'ios'
+            ? width >= 768  // iPad minimum width
+            : width >= 600; // Android tablet threshold
+
+        const isPortrait = orientation === Orientation.Orientation.PORTRAIT_UP ||
+            orientation === Orientation.Orientation.PORTRAIT_DOWN;
+
+        let numColumns: number;
+
+        if (isTablet) {
+            numColumns = isPortrait ? 6 : 8;
+        } else {
+            numColumns = isPortrait ? 3 : 5;
+        }
+
+        const itemSize = (width - (GAP * (numColumns - 1))) / numColumns;
+
+        return {
+            itemSize,
+            numColumns,
+            gap: GAP,
+        };
+    }, [width, orientation]);
 
     // Data
     const { profileId } = useProfile();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbum } = useAlbums();
     const album = getAlbum(albumId);
-    const { media, uploadMedia, inFlightUploads, removeInFlightUpload, } = useMedia(albumId);
+    const { media, pendingMedia, uploadMedia, removePendingMedia } = useMedia(albumId);
 
     // Refs
-    const flatListRef = useRef<FlatList>(null);
     const settingsModalRef = useRef<BottomSheetModal>(null);
-
-    // Animation
-    const headerHeight = useSharedValue(0);
 
     // States
     const [isCreatingInvite, setIsCreatingInvite] = useState(false);
@@ -63,19 +94,34 @@ export default function AlbumScreen() {
     const deleteAlbum = useMutation(api.albums.deleteAlbum);
     const cancelDeletion = useMutation(api.albums.cancelAlbumDeletion);
 
-    // Animate header based on in-flight uploads
-    const numInFlightUploads = Object.keys(inFlightUploads).length;
-    useEffect(() => {
-        headerHeight.value = withTiming(numInFlightUploads > 0 ? 60 : 0, { duration: 300 });
-    }, [numInFlightUploads]);
+    const albumCover = media.find(m => m._id === album?.thumbnail) ?? null;
 
-    const animatedHeaderStyle = useAnimatedStyle(() => {
-        return {
-            height: headerHeight.value,
-            opacity: withTiming(numInFlightUploads > 0 ? 1 : 0, { duration: 300 }),
-            overflow: 'hidden',
-        };
-    });
+    // Combine pending media with actual media for optimistic UI
+    type DisplayItem =
+        | { type: 'media'; data: Media; index: number }
+        | { type: 'pending'; data: PendingMedia };
+
+    const displayItems: DisplayItem[] = useMemo(() => {
+        const items: DisplayItem[] = [];
+        const processedAssetIds = new Set<string>();
+
+        // Add pending media first (newest at top, sorted by timestamp descending)
+        const sortedPending = [...pendingMedia].sort((a, b) => b.timestamp - a.timestamp);
+        sortedPending.forEach(pending => {
+            items.push({ type: 'pending', data: pending });
+            processedAssetIds.add(pending.assetId);
+        });
+
+        // Add actual media (already sorted by Convex query in descending order)
+        // Skip any that have a pending counterpart (shouldn't happen after cleanup effect)
+        media.forEach((m, idx) => {
+            if (!processedAssetIds.has(m.assetId)) {
+                items.push({ type: 'media', data: m, index: idx });
+            }
+        });
+
+        return items;
+    }, [media, pendingMedia]);
 
     const handleMediaRetry = useCallback(async (mediaId: Id<'media'>) => {
         try {
@@ -174,8 +220,6 @@ export default function AlbumScreen() {
                 console.warn("Invalid assets: ", invalid.length);
             }
 
-
-
             await uploadMedia(valid);
         } catch (e) {
             console.error("Failed to upload media: ", e);
@@ -183,19 +227,26 @@ export default function AlbumScreen() {
         }
     }, [albumId]);
 
-    const renderMedia = useCallback(({ item, index }: { item: Media, index: number }) => {
-        const inFlightUri: string | undefined = inFlightUploads[item.assetId] ?? undefined;
-        if (inFlightUri) console.log("inFlight: ", index, item.filename);
+    const renderItem = useCallback(({ item }: { item: DisplayItem }) => {
+        if (item.type === 'pending') {
+            return (
+                <PendingGalleryTile
+                    pendingMedia={item.data}
+                    itemSize={gridConfig.itemSize}
+                />
+            );
+        }
+
+        const media = item.data;
 
         return (
             <GalleryTile
-                media={item}
-                itemSize={itemSize}
-                placeholder={inFlightUri}
+                media={media}
+                itemSize={gridConfig.itemSize}
                 onPress={() => {
                     router.push({
                         pathname: '../viewer/[albumId]',
-                        params: { albumId: albumId, index: index.toString() },
+                        params: { albumId: albumId, index: item.index.toString() },
                     })
                 }}
                 onLongPress={() => { }}
@@ -207,12 +258,11 @@ export default function AlbumScreen() {
                     ]);
                 }}
                 onReady={() => {
-                    removeInFlightUpload(item.assetId);
+                    removePendingMedia(media.assetId);
                 }}
             />
         );
-
-    }, [media, inFlightUploads, removeInFlightUpload]);
+    }, [displayItems, removePendingMedia, gridConfig.itemSize]);
 
     if (!album) return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -253,14 +303,17 @@ export default function AlbumScreen() {
 
             {/* Media Grid */}
             <FlatList
-                ref={flatListRef}
-                data={media}
+                data={displayItems}
                 initialNumToRender={20}
-                maxToRenderPerBatch={media.length}
-                keyExtractor={(item: Media) => item._id}
-                numColumns={NUM_COLUMNS}
+                maxToRenderPerBatch={displayItems.length}
+                keyExtractor={(item: DisplayItem) =>
+                    item.type === 'pending' ? item.data.assetId : item.data.assetId
+                }
+                key={`${albumId}-${gridConfig.numColumns}`}
+                numColumns={gridConfig.numColumns}
                 columnWrapperStyle={{ gap: GAP }}
                 contentContainerStyle={{ padding: 0 }}
+                removeClippedSubviews={false}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Images size={48} color="#ccc" style={{ margin: 16 }} />
@@ -269,17 +322,7 @@ export default function AlbumScreen() {
                         <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
                     </View>
                 }
-                ListHeaderComponent={() => (
-                    <Animated.View style={[animatedHeaderStyle, styles.uploadHeader]}>
-                        <View style={styles.uploadHeaderContent}>
-                            <Ionicons name="cloud-upload-outline" size={24} color={colors.primary || "#007AFF"} />
-                            <Text style={styles.uploadHeaderText}>
-                                Uploading {numInFlightUploads} {numInFlightUploads === 1 ? 'item' : 'items'}...
-                            </Text>
-                        </View>
-                    </Animated.View>
-                )}
-                renderItem={renderMedia}
+                renderItem={renderItem}
             />
 
             {/* Floating Action Button */}
@@ -313,11 +356,11 @@ export default function AlbumScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Album Header with Thumbnail */}
-                    {width < MAX_WIDTH && (<AlbumInfoCard
-                        album={album}
-                        cover={media.find(m => m._id === album.thumbnail)}
-                        mediaCount={media.length}
-                    />)}
+                    <AlbumInfoCard
+                        title={album.title}
+                        cover={albumCover}
+                        mediaCount={media.length + pendingMedia.length}
+                    />
 
                     {/* Album Info */}
                     <View style={styles.infoSection}>
@@ -458,8 +501,7 @@ export default function AlbumScreen() {
                     <View style={styles.section}>
                         <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>Danger Zone</Text>
 
-                        {/* Show Leave or Delete based on user role */}
-                        {album.hostId !== profileId ? ( // Replace with actual user ID check
+                        {album.hostId !== profileId ? (
                             <TouchableOpacity
                                 style={[styles.settingsOption, styles.dangerOption]}
                                 onPress={() => {
@@ -512,7 +554,7 @@ export default function AlbumScreen() {
                                     <Text style={[styles.optionTitle, { color: '#FF3B30' }]}>
                                         {isDeletingAlbum ? 'Deleting Album...' : 'Delete Album'}
                                     </Text>
-                                    <Text style={styles.optionSubtitle}>Permanently delete this album</Text>
+                                    <Text style={styles.optionSubtitle}>Delete this album and all its contents</Text>
                                 </View>
                             </TouchableOpacity>
                         )}
@@ -570,6 +612,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F0F8FF',
         borderBottomWidth: 1,
         borderBottomColor: '#E0E0E0',
+        overflow: 'hidden',
     },
     uploadHeaderContent: {
         flexDirection: 'row',
