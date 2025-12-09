@@ -1,5 +1,5 @@
 import { api } from "@/convex/_generated/api";
-import { ASSETS } from "@/src/constants/assets";
+import { QRCodeModal } from "@/src/components/QRCodeModal";
 import { useAlbums } from '@/src/context/AlbumsContext';
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { useProfile } from "@/src/context/ProfileContext";
@@ -11,15 +11,18 @@ import { router, Stack } from "expo-router";
 import * as Orientation from 'expo-screen-orientation';
 import { Plus } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, Image, Modal, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { FlatList, Platform, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { AddFriendsPrompt } from "./components/AddFriendsPrompt";
+import { HeaderLeftComponent } from "./components/Navbar";
 
 export function HomeScreen() {
     // Layout
     const { colors } = useAppTheme();
     const { position, button, iconSize } = useFabStyles();
     const { width } = useWindowDimensions();
-    // const gridConfig = useMemo(() => getGridLayout({ width, columns: width > MAX_WIDTH ? 3 : 2, gap: 16, aspectRatio: 1 }), [width, MAX_WIDTH]);
+
     const [orientation, setOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
+    const [qrModalVisible, setQrModalVisible] = useState(false);
 
     // Data
     const { profile } = useProfile();
@@ -32,7 +35,7 @@ export function HomeScreen() {
     useEffect(() => {
         const subscription = Orientation.addOrientationChangeListener((event) => {
             setOrientation(event.orientationInfo.orientation);
-        })
+        });
 
         Orientation.getOrientationAsync().then(setOrientation);
 
@@ -40,6 +43,14 @@ export function HomeScreen() {
             Orientation.removeOrientationChangeListener(subscription);
         };
     }, []);
+
+    useEffect(() => {
+        if (qrModalVisible) {
+            Orientation.lockAsync(Orientation.OrientationLock.PORTRAIT_UP);
+        } else {
+            Orientation.unlockAsync();
+        }
+    }, [qrModalVisible]);
 
     const gridConfig = useMemo(() => {
         const gap = 16;
@@ -68,101 +79,43 @@ export function HomeScreen() {
     }, [width, orientation]);
 
     const renderHeader = useCallback(() => {
-        if (friendships && friendships?.length > 0) return null;
+        const friendCount = friendships?.length ?? 0;
 
-        // Share Profile Card
+        // Show prompt for users with fewer than 5 friends
+        if (friendCount >= 5) return null;
+
         return (
-            <TouchableOpacity
-                style={{
-                    flex: 1,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    backgroundColor: colors.grey2,
-                    borderRadius: 12,
-                    padding: 12,
-                }}
-                onPress={async () => await Share.share({ url: shareUrl })}
-            >
-                <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 12,
-                }}>
-                    <View style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 12,
-                        backgroundColor: colors.grey1,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                    }}>
-                        <Ionicons name="qr-code" size={20} color="white" />
-                    </View>
-                    <View style={{
-                        flex: 1,
-                        flexDirection: 'column',
-                        gap: 4,
-                    }}>
-                        <Text style={{
-                            fontSize: 16,
-                            fontWeight: '600',
-                            color: colors.text,
-                        }}>
-                            Share Profile
-                        </Text>
-                        <Text style={{
-                            fontSize: 14,
-                            fontWeight: '400',
-                            color: colors.text + '80',
-                        }} >
-                            Share via QR Code or Link
-                        </Text>
-                    </View>
-
-
-                    <Ionicons name="chevron-forward" size={24} color={colors.grey1} />
-                </View>
-            </TouchableOpacity>
+            <AddFriendsPrompt
+                friendCount={friendCount}
+                onPress={() => setQrModalVisible(true)}
+            />
         );
-    }, []);
+    }, [friendships]);
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Stack.Screen options={{
                 headerLeft: () => (
-                    <Image
-                        source={ASSETS.logo}
-                        style={{ height: 32, width: 32 }}
-                        resizeMode="contain"
+                    <HeaderLeftComponent
+                        nickname={profile.nickname}
+                        avatar={profile.avatarKey}
+                        onPress={() => router.push('settings')}
+                        onCompleteProfilePress={() => router.push('profile/edit')}
                     />
                 ),
                 headerTitle: '',
                 headerRight: () => (
-                    <View style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 12,
-                    }}>
-                        <Text style={{
-                            fontSize: 18,
-                            color: colors.text,
-                        }}>
-                            Hey, <Text style={{ fontSize: 18, fontWeight: '600', }}>{profile.nickname} 👋</Text>
-                        </Text>
-                        <TouchableOpacity
-                            style={[styles.avatarContainer, {
-                                backgroundColor: colors.secondary + '60'
-                            }]}
-                            onPress={() => router.push('/settings')}
-                        >
-                            <Text style={styles.avatarInitial}>{profile.nickname.charAt(0)}</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity
+                        onPress={() => setQrModalVisible(true)}
+                        style={[styles.headerRight, { backgroundColor: colors.background, shadowColor: colors.shadow }]}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="qr-code" size={24} color={colors.grey1} />
+                    </TouchableOpacity>
                 )
             }} />
 
-            <FlatList
+            < FlatList
                 key={gridConfig.numColumns}
                 data={albums}
                 keyExtractor={(item) => item._id}
@@ -175,7 +128,7 @@ export function HomeScreen() {
                 contentContainerStyle={{ paddingHorizontal: gridConfig.gap, gap: gridConfig.gap }}
                 scrollEnabled={albums.length > 0}
                 ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
+                    < View style={styles.emptyContainer} >
                         <View style={[styles.emptyCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
                             <Text style={[styles.emptyTitle, { color: colors.text }]}>
                                 Welcome to Shutterspace!
@@ -193,11 +146,11 @@ export function HomeScreen() {
                                 </Text>
                             </View>
                         </View>
-                    </View>
+                    </View >
                 }
                 ListHeaderComponent={renderHeader}
                 ListHeaderComponentStyle={{
-                    paddingVertical: 16,
+                    marginTop: 16,
                 }}
                 renderItem={({ item }) => (
                     <AlbumCover
@@ -209,24 +162,25 @@ export function HomeScreen() {
                 )}
             />
 
-            <View style={position}>
+            < View style={position} >
                 <TouchableOpacity
                     style={button}
                     onPress={() => router.push('/new-album')}
                 >
                     <Ionicons name="add" size={iconSize} color="white" />
                 </TouchableOpacity>
-            </View>
+            </View >
 
-            <Modal
-                visible={false}
-                animationType="fade"
-                transparent={true}
-                onRequestClose={() => { }}
-            >
-
-            </Modal>
-        </View>
+            <QRCodeModal
+                visible={qrModalVisible}
+                onClose={() => setQrModalVisible(false)}
+                value={shareUrl}
+                displayValue={profile.shareCode}
+                title="Share Profile"
+                description="Share this code with your friends!"
+                showCopyButton={true}
+            />
+        </View >
     );
 }
 
@@ -235,18 +189,16 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
-    avatarContainer: {
+    headerRight: {
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 12,
-        width: 40,
-        height: 40,
-        overflow: 'hidden',
-    },
-
-    avatarInitial: {
-        fontSize: 18,
-        fontWeight: '600',
+        padding: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 1,
     },
 
     // Fab

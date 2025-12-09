@@ -186,6 +186,7 @@ export default function ViewerItem({ media, isViewable, onZoomChange }: ViewerIt
                         style={styles.image}
                         contentFit="contain"
                         cachePolicy={'memory-disk'}
+                        recyclingKey={media._id}
                     />
                 </Animated.View>
             </GestureDetector>

@@ -6,14 +6,12 @@ import { useProfile } from "@/src/context/ProfileContext";
 import useFabStyles from "@/src/hooks/useFabStyles";
 import { PendingMedia, useMedia } from "@/src/hooks/useMedia";
 import AlbumDeletionAlert from "@/src/screens/Album/components/AlbumDeletionAlert";
-import AlbumInfoCard from "@/src/screens/Album/components/AlbumInfoCard";
 import GalleryTile from "@/src/screens/Album/components/GalleryTile";
 import PendingGalleryTile from "@/src/screens/Album/components/PendingGalleryTile";
 import { Media } from "@/src/types/Media";
-import { formatAlbumData } from "@/src/utils/formatters";
 import { validateAssets } from "@/src/utils/mediaHelper";
 import { Ionicons } from "@expo/vector-icons";
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery } from "convex/react";
 import { } from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
@@ -22,6 +20,7 @@ import * as Orientation from 'expo-screen-orientation';
 import { Images } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, FlatList, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import AlbumSettingsSheet from "./components/AlbumSettingsSheet";
 
 const GAP = 2;
 
@@ -87,6 +86,8 @@ export function AlbumScreen() {
     const [isLeavingAlbum, setIsLeavingAlbum] = useState(false);
     const [isDeletingAlbum, setIsDeletingAlbum] = useState(false);
     const [isCancelingDeletion, setIsCancelingDeletion] = useState(false);
+    const [selectionMode, setSelectionMode] = useState(false);
+    const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
     // Convex
     const inviteCode = useQuery(api.inviteCodes.getInviteCode, { albumId }) ?? undefined;
@@ -227,6 +228,49 @@ export function AlbumScreen() {
         }
     }, [albumId]);
 
+    const handleLongPress = useCallback((mediaId: Id<'media'>) => {
+        setSelectionMode(true);
+        setSelectedItems(new Set([mediaId]));
+    }, []);
+
+    const handleTilePress = useCallback((mediaId: Id<'media'>, index: number) => {
+        if (selectionMode) {
+            setSelectedItems(prev => {
+                const next = new Set(prev);
+                if (next.has(mediaId)) {
+                    next.delete(mediaId);
+                } else {
+                    next.add(mediaId);
+                }
+                return next;
+            });
+        } else {
+            router.push({
+                pathname: '../viewer/[index]',
+                params: { albumId: albumId, index: index.toString() },
+            });
+        }
+    }, [selectionMode, albumId]);
+
+    const handleCancelSelection = useCallback(() => {
+        setSelectionMode(false);
+        setSelectedItems(new Set());
+    }, []);
+
+    const handleSelectAll = useCallback(() => {
+        const allMediaIds = displayItems
+            .filter(item => item.type === 'media')
+            .map(item => item.data._id);
+
+        const allSelected = allMediaIds.length > 0 && allMediaIds.every(id => selectedItems.has(id));
+
+        if (allSelected) {
+            setSelectedItems(new Set());
+        } else {
+            setSelectedItems(new Set(allMediaIds));
+        }
+    }, [displayItems, selectedItems]);
+
     const renderItem = useCallback(({ item }: { item: DisplayItem }) => {
         if (item.type === 'pending') {
             return (
@@ -238,18 +282,14 @@ export function AlbumScreen() {
         }
 
         const media = item.data;
+        const isSelected = selectedItems.has(media._id);
 
         return (
             <GalleryTile
                 media={media}
                 itemSize={gridConfig.itemSize}
-                onPress={() => {
-                    router.push({
-                        pathname: '../viewer/[albumId]',
-                        params: { albumId: albumId, index: item.index.toString() },
-                    })
-                }}
-                onLongPress={() => { }}
+                onPress={() => handleTilePress(media._id, item.index)}
+                onLongPress={() => handleLongPress(media._id)}
                 onRetry={(mediaId) => {
                     Alert.alert("Upload Failed", "This asset failed to upload. Would you like to retry?", [
                         { text: "Retry", onPress: () => handleMediaRetry(mediaId) },
@@ -260,9 +300,11 @@ export function AlbumScreen() {
                 onReady={() => {
                     removePendingMedia(media.assetId);
                 }}
+                selectionMode={selectionMode}
+                isSelected={isSelected}
             />
         );
-    }, [displayItems, removePendingMedia, gridConfig.itemSize]);
+    }, [displayItems, removePendingMedia, gridConfig.itemSize, selectionMode, selectedItems, handleTilePress, handleLongPress]);
 
     if (!album) return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -283,11 +325,22 @@ export function AlbumScreen() {
 
             {/* Header */}
             <Stack.Screen options={{
-                headerTitle: album.title,
-                headerRight: () => (
-                    <TouchableOpacity onPress={handleSettingsPress}>
-                        <Ionicons name="ellipsis-horizontal" size={24} />
+                headerTitle: selectionMode ? `${selectedItems.size} selected` : album.title,
+                headerLeft: selectionMode ? () => (
+                    <TouchableOpacity onPress={handleCancelSelection}>
+                        <Text style={{ fontSize: 17, color: colors.text }}>Cancel</Text>
                     </TouchableOpacity>
+                ) : undefined,
+                headerRight: () => (
+                    selectionMode ? (
+                        <TouchableOpacity onPress={handleSelectAll}>
+                            <Text style={{ fontSize: 17, color: colors.text }}>Select All</Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity onPress={handleSettingsPress}>
+                            <Ionicons name="ellipsis-horizontal" size={24} />
+                        </TouchableOpacity>
+                    )
                 )
             }} />
 
@@ -309,7 +362,7 @@ export function AlbumScreen() {
                 keyExtractor={(item: DisplayItem) =>
                     item.type === 'pending' ? item.data.assetId : item.data.assetId
                 }
-                key={`${albumId}-${gridConfig.numColumns}`}
+                key={gridConfig.numColumns.toString()}
                 numColumns={gridConfig.numColumns}
                 columnWrapperStyle={{ gap: GAP }}
                 contentContainerStyle={{ padding: 0 }}
@@ -326,17 +379,81 @@ export function AlbumScreen() {
             />
 
             {/* Floating Action Button */}
-            <View style={position}>
-                <TouchableOpacity
-                    style={button}
-                    onPress={handleMediaUpload}
-                >
-                    <Ionicons name="add" size={iconSize} color="white" />
-                </TouchableOpacity>
-            </View>
+            {!selectionMode && (
+                <View style={position}>
+                    <TouchableOpacity
+                        style={button}
+                        onPress={handleMediaUpload}
+                    >
+                        <Ionicons name="add" size={iconSize} color="white" />
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {/* Selection Action Bar */}
+            {selectionMode && (
+                <View style={styles.selectionBar}>
+                    <TouchableOpacity
+                        style={styles.selectionButton}
+                        onPress={() => {
+                            Alert.alert("Share", "Feature coming soon!");
+                        }}
+                    >
+                        <Ionicons name="share-outline" size={24} color={colors.text} />
+                        <Text style={styles.selectionButtonText}>Share</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.selectionButton}
+                        onPress={() => {
+                            Alert.alert("Download", "Feature coming soon!");
+                        }}
+                    >
+                        <Ionicons name="download-outline" size={24} color={colors.text} />
+                        <Text style={styles.selectionButtonText}>Download</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.selectionButton}
+                        onPress={() => {
+                            Alert.alert(
+                                "Delete",
+                                `Are you sure you want to delete ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''}?`,
+                                [
+                                    { text: "Cancel", style: "cancel" },
+                                    {
+                                        text: "Delete",
+                                        style: "destructive",
+                                        onPress: () => {
+                                            Alert.alert("Delete", "Feature coming soon!");
+                                            handleCancelSelection();
+                                        }
+                                    }
+                                ]
+                            );
+                        }}
+                    >
+                        <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+                        <Text style={[styles.selectionButtonText, { color: '#FF3B30' }]}>Delete</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            <AlbumSettingsSheet
+                ref={settingsModalRef}
+                album={album}
+                mediaCount={media.length + pendingMedia.length}
+                lastMedia={albumCover}
+                handleInviteMembers={handleInviteMembers}
+                handleLeaveAlbum={handleLeaveAlbum}
+                handleDeleteAlbum={handleDeleteAlbum}
+                isCreatingInvite={isCreatingInvite}
+                isLeavingAlbum={isLeavingAlbum}
+                isDeletingAlbum={isDeletingAlbum}
+            />
 
             {/* Settings Modal */}
-            <BottomSheetModal
+            {/* <BottomSheetModal
                 ref={settingsModalRef}
                 snapPoints={['85%']}
                 enablePanDownToClose
@@ -355,18 +472,18 @@ export function AlbumScreen() {
                     contentContainerStyle={[styles.modalContent, {}]}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Album Header with Thumbnail */}
+                    
                     <AlbumInfoCard
                         title={album.title}
                         cover={albumCover}
                         mediaCount={media.length + pendingMedia.length}
                     />
 
-                    {/* Album Info */}
+                    
                     <View style={styles.infoSection}>
                         <View style={styles.infoRow}>
                             <Ionicons name="calendar-outline" size={18} color="#666" />
-                            <Text style={styles.infoText}>Created {formatAlbumData(album._creationTime)}</Text>
+                            <Text style={styles.infoText}>Created {formatAlbumDate(album._creationTime)}</Text>
                         </View>
                         {album.description && (
                             <View style={styles.infoRow}>
@@ -393,7 +510,7 @@ export function AlbumScreen() {
                         )}
                     </View>
 
-                    {/* Quick Actions Section */}
+                    
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Quick Actions</Text>
 
@@ -454,7 +571,7 @@ export function AlbumScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Manage Section */}
+                    
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Manage</Text>
 
@@ -497,7 +614,7 @@ export function AlbumScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Danger Zone */}
+                    
                     <View style={styles.section}>
                         <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>Danger Zone</Text>
 
@@ -560,10 +677,10 @@ export function AlbumScreen() {
                         )}
                     </View>
 
-                    {/* Bottom spacing */}
+                    
                     <View style={{ height: 32 }} />
                 </BottomSheetScrollView>
-            </BottomSheetModal>
+            </BottomSheetModal> */}
         </View>
     );
 }
@@ -698,5 +815,26 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#535252FF',
+    },
+
+    // Selection Styles
+    selectionBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderTopWidth: 1,
+        borderTopColor: '#E5E5E5',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        paddingBottom: Platform.OS === 'ios' ? 28 : 12,
+    },
+    selectionButton: {
+        alignItems: 'center',
+        gap: 4,
+    },
+    selectionButtonText: {
+        fontSize: 12,
+        fontWeight: '500',
     },
 });

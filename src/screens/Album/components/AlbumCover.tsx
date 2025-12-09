@@ -2,7 +2,7 @@ import { api } from '@/convex/_generated/api';
 import { useAppTheme } from '@/src/context/AppThemeContext';
 import useSignedUrls from '@/src/hooks/useSignedUrls';
 import { Album } from '@/src/types/Album';
-import { formatAlbumData } from '@/src/utils/formatters';
+import { formatAlbumDate } from '@/src/utils/formatters';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { Image } from 'expo-image';
@@ -67,7 +67,7 @@ export default function AlbumCover({ album, width, height, onPress }: AlbumCover
             </Text>
 
             <Text style={[styles.albumDate, { color: colors.text + '80' }]}>
-                {formatAlbumData(album._creationTime)}
+                {formatAlbumDate(album._creationTime)}
             </Text>
         </Pressable>
     );

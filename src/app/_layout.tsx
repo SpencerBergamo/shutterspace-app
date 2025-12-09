@@ -40,6 +40,7 @@ function AppLayout({ onAuthReady }: { onAuthReady: () => void }) {
             headerShown: true,
             headerBackButtonDisplayMode: 'minimal',
             headerShadowVisible: false,
+            headerTintColor: colors.grey1,
             headerStyle: {
                 backgroundColor: colors.background,
             }

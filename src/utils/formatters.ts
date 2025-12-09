@@ -1,4 +1,4 @@
-export function formatAlbumData(creationTime: number): string {
+export function formatAlbumDate(creationTime: number): string {
     const date = new Date(creationTime);
     const currentYear = new Date().getFullYear();
     const dateYear = date.getFullYear();

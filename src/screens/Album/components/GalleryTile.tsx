@@ -14,9 +14,11 @@ interface GalleryTileProps {
     onLongPress: (mediaId: Id<'media'>) => void;
     onRetry: (mediaId: Id<'media'>) => void;
     onReady: (mediaId: Id<'media'>) => void;
+    selectionMode?: boolean;
+    isSelected?: boolean;
 }
 
-export default function GalleryTile({ media, itemSize, onPress, onLongPress, onRetry, onReady }: GalleryTileProps) {
+export default function GalleryTile({ media, itemSize, onPress, onLongPress, onRetry, onReady, selectionMode = false, isSelected = false }: GalleryTileProps) {
     const { profileId } = useProfile();
     const { requesting, thumbnail } = useSignedUrls({ media });
 
@@ -59,10 +61,11 @@ export default function GalleryTile({ media, itemSize, onPress, onLongPress, onR
             {thumbnail && (
                 <Image
                     source={{ uri: thumbnail, cacheKey: mediaId }}
-                    transition={200}
+                    transition={0}
                     style={{ width: '100%', height: '100%' }}
                     contentFit="cover"
                     cachePolicy={'memory-disk'}
+                    recyclingKey={mediaId}
                     onError={(e) => { }}
                     onDisplay={() => onReady(mediaId)}
                 />
@@ -81,6 +84,17 @@ export default function GalleryTile({ media, itemSize, onPress, onLongPress, onR
             {requesting && (
                 <View style={styles.uploadingOverlay}>
                     <ActivityIndicator size="small" color="black" />
+                </View>
+            )}
+
+            {/* Selection Overlay */}
+            {selectionMode && (
+                <View style={styles.selectionOverlay}>
+                    <View style={[styles.checkboxContainer, isSelected && styles.checkboxSelected]}>
+                        {isSelected && (
+                            <Ionicons name="checkmark" size={18} color="white" />
+                        )}
+                    </View>
                 </View>
             )}
         </Pressable>
@@ -118,4 +132,33 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+
+    selectionOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        padding: 8,
+        justifyContent: 'flex-start',
+        alignItems: 'flex-end',
+    },
+
+    checkboxContainer: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: 'white',
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    checkboxSelected: {
+        backgroundColor: '#007AFF',
+        borderColor: '#007AFF',
+    },
+
+
 })

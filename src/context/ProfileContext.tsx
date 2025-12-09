@@ -2,15 +2,16 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Profile } from "@/src/types/Profile";
 import { getAuth } from "@react-native-firebase/auth";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 interface ProfileContextType {
     profile: Profile;
     profileId: Id<'profiles'>;
     isLoading: boolean;
+    createNewShareCode: () => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -30,9 +31,23 @@ export const ProfileProvider = ({ children }: {
     // Convex
     const profile = useQuery(api.profile.getProfile);
     const createProfile = useMutation(api.profile.createProfile);
+    const createShareCode = useAction(api.shareCodes.createShareCode);
+
+    const createNewShareCode = useCallback(async () => {
+        try {
+            await createShareCode();
+        } catch (e) {
+            console.error("failed creating new share code", e);
+            throw new Error("Failed to create new share code");
+        }
+    }, []);
 
     useEffect(() => {
         if (profile === undefined) return;
+
+        if (profile && !profile.shareCode) {
+            createNewShareCode();
+        }
 
         if (profile === null && !isCreatingProfile) {
             setIsCreatingProfile(true);
@@ -87,6 +102,7 @@ export const ProfileProvider = ({ children }: {
         profile,
         profileId: profile._id,
         isLoading: false,
+        createNewShareCode,
     }}>
         {children}
     </ProfileContext.Provider>;

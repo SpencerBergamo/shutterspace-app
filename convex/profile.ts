@@ -47,7 +47,7 @@ export const getProfile = query({
 
 export const updateProfile = mutation({
     args: {
-        nickname: v.optional(v.string()),
+        nickname: v.optional(v.string())
     }, handler: async (ctx, { nickname }) => {
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) return;

@@ -2,23 +2,20 @@ import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { action, internalMutation } from "./_generated/server";
 
-export const create = action({
-    args: {}, handler: async (ctx): Promise<string | null> => {
+export const createShareCode = action({
+    args: {}, handler: async (ctx): Promise<string> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
-        if (!profile) return null;
+        if (!profile) throw new Error('Profile not found');
 
-        const shareCode = profile.shareCode;
-        if (shareCode) return shareCode;
+        const shareCode = await ctx.runAction(internal.crypto.generateRandomCode, { length: 6 });
+        await ctx.runMutation(internal.shareCodes.updateShareCode, { profileId: profile._id, shareCode });
 
-        const newCode = await ctx.runAction(internal.crypto.generateRandomCode, { length: 6 });
-        await ctx.runMutation(internal.shareCodes.update, { profileId: profile._id, shareCode: newCode });
-        return newCode;
+        return shareCode;
     }
 })
 
-// --- Internal ---
 
-export const update = internalMutation({
+export const updateShareCode = internalMutation({
     args: {
         profileId: v.id('profiles'),
         shareCode: v.string(),

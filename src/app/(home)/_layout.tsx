@@ -25,41 +25,40 @@ function HomeLayout() {
             headerShadowVisible: false,
             headerStyle: {
                 backgroundColor: colors.background,
-            }
+            },
+            headerTintColor: 'black',
         }}>
             <Stack.Screen name="index" />
 
+            {/* Profile */}
             <Stack.Screen name="settings" options={{
                 headerTitle: 'Settings',
             }} />
+            <Stack.Screen name="profile/edit" options={{
+                headerTitle: 'Edit Profile',
+                headerBackButtonDisplayMode: 'minimal',
+            }} />
+            <Stack.Screen name="shareId/[code]" options={{
+                headerShown: false,
+            }} />
 
+            {/* Album */}
             <Stack.Screen name="new-album" options={{
                 headerTitle: 'Create New Album',
             }} />
-
             <Stack.Screen name="album/[albumId]/index" options={{
                 headerShown: true,
             }} />
-
             <Stack.Screen name="viewer/[index]/index" options={{
                 headerShown: true,
                 animation: 'fade',
                 animationDuration: 200,
             }} />
 
-            <Stack.Screen name="(profile)/edit-profile" options={{
-                headerTitle: 'Edit Profile',
-                headerBackButtonDisplayMode: 'minimal',
-            }} />
 
+            {/* Friends */}
             <Stack.Screen name="friends" options={{
                 headerTitle: 'My Friends',
-            }} />
-
-            <Stack.Screen name="shareId/[code]" options={{
-                headerShown: false,
-                presentation: 'transparentModal',
-                gestureEnabled: true,
             }} />
 
             <Stack.Screen name="contact-us" options={{

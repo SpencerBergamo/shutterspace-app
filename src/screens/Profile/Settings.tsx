@@ -19,7 +19,7 @@ export function SettingsScreen() {
     const { profile } = useProfile();
 
     // Convex
-    const createShareCode = useAction(api.shareCodes.create);
+    const createShareCode = useAction(api.shareCodes.createShareCode);
 
     const handleOpenUrl = async (url: string) => {
         const supported = await Linking.canOpenURL(url);
@@ -110,7 +110,7 @@ export function SettingsScreen() {
                 <View style={[styles.section, { marginTop: 20 }]}>
                     <TouchableOpacity
                         style={styles.profileOption}
-                        onPress={() => router.push('(profile)/edit')}
+                        onPress={() => router.push('profile/edit')}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: colors.secondary + '50' }]}>
                             <Text>{profile.nickname.charAt(0)}</Text>
