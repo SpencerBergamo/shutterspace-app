@@ -5,7 +5,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v } from "convex/values";
 import { v4 as uuidv4 } from 'uuid';
 import { api } from "./_generated/api";
-import { action, internalAction } from "./_generated/server";
+import { action } from "./_generated/server";
 
 const s3 = new S3Client({
     region: 'auto',
@@ -21,12 +21,13 @@ export const prepareImageUpload = action({
         albumId: v.id('albums'),
         filename: v.string(),
         contentType: v.string(),
+        extension: v.string(),
     },
-    handler: async (ctx, { albumId, filename, contentType }): Promise<{ uploadUrl: string, imageId: string }> => {
+    handler: async (ctx, { albumId, filename, contentType, extension }): Promise<{ uploadUrl: string, imageId: string }> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new Error("Not a member of this album");
 
-        const imageId = `${uuidv4()}.${filename.split('.').pop()}`; // should be uuidv4 + file extension
+        const imageId = `${uuidv4()}.${extension}`; // should be uuidv4 + file extension
         console.log("imageId: ", imageId);
 
         const uploadUrl = await getSignedUrl(s3, new PutObjectCommand({
@@ -57,17 +58,24 @@ export const getImageURL = action({
     },
 })
 
-export const prepareAvatarUpload = internalAction({
+export const prepareAvatarUpload = action({
     args: {
+        extension: v.string(),
         contentType: v.string(),
     },
-    handler: async (ctx) => {
+    handler: async (ctx, { extension, contentType }): Promise<{ uploadUrl: string, avatarId: string }> => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) throw new Error("Profile not found");
 
-        const avatarId = `${uuidv4()}.jpg`;
+        const avatarId = crypto.randomUUID();
+        const avatarKey = `${avatarId}.${extension}`;
+
         const uploadUrl = await getSignedUrl(s3, new PutObjectCommand({
             Bucket: "avatar",
-            Key: `avatar/${avatarId}`,
+            Key: avatarKey,
+            ContentType: contentType,
         }), { expiresIn: 3600 });
+
         return { uploadUrl, avatarId };
     }
 })

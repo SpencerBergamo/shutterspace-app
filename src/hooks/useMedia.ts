@@ -102,6 +102,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                     albumId,
                     filename: asset.filename,
                     contentType: asset.mimeType,
+                    extension: asset.extension,
                 });
 
                 uploadUrl = imageUploadUrl;

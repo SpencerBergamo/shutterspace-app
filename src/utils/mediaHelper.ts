@@ -46,14 +46,20 @@ const MAX_SIZE = {
 export interface ValidatedAsset extends ImagePickerAsset {
     assetId: string;
     filename: string;
+    extension: string;
     mimeType: string;
     type: 'image' | 'video';
     size?: number;
     creationTime?: number;
 };
 
-export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ valid: ValidatedAsset[], invalid: ValidatedAsset[] }> {
-    let invalid: ValidatedAsset[] = [];
+export interface InvalidAsset {
+    uri: string;
+    assetId: string;
+}
+
+export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ valid: ValidatedAsset[], invalid: InvalidAsset[] }> {
+    let invalid: InvalidAsset[] = [];
     let valid: ValidatedAsset[] = [];
 
     for (const asset of assets) {
@@ -62,12 +68,7 @@ export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ vali
         if (!extension || !ALLOWED_EXTENSIONS.has(extension as Extensions)) {
             invalid.push({
                 uri: asset.uri,
-                width: asset.width,
-                height: asset.height,
-                assetId: asset.assetId ?? uuidv4(),
-                filename: asset.fileName ?? `${asset.assetId ?? uuidv4()}.${extension}`,
-                mimeType: asset.mimeType ?? EXTENSION_TO_MIME[extension as Extensions],
-                type: asset.type === 'video' ? 'video' : 'image',
+                assetId: asset.assetId ?? 'unknown',
             });
             console.error(`Invalid extension: ${extension}`);
             continue;
@@ -86,6 +87,7 @@ export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ vali
             height: asset.height,
             assetId,
             filename,
+            extension,
             mimeType,
             type,
             size,
