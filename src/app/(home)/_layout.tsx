@@ -40,6 +40,8 @@ function HomeLayout() {
             }} />
             <Stack.Screen name="shareId/[code]" options={{
                 headerShown: false,
+                presentation: 'transparentModal',
+                animation: 'fade',
             }} />
 
             {/* Album */}

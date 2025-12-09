@@ -73,6 +73,8 @@ export const getUserByShareCode = query({
         return {
             _id: profile._id,
             nickname: profile.nickname,
+            avatarKey: profile.avatarKey,
+            ssoAvatarUrl: profile.ssoAvatarUrl,
         };
     }
 })

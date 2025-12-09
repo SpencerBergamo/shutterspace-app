@@ -1,240 +1,319 @@
 import { api } from "@/convex/_generated/api";
+import Avatar from "@/src/components/Avatar";
 import { useAppTheme } from "@/src/context/AppThemeContext";
+import { useProfile } from "@/src/context/ProfileContext";
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from "convex/react";
 import { BlurView } from "expo-blur";
+import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
-} from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ActivityIndicator, Alert, Animated, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-const SPRING_CONFIG = {
-    damping: 20,
-    stiffness: 300,
-};
-
-const DISMISS_THRESHOLD = 100;
 
 export function ProfileInviteScreen() {
-    const insets = useSafeAreaInsets();
     const { colors } = useAppTheme();
+    const { profile } = useProfile();
     const { code }: { code: string } = useLocalSearchParams<{ code: string }>();
-    const friendships = useQuery(api.friendships.getFriendships);
-
-    const areFriends = friendships?.some(friendship => friendship.senderId === user?._id || friendship.recipientId === user?._id);
-
-    // States
-    const [isAddingFriend, setIsAddingFriend] = useState(false);
-
-    // Animation values
-    const translateY = useSharedValue(500);
-    const opacity = useSharedValue(0);
 
     // Convex
     const user = useQuery(api.profile.getUserByShareCode, { code });
     const addFriend = useMutation(api.friendships.sendFriendRequest);
+    const friendships = useQuery(api.friendships.getFriendships);
+    const areFriends = friendships?.some(friendship => friendship.senderId === user?._id || friendship.recipientId === user?._id);
+
+    // States
+    const [isAddingFriend, setIsAddingFriend] = useState(false);
+    const [requestSent, setRequestSent] = useState(false);
+
+    // Animations
+    const scaleAnim = useState(new Animated.Value(0))[0];
+    const fadeAnim = useState(new Animated.Value(0))[0];
 
     useEffect(() => {
-        translateY.value = withSpring(0, SPRING_CONFIG);
-        opacity.value = withTiming(1, { duration: 200 });
-    }, []);
-
-    const handleClose = () => {
-        translateY.value = withTiming(500, { duration: 250 });
-        opacity.value = withTiming(0, { duration: 200 });
-        setTimeout(() => router.back(), 250);
-    };
-
-    const panGesture = Gesture.Pan()
-        .onUpdate((event) => {
-            if (event.translationY > 0) {
-                translateY.value = event.translationY;
-            }
-        })
-        .onEnd((event) => {
-            if (event.translationY > DISMISS_THRESHOLD) {
-                translateY.value = withTiming(500, { duration: 250 });
-                opacity.value = withTiming(0, { duration: 200 });
-                runOnJS(setTimeout)(() => router.back(), 250);
-            } else {
-                translateY.value = withSpring(0, SPRING_CONFIG);
-            }
-        });
-
-    const tapGesture = Gesture.Tap().onEnd(() => {
-        runOnJS(handleClose)();
-    });
-
-    const animatedBackdrop = useAnimatedStyle(() => ({
-        opacity: opacity.value,
-    }));
-
-    const animatedSheet = useAnimatedStyle(() => ({
-        transform: [{ translateY: translateY.value }],
-    }));
+        if (user) {
+            Animated.parallel([
+                Animated.spring(scaleAnim, {
+                    toValue: 1,
+                    tension: 50,
+                    friction: 7,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                })
+            ]).start();
+        }
+    }, [user]);
 
     const handleAddFriend = async () => {
-        if (areFriends || !user) return;
+        if (areFriends || !user || isAddingFriend || user._id === profile?._id) return;
+
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setIsAddingFriend(true);
 
         try {
             await addFriend({ friendId: user._id });
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setRequestSent(true);
+
+            setTimeout(() => {
+                router.back();
+            }, 1500);
         } catch (e) {
             console.error(e);
-            Alert.alert('Error', 'Failed to add friend');
-        } finally {
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert('Error', 'Failed to send friend request');
             setIsAddingFriend(false);
-            setTimeout(() => router.back(), 300);
         }
     };
 
+    const handleClose = async () => {
+        await Haptics.selectionAsync();
+        router.back();
+    };
+
     return (
-        <View style={[styles.overlay, { paddingBottom: insets.bottom }]}>
-            <GestureDetector gesture={tapGesture}>
-                <Animated.View style={[styles.backdrop, animatedBackdrop]}>
-                    {Platform.OS === 'ios' ? (<BlurView intensity={20} style={StyleSheet.absoluteFillObject} />) :
-                        (<View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0, 0, 0, 0.3)' }]} />)}
-                </Animated.View>
-            </GestureDetector>
+        <BlurView style={StyleSheet.absoluteFillObject} intensity={80} tint="dark">
+            <Pressable style={styles.overlay} onPress={handleClose}>
+                <Animated.View
+                    style={[
+                        styles.card,
+                        { backgroundColor: colors.background },
+                        {
+                            transform: [{ scale: scaleAnim }],
+                            opacity: fadeAnim,
+                        }
+                    ]}
+                >
+                    <Pressable onPress={(e) => e.stopPropagation()}>
+                        {/* Close Button */}
+                        <TouchableOpacity
+                            style={[styles.closeButton, { backgroundColor: colors.grey2 }]}
+                            onPress={handleClose}
+                        >
+                            <Ionicons name="close" size={20} color={colors.text} />
+                        </TouchableOpacity>
 
-            <GestureDetector gesture={panGesture}>
-                <Animated.View style={[styles.sheetContainer, animatedSheet]}>
-                    <View style={[styles.sheet, { backgroundColor: colors.background }]}>
-                        {/* Drag handle */}
-                        <View style={styles.handleContainer}>
-                            <View style={[styles.handle, { backgroundColor: colors.border }]} />
-                        </View>
-
-                        {/* Content */}
                         {user === undefined ? (
-                            <View style={styles.loadingContainer}>
+                            // Loading state
+                            <View style={styles.content}>
                                 <ActivityIndicator size="large" color={colors.primary} />
                             </View>
                         ) : user === null ? (
-                            <View style={styles.contentContainer}>
-                                <Text style={[styles.errorText, { color: colors.text }]}>
-                                    User not found
+                            // User not found
+                            <View style={styles.content}>
+                                <Ionicons name="alert-circle-outline" size={64} color={colors.caption} />
+                                <Text style={[styles.title, { color: colors.text, marginTop: 16 }]}>
+                                    Profile Not Found
+                                </Text>
+                                <Text style={[styles.description, { color: colors.caption }]}>
+                                    This invite code is invalid or expired
+                                </Text>
+                            </View>
+                        ) : user._id === profile?._id ? (
+                            // User is the same as the current user
+                            <View style={styles.content}>
+                                <Text style={[styles.title, { color: colors.text, marginTop: 16 }]}>
+                                    You cannot add yourself as a friend, silly!
                                 </Text>
                             </View>
                         ) : (
-                            <View style={styles.contentContainer}>
-                                {/* Avatar */}
-                                <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colors.border }]}>
-                                    <Text style={[styles.avatarInitial, { color: colors.text }]}>
-                                        {user.nickname?.charAt(0).toUpperCase() || '?'}
+                            // User found
+                            <View style={styles.content}>
+                                {/* Avatar with glow effect */}
+                                <View style={[styles.avatarContainer, { shadowColor: colors.primary }]}>
+                                    <View style={{ transform: [{ scale: 1.5 }] }}>
+                                        <Avatar
+                                            nickname={user.nickname}
+                                            avatarKey={user.avatarKey}
+                                            ssoAvatarUrl={user.ssoAvatarUrl}
+                                        />
+                                    </View>
+                                </View>
+
+                                {/* User Info */}
+                                <View style={styles.userInfo}>
+                                    <Text style={[styles.nickname, { color: colors.text }]}>
+                                        {user.nickname}
+                                    </Text>
+                                    <Text style={[styles.label, { color: colors.caption }]}>
+                                        wants to connect on ShutterSpace
                                     </Text>
                                 </View>
 
-                                {/* Nickname */}
-                                <Text style={[styles.nickname, { color: colors.text }]}>
-                                    {user.nickname || 'Unknown User'}
-                                </Text>
-
-                                {/* Add Friend Button */}
-                                <Pressable
-                                    style={({ pressed }) => [
-                                        styles.addButton,
-                                        { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
-                                    ]}
-                                    onPress={handleAddFriend}
-                                    disabled={isAddingFriend}
-                                >
-                                    {isAddingFriend ? (
-                                        <ActivityIndicator size="small" color="white" />
+                                {/* Action Buttons */}
+                                <View style={styles.actions}>
+                                    {areFriends ? (
+                                        <View style={[styles.statusBadge, { backgroundColor: colors.secondary + '40', borderColor: colors.border }]}>
+                                            <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                                            <Text style={[styles.statusText, { color: colors.text }]}>
+                                                Already Friends
+                                            </Text>
+                                        </View>
+                                    ) : requestSent ? (
+                                        <View style={[styles.statusBadge, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
+                                            <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                                            <Text style={[styles.statusText, { color: colors.primary }]}>
+                                                Friend Request Sent!
+                                            </Text>
+                                        </View>
                                     ) : (
-                                        <Text style={styles.addButtonText}>{areFriends ? 'Already Friends' : 'Add Friend'}</Text>
+                                        <>
+                                            <TouchableOpacity
+                                                style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+                                                onPress={handleAddFriend}
+                                                disabled={isAddingFriend}
+                                            >
+                                                {isAddingFriend ? (
+                                                    <ActivityIndicator size="small" color="white" />
+                                                ) : (
+                                                    <>
+                                                        <Ionicons name="person-add" size={20} color="white" />
+                                                        <Text style={styles.primaryButtonText}>
+                                                            Send Friend Request
+                                                        </Text>
+                                                    </>
+                                                )}
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                style={[styles.secondaryButton, { backgroundColor: colors.grey2 }]}
+                                                onPress={handleClose}
+                                            >
+                                                <Text style={[styles.secondaryButtonText, { color: colors.text }]}>
+                                                    Maybe Later
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </>
                                     )}
-                                </Pressable>
+                                </View>
                             </View>
                         )}
-                    </View>
+                    </Pressable>
                 </Animated.View>
-            </GestureDetector>
-        </View>
-
+            </Pressable>
+        </BlurView>
     );
 }
 
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
     },
-    backdrop: {
-        ...StyleSheet.absoluteFillObject,
-    },
-    sheetContainer: {
-        paddingHorizontal: 16,
-        paddingBottom: 40,
-    },
-    sheet: {
+    card: {
         borderRadius: 24,
+        width: '100%',
+        maxWidth: 400,
+        paddingVertical: 32,
+        paddingHorizontal: 24,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 10,
-        elevation: 5,
+        shadowOffset: {
+            width: 0,
+            height: 8,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 12,
     },
-    handleContainer: {
-        alignItems: 'center',
-        paddingTop: 12,
-        paddingBottom: 8,
-    },
-    handle: {
-        width: 40,
-        height: 4,
-        borderRadius: 2,
-    },
-    loadingContainer: {
-        padding: 60,
+    closeButton: {
+        position: 'absolute',
+        top: -8,
+        right: -8,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
+        zIndex: 10,
     },
-    contentContainer: {
-        padding: 32,
+    content: {
         alignItems: 'center',
+        gap: 20,
     },
-    avatar: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        marginBottom: 16,
+    avatarContainer: {
+        marginTop: 8,
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 8,
     },
-    avatarPlaceholder: {
-        justifyContent: 'center',
+    userInfo: {
         alignItems: 'center',
-    },
-    avatarInitial: {
-        fontSize: 40,
-        fontWeight: '600',
+        gap: 6,
     },
     nickname: {
+        fontSize: 28,
+        fontWeight: '700',
+        letterSpacing: -0.5,
+    },
+    label: {
+        fontSize: 15,
+        textAlign: 'center',
+        lineHeight: 20,
+    },
+    title: {
         fontSize: 24,
-        fontWeight: '600',
-        marginBottom: 24,
+        fontWeight: '700',
     },
-    addButton: {
-        paddingVertical: 14,
-        paddingHorizontal: 48,
+    description: {
+        fontSize: 15,
+        textAlign: 'center',
+        lineHeight: 20,
+        paddingHorizontal: 16,
+    },
+    actions: {
+        width: '100%',
+        gap: 12,
+        marginTop: 8,
+    },
+    primaryButton: {
+        width: '100%',
+        flexDirection: 'row',
+        paddingVertical: 16,
+        paddingHorizontal: 24,
         borderRadius: 12,
-        minWidth: 200,
         alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
     },
-    addButtonText: {
+    primaryButtonText: {
         color: 'white',
+        fontSize: 17,
+        fontWeight: '600',
+    },
+    secondaryButton: {
+        width: '100%',
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    secondaryButtonText: {
         fontSize: 16,
         fontWeight: '600',
     },
-    errorText: {
-        fontSize: 18,
-        textAlign: 'center',
-        paddingVertical: 40,
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    statusText: {
+        fontSize: 17,
+        fontWeight: '600',
     },
 });

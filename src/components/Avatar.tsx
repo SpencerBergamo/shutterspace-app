@@ -30,6 +30,10 @@ export default function Avatar({
         }
     }
 
+    const onImageRenderError = (e: any) => {
+        console.error("Error rendering avatar: ", e);
+    }
+
     return (
         <TouchableOpacity onPress={handlePress} style={[styles.container, { backgroundColor: colors.secondary + '60', borderColor: colors.border }]}>
             {ssoAvatarUrl ? (
@@ -37,18 +41,21 @@ export default function Avatar({
                     source={{ uri: ssoAvatarUrl }}
                     style={{ width: '100%', height: '100%' }}
                     contentFit="cover"
+                    onError={onImageRenderError}
                 />
             ) : avatarKey ? (
                 <Image
                     source={{ uri: `${avatarBaseUrl}/${avatarKey}` }}
                     style={{ width: '100%', height: '100%' }}
                     contentFit="cover"
+                    onError={onImageRenderError}
                 />
             ) : localUri ? (
                 <Image
                     source={{ uri: localUri }}
                     style={{ width: '100%', height: '100%' }}
                     contentFit="cover"
+                    onError={onImageRenderError}
                 />
             ) : (
                 <Text style={styles.initial}>{nickname.charAt(0)}</Text>

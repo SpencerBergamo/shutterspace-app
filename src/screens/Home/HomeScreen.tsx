@@ -1,4 +1,5 @@
 import { api } from "@/convex/_generated/api";
+import Avatar from "@/src/components/Avatar";
 import { QRCodeModal } from "@/src/components/QRCodeModal";
 import { useAlbums } from '@/src/context/AlbumsContext';
 import { useAppTheme } from "@/src/context/AppThemeContext";
@@ -13,7 +14,6 @@ import { Plus } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, Platform, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { AddFriendsPrompt } from "./components/AddFriendsPrompt";
-import { HeaderLeftComponent } from "./components/Navbar";
 
 export function HomeScreen() {
     // Layout
@@ -96,12 +96,27 @@ export function HomeScreen() {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Stack.Screen options={{
                 headerLeft: () => (
-                    <HeaderLeftComponent
-                        nickname={profile.nickname}
-                        avatarKey={profile.avatarKey}
-                        onPress={() => router.push('settings')}
-                        onCompleteProfilePress={() => router.push('profile/edit')}
-                    />
+                    <View style={styles.headerLeft}>
+                        <Avatar
+                            nickname={profile.nickname}
+                            avatarKey={profile.avatarKey}
+                            onPress={() => router.push('settings')}
+                        />
+                        <View style={styles.greetingContainer}>
+                            <Text style={[styles.greeting, { color: colors.text }]}>
+                                Hi, {profile.nickname}
+                            </Text>
+                            {!profile.avatarKey && (
+                                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} onPress={() => router.push('profile/edit')}>
+
+                                    <Text style={[styles.completeProfile, { color: colors.primary }]}>
+                                        Complete profile
+                                    </Text>
+                                    <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </View>
                 ),
                 headerTitle: '',
                 headerRight: () => (
@@ -189,6 +204,38 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
+    // Header
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    avatarContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 12,
+        width: 40,
+        height: 40,
+        overflow: 'hidden',
+    },
+    avatarInitial: {
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    greetingContainer: {
+        flexDirection: 'column',
+        justifyContent: 'center',
+    },
+    greeting: {
+        fontSize: 16,
+        fontWeight: '500',
+        lineHeight: 16,
+    },
+    completeProfile: {
+        fontSize: 12,
+        fontWeight: '500',
+        lineHeight: 16,
+    },
     headerRight: {
         borderRadius: 12,
         justifyContent: 'center',
