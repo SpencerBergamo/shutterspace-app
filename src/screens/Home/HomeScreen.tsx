@@ -98,7 +98,7 @@ export function HomeScreen() {
                 headerLeft: () => (
                     <HeaderLeftComponent
                         nickname={profile.nickname}
-                        avatar={profile.avatarKey}
+                        avatarKey={profile.avatarKey}
                         onPress={() => router.push('settings')}
                         onCompleteProfilePress={() => router.push('profile/edit')}
                     />
@@ -115,7 +115,7 @@ export function HomeScreen() {
                 )
             }} />
 
-            < FlatList
+            <FlatList
                 key={gridConfig.numColumns}
                 data={albums}
                 keyExtractor={(item) => item._id}

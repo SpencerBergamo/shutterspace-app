@@ -63,11 +63,11 @@ export const prepareAvatarUpload = action({
         extension: v.string(),
         contentType: v.string(),
     },
-    handler: async (ctx, { extension, contentType }): Promise<{ uploadUrl: string, avatarId: string }> => {
+    handler: async (ctx, { extension, contentType }): Promise<{ uploadUrl: string, avatarKey: string }> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new Error("Profile not found");
 
-        const avatarId = crypto.randomUUID();
+        const avatarId = profile.avatarKey?.split('.')[0] ?? crypto.randomUUID();
         const avatarKey = `${avatarId}.${extension}`;
 
         const uploadUrl = await getSignedUrl(s3, new PutObjectCommand({
@@ -76,6 +76,6 @@ export const prepareAvatarUpload = action({
             ContentType: contentType,
         }), { expiresIn: 3600 });
 
-        return { uploadUrl, avatarId };
+        return { uploadUrl, avatarKey };
     }
 })

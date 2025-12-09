@@ -1,17 +1,18 @@
+import Avatar from "@/src/components/Avatar";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface HeaderLeftComponentProps {
     nickname: string;
-    avatar?: string;
+    avatarKey?: string;
     onPress: () => void;
     onCompleteProfilePress: () => void;
 }
 
 export function HeaderLeftComponent({
     nickname,
-    avatar,
+    avatarKey,
     onPress,
     onCompleteProfilePress,
 }: HeaderLeftComponentProps) {
@@ -19,14 +20,16 @@ export function HeaderLeftComponent({
 
     return (
         <View style={styles.headerLeft}>
-            <TouchableOpacity style={[styles.avatarContainer, { backgroundColor: colors.secondary + '60' }]} onPress={onPress} activeOpacity={0.7}>
-                <Text style={styles.avatarInitial}>{nickname.charAt(0)}</Text>
-            </TouchableOpacity>
+            <Avatar
+                nickname={nickname}
+                avatarKey={avatarKey}
+                onPress={onPress}
+            />
             <View style={styles.greetingContainer}>
                 <Text style={[styles.greeting, { color: colors.text }]}>
                     Hi, {nickname}
                 </Text>
-                {!avatar && (
+                {!avatarKey && (
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} onPress={onCompleteProfilePress}>
 
                         <Text style={[styles.completeProfile, { color: colors.primary }]}>

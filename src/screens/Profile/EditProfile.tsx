@@ -16,7 +16,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { ActivityIndicator, Alert, Keyboard, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type ProfileFormData = {
-    avatar?: any;
+    avatar?: ValidatedAsset;
     nickname: string;
 }
 
@@ -56,7 +56,7 @@ export function EditProfileScreen() {
     });
 
 
-    const handleLibrarySelection = async () => {
+    const handleLibrarySelection = async (onChange: (value: ValidatedAsset) => void) => {
         const picker = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
             allowsEditing: true,
@@ -70,9 +70,10 @@ export function EditProfileScreen() {
 
         const asset = valid[0];
         setAvatar(asset);
+        onChange(asset);
     }
 
-    const handleCameraSelection = async () => {
+    const handleCameraSelection = async (onChange: (value: ValidatedAsset) => void) => {
         const picker = await ImagePicker.launchCameraAsync({
             mediaTypes: ['images'],
             allowsEditing: true,
@@ -86,6 +87,7 @@ export function EditProfileScreen() {
 
         const asset = valid[0];
         setAvatar(asset);
+        onChange(asset);
     }
 
     const saveChanges = async (data: ProfileFormData) => {
@@ -93,18 +95,18 @@ export function EditProfileScreen() {
         try {
             let avatarKey: string | undefined;
 
-            if (avatar) {
-                const { uploadUrl, avatarId } = await prepareAvatarUpload({ extension: avatar.extension, contentType: avatar.mimeType });
+            if (data.avatar) {
+                const { uploadUrl, avatarKey: key } = await prepareAvatarUpload({ extension: data.avatar.extension, contentType: data.avatar.mimeType });
 
-                const buffer = await fetch(avatar.uri).then(res => res.arrayBuffer());
+                const buffer = await fetch(data.avatar.uri).then(res => res.arrayBuffer());
                 await axios.put(uploadUrl, buffer, {
-                    headers: { 'Content-Type': avatar.mimeType },
+                    headers: { 'Content-Type': data.avatar.mimeType },
                 }).catch(e => {
                     console.error("Failed to upload avatar to R2: ", e);
                     throw new Error("Failed to upload avatar");
                 })
 
-                avatarKey = avatarId;
+                avatarKey = key;
             }
 
             await updateProfile({ nickname: data.nickname, avatarKey });
@@ -117,7 +119,7 @@ export function EditProfileScreen() {
         }
     }
 
-    const showActionSheet = () => {
+    const showActionSheet = (onChange: (value: ValidatedAsset) => void) => {
         const options = ['Take Photo', 'Choose from Library', 'Cancel'];
         const cancelButtonIndex = options.length - 1;
 
@@ -127,10 +129,10 @@ export function EditProfileScreen() {
         }, (index) => {
             switch (index) {
                 case 0:
-                    handleCameraSelection();
+                    handleCameraSelection(onChange);
                     break;
                 case 1:
-                    handleLibrarySelection();
+                    handleLibrarySelection(onChange);
                     break;
                 case cancelButtonIndex:
                     break;
@@ -147,7 +149,7 @@ export function EditProfileScreen() {
                 render={({ field: { onChange, onBlur, value } }) => (
                     <Pressable onPress={async () => {
                         await Haptics.selectionAsync();
-                        showActionSheet();
+                        showActionSheet(onChange);
                     }}>
                         <View style={[styles.avatarContainer, { backgroundColor: colors.secondary + '60', borderColor: colors.border }]}>
 

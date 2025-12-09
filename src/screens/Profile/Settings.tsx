@@ -1,25 +1,22 @@
-import { api } from '@/convex/_generated/api';
+import Avatar from '@/src/components/Avatar';
 import { ASSETS } from '@/src/constants/assets';
 import { useAppTheme } from '@/src/context/AppThemeContext';
 import { useProfile } from '@/src/context/ProfileContext';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '@react-native-firebase/auth';
-import { useAction } from 'convex/react';
 import Constants from 'expo-constants';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Alert, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export function SettingsScreen() {
     const auth = getAuth();
     const { colors } = useAppTheme();
     const { profile } = useProfile();
-
-    // Convex
-    const createShareCode = useAction(api.shareCodes.createShareCode);
 
     const handleOpenUrl = async (url: string) => {
         const supported = await Linking.canOpenURL(url);
@@ -77,24 +74,6 @@ export function SettingsScreen() {
         )
     }
 
-    const handleShareProfile = useCallback(async () => {
-        let code: string | undefined | null = profile.shareCode;
-
-        if (code === undefined) {
-            code = await createShareCode();
-        }
-
-        if (code === null) {
-            Alert.alert("Error", "Failed to create share code. Please try again.");
-            return;
-        }
-
-        await Share.share({
-            message: 'Join me on Shutterspace!',
-            url: `https://shutterspace.app/share?code=${code}`
-        });
-    }, [profile]);
-
     const handleReviewApp = async () => {
         await StoreReview.requestReview();
     }
@@ -112,8 +91,13 @@ export function SettingsScreen() {
                         style={styles.profileOption}
                         onPress={() => router.push('profile/edit')}
                     >
-                        <View style={[styles.optionIcon, { backgroundColor: colors.secondary + '50' }]}>
-                            <Text>{profile.nickname.charAt(0)}</Text>
+                        <View style={{ marginRight: 12 }}>
+
+                            <Avatar
+                                nickname={profile.nickname}
+                                avatarKey={profile.avatarKey}
+                                size={40}
+                            />
                         </View>
                         <View style={styles.optionContent}>
                             <Text style={styles.optionTitle}>{profile.nickname}</Text>
@@ -129,7 +113,18 @@ export function SettingsScreen() {
 
                     <TouchableOpacity
                         style={styles.settingsOption}
-                        onPress={handleShareProfile}
+                        onPress={async () => {
+                            try {
+                                await Haptics.selectionAsync();
+                                await Share.share({
+                                    title: 'Join me on Shutterspace!',
+                                    message: `Check out my profile: https://shutterspace.app/shareId/${profile.shareCode}`,
+                                    url: `https://shutterspace.app/shareId/${profile.shareCode}`,
+                                });
+                            } catch (e) {
+                                console.error("Failed to share profile: ", e);
+                            }
+                        }}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: '#F5F5F5' }]}>
                             <Ionicons name="share-outline" size={20} color="#8E8E93" />
@@ -293,7 +288,7 @@ export function SettingsScreen() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={{ margin: 24, alignItems: 'center' }}
+                        style={{ margin: 12, alignItems: 'center' }}
                         onPress={handleClearCache}
                     >
                         <Text style={{ color: '#007AFF', fontSize: 16, fontWeight: '600' }}>Clear Cache</Text>
@@ -302,8 +297,6 @@ export function SettingsScreen() {
 
                 {/* Footer */}
                 <View style={styles.footer}>
-
-
                     <Text style={styles.footerTitle}>
                         Shutterspace
                     </Text>
@@ -382,7 +375,7 @@ const styles = StyleSheet.create({
 
     footer: {
         alignItems: 'center',
-        marginTop: 20,
+        marginBottom: 24,
     },
     footerTitle: {
         fontSize: 18,
