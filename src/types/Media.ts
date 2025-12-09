@@ -1,5 +1,21 @@
 import { Id } from "@/convex/_generated/dataModel";
 
+export type MimeType =
+    | 'video/mp4'
+    | 'video/quicktime'
+    | 'video/mov'
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/heic';
+
+export type Extensions =
+    | 'mp4'
+    | 'mov'
+    | 'quicktime'
+    | 'jpeg'
+    | 'png'
+    | 'heic';
+
 export type MediaStatus = 'pending' | 'ready' | 'error';
 
 export type Media = {

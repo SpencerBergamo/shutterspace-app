@@ -1,7 +1,9 @@
-import { ImagePickerAsset } from "expo-image-picker";
+import { File } from 'expo-file-system';
+import { ImagePickerAsset } from 'expo-image-picker';
+import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
-type AllowedMimeTypes =
+type MimeType =
     | 'video/mp4'
     | 'video/quicktime'
     | 'video/mov'
@@ -9,84 +11,96 @@ type AllowedMimeTypes =
     | 'image/png'
     | 'image/heic';
 
+type Extensions =
+    | 'mp4'
+    | 'mov'
+    | 'quicktime'
+    | 'jpeg'
+    | 'png'
+    | 'heic';
+
+const ALLOWED_EXTENSIONS = new Set<Extensions>([
+    'mp4',
+    'mov',
+    'quicktime',
+    'jpeg',
+    'png',
+    'heic',
+]);
+
+const EXTENSION_TO_MIME: Record<string, MimeType> = {
+    mp4: 'video/mp4',
+    mov: 'video/quicktime',
+    quicktime: 'video/quicktime',
+    jpeg: 'image/jpeg',
+    jpg: 'image/jpeg',
+    png: 'image/png',
+    heic: 'image/heic',
+};
+
+const MAX_SIZE = {
+    video: 2e+8, // 200MB
+    image: 1e+7, // 10MB
+};
+
 export interface ValidatedAsset extends ImagePickerAsset {
     assetId: string;
     filename: string;
     mimeType: string;
     type: 'image' | 'video';
-}
+    size?: number;
+    creationTime?: number;
+};
 
-const ALLOWED_TYPES = new Set<AllowedMimeTypes>([
-    'video/mp4',
-    'video/quicktime',
-    'video/mov',
-    'image/jpeg',
-    'image/png',
-    'image/heic',
-]);
-
-const MAX_SIZE = {
-    video: 2e+8, // 200MB
-    image: 1e+7, // 10MB
-}
-
-function getMimeType(asset: ImagePickerAsset): AllowedMimeTypes | null {
-    const ext = asset.uri.split('.').pop()?.toLowerCase();
-    const mimeType = asset.mimeType;
-
-    if (mimeType && ALLOWED_TYPES.has(mimeType as AllowedMimeTypes)) {
-        return mimeType as AllowedMimeTypes;
-    }
-
-    const mimeMap: Record<string, AllowedMimeTypes> = {
-        mp4: 'video/mp4',
-        mov: 'video/quicktime',
-        jpeg: 'image/jpeg',
-        jpg: 'image/jpeg',
-        png: 'image/png',
-        heic: 'image/heic',
-    };
-
-    return ext && mimeMap[ext] ? mimeMap[ext] : null;
-}
-
-function generateFilename(mimeType: AllowedMimeTypes): string {
-    const ext = mimeType.split('/')[1].replace('quicktime', 'mov'); // quicktime is not a valid extension type
-    const timestamp = new Date().getTime();
-    return `${timestamp}.${ext}`;
-}
-
-export const validateAssets = (assets: ImagePickerAsset[]) => {
+export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ valid: ValidatedAsset[], invalid: ValidatedAsset[] }> {
     let invalid: ValidatedAsset[] = [];
     let valid: ValidatedAsset[] = [];
 
     for (const asset of assets) {
-        const assetId = asset.assetId || uuidv4();
+        const fileInfo = new File(asset.uri).info();
+        const extension = fileInfo.uri?.split('.').pop()?.toLowerCase();
+        if (!extension || !ALLOWED_EXTENSIONS.has(extension as Extensions)) {
+            invalid.push({
+                uri: asset.uri,
+                width: asset.width,
+                height: asset.height,
+                assetId: asset.assetId ?? uuidv4(),
+                filename: asset.fileName ?? `${asset.assetId ?? uuidv4()}.${extension}`,
+                mimeType: asset.mimeType ?? EXTENSION_TO_MIME[extension as Extensions],
+                type: asset.type === 'video' ? 'video' : 'image',
+            });
+            console.error(`Invalid extension: ${extension}`);
+            continue;
+        }
+
+        const assetId = asset.assetId ?? uuidv4();
+        let filename = asset.fileName ?? `${assetId}.${extension}`;
+        let mimeType = asset.mimeType ?? EXTENSION_TO_MIME[extension as Extensions];
         const type = asset.type === 'video' ? 'video' : 'image';
+        const size = asset.fileSize ?? fileInfo.size;
+        const creationTime = fileInfo.modificationTime;
 
-        const mimeType = getMimeType(asset);
-        if (!mimeType) {
-            console.warn('Invalid mime type');
-            invalid.push({ ...asset, assetId, filename: asset.fileName || 'unknown', mimeType: 'invalid', type });
+        const validatedAsset: ValidatedAsset = {
+            uri: asset.uri,
+            width: asset.width,
+            height: asset.height,
+            assetId,
+            filename,
+            mimeType,
+            type,
+            size,
+            creationTime,
+        };
+
+        if (!size || size > MAX_SIZE[type]) {
+            invalid.push(validatedAsset);
             continue;
         }
 
-        const maxSize = type === 'video' ? MAX_SIZE.video : MAX_SIZE.image;
-        if (!asset.fileSize) {
-            console.warn('No file size found');
-            invalid.push({ ...asset, assetId, filename: asset.fileName || 'unknown', mimeType: 'invalid', type });
-            continue;
-        } else if (asset.fileSize && asset.fileSize > maxSize) {
-            console.warn('File size exceeds max size');
-            invalid.push({ ...asset, assetId, filename: asset.fileName || 'unknown', mimeType: 'invalid', type });
-            continue;
-        }
-
-        const filename = asset.fileName || generateFilename(mimeType);
-        valid.push({ ...asset, assetId, filename, mimeType, type });
+        valid.push(validatedAsset);
     }
 
-    return { invalid, valid };
+    return { valid, invalid };
 }
 
 export const formatDuration = (seconds: number): string => {

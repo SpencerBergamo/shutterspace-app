@@ -215,7 +215,7 @@ export function AlbumScreen() {
             });
 
             if (picker.canceled || !picker.assets || picker.assets.length === 0) return;
-            const { invalid, valid } = validateAssets(picker.assets);
+            const { valid, invalid } = await validateAssets(picker.assets);
 
             if (invalid.length > 0) {
                 console.warn("Invalid assets: ", invalid.length);
