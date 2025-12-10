@@ -15,13 +15,12 @@ export interface InviteCode {
 export interface Invitation {
     albumId: Id<'albums'>;
     sender: string;
-    avatarUrl?: string;
+    ssoAvatarUrl?: string;
+    avatarKey?: string;
     title: string;
     description?: string;
     cover?: MediaIdentifier;
     role: InviteRole;
     created: number;
     message?: string;
-    memberCount: number;
-    mediaCount: number;
 }

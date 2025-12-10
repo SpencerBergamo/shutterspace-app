@@ -1,4 +1,5 @@
 export { AlbumScreen } from "./AlbumDetail";
-export { AlbumInviteScreen } from "./AlbumInvite";
+export { AlbumInvitationScreen } from "./AlbumInvitation";
 export { EditAlbumScreen } from "./EditAlbumForm";
 export { NewAlbumScreen } from "./NewAlbum";
+

@@ -66,6 +66,15 @@ function HomeLayout() {
             <Stack.Screen name="contact-us" options={{
                 headerTitle: 'Contact Us',
             }} />
+
+            <Stack.Screen name="invite/[code]" options={{
+                headerTitle: '',
+                headerTransparent: true,
+                headerTintColor: 'white',
+                headerStyle: {
+                    backgroundColor: 'transparent',
+                }
+            }} />
         </Stack>
     );
 }

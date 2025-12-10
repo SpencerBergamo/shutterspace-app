@@ -21,11 +21,11 @@ export const getInviteCode = query({
 
 export const openInvite = query({
     args: { code: v.string() },
-    handler: async (ctx, { code }): Promise<Invitation> => {
+    handler: async (ctx, { code }): Promise<Invitation | null> => {
         const invite = await ctx.db.query('inviteCodes')
             .withIndex('by_code', q => q.eq('code', code))
             .first();
-        if (!invite) throw new Error('Invalid invite code');
+        if (!invite) return null;
 
         const album = await ctx.db.get(invite.albumId);
         if (!album || album.isDeleted) throw new Error('Album not found or deleted');
@@ -39,26 +39,16 @@ export const openInvite = query({
             albumCover = media?.identifier ?? undefined;
         }
 
-        const memberCount = await ctx.db.query('albumMembers')
-            .withIndex('by_albumId', q => q.eq('albumId', album._id))
-            .collect().then(members => members.length);
-
-        const mediaCount = await ctx.db.query('media')
-            .withIndex('by_albumId', q => q.eq('albumId', album._id))
-            .collect().then(media => media.length);
-
         return {
             albumId: album._id,
             sender: sender.nickname,
-            avatarUrl: undefined,
+            ssoAvatarUrl: sender.ssoAvatarUrl,
+            avatarKey: sender.avatarKey,
             title: album.title,
             description: album.description,
             cover: albumCover,
-            created: album._creationTime,
             role: invite.role,
-            message: undefined,
-            memberCount,
-            mediaCount,
+            created: album._creationTime,
         }
     }
 })
