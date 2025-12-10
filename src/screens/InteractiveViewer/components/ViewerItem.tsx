@@ -151,7 +151,7 @@ export default function ViewerItem({ media, isViewable, onZoomChange }: ViewerIt
         };
     });
 
-    if (!thumbnail) {
+    if (thumbnail === null) {
         return (
             <View style={styles.container}>
                 <Ionicons name="alert-circle-outline" size={24} color="white" />

@@ -25,15 +25,15 @@ export function InteractiveViewerScreen() {
     }, []);
 
     const hasScrolled = useRef(false);
+
     const onContentSizeChange = useCallback(() => {
         if (!hasScrolled.current && initialIndex > 0) {
-            setTimeout(() => {
-                scrollViewRef.current?.scrollTo({
-                    x: initialIndex * SCREEN_WIDTH,
-                    animated: false,
-                });
-                hasScrolled.current = true;
-            }, 100);
+            hasScrolled.current = true;
+
+            scrollViewRef.current?.scrollTo({
+                x: initialIndex * SCREEN_WIDTH,
+                animated: false,
+            });
         }
     }, [initialIndex]);
 
@@ -56,9 +56,9 @@ export function InteractiveViewerScreen() {
                 pagingEnabled
                 scrollEnabled={!isZoomed}
                 showsHorizontalScrollIndicator={false}
+                onContentSizeChange={onContentSizeChange}
                 onScroll={onScroll}
                 scrollEventThrottle={16}
-                onContentSizeChange={onContentSizeChange}
             >
                 {media.map((item, index) => (
                     <ViewerItem
