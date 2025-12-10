@@ -63,8 +63,7 @@ export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ vali
     let valid: ValidatedAsset[] = [];
 
     for (const asset of assets) {
-        const fileInfo = new File(asset.uri).info();
-        const extension = fileInfo.uri?.split('.').pop()?.toLowerCase();
+        const extension = asset.uri.split('.').pop()?.toLowerCase();
         if (!extension || !ALLOWED_EXTENSIONS.has(extension as Extensions)) {
             invalid.push({
                 uri: asset.uri,
@@ -78,7 +77,18 @@ export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ vali
         let filename = asset.fileName ?? `${assetId}.${extension}`;
         let mimeType = asset.mimeType ?? EXTENSION_TO_MIME[extension as Extensions];
         const type = asset.type === 'video' ? 'video' : 'image';
-        const size = asset.fileSize ?? fileInfo.size;
+        let size = asset.fileSize;
+
+        const fileInfo = await new File(asset.uri).info();
+        if (!fileInfo.exists) {
+            invalid.push({
+                uri: asset.uri,
+                assetId: asset.assetId ?? 'unknown',
+            });
+            console.error(`File does not exist: ${asset.uri}`);
+            continue;
+        }
+        if (!size) size = fileInfo.size;
         const creationTime = fileInfo.modificationTime;
 
         const validatedAsset: ValidatedAsset = {

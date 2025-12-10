@@ -221,6 +221,7 @@ export function AlbumScreen() {
 
             if (invalid.length > 0) {
                 console.warn("Invalid assets: ", invalid.length);
+                Alert.alert("Invalid assets", `${invalid.length} assets were invalid. Please try again.`);
             }
 
             await uploadMedia(valid);
