@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Modal, Pressable, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 
@@ -60,10 +60,17 @@ export function QRCodeModal({
         };
     });
 
-    const animatedStyle = useAnimatedStyle(() => {
+    const copyAnimatedStyle = useAnimatedStyle(() => {
         return {
             opacity: copyIconOpacity.value,
             transform: [{ scale: copyIconScale.value }],
+        };
+    });
+
+    const checkAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            opacity: checkIconOpacity.value,
+            transform: [{ scale: checkIconScale.value }],
         };
     });
 
@@ -106,6 +113,19 @@ export function QRCodeModal({
             Alert.alert("Error", "Failed to copy link. Please try again.");
         }
     };
+
+    const handleShareLink = async () => {
+        try {
+            await Share.share({
+                title: 'Join me on Shutterspace!',
+                message: value,
+                url: value,
+            });
+        } catch (e) {
+            console.error("failed to share link", e);
+            Alert.alert("Error", "Failed to share link. Please try again.");
+        }
+    }
 
     const handleClose = () => {
         onClose();
@@ -154,6 +174,7 @@ export function QRCodeModal({
 
                                 <TextInput
                                     value={value}
+                                    editable={false}
                                     style={{
                                         backgroundColor: colors.background,
                                         borderColor: colors.border,
@@ -167,17 +188,16 @@ export function QRCodeModal({
                                     }}
                                 />
 
-                                <TouchableOpacity
-                                    style={{}}
-                                    onPress={handleCopyLink}>
-
-                                    <Animated.View style={animatedStyle}>
-                                        {currentIcon === 'copy' ? (
+                                <TouchableOpacity onPress={handleCopyLink}>
+                                    {currentIcon === 'copy' ? (
+                                        <Animated.View style={copyAnimatedStyle}>
                                             <Ionicons name="copy-outline" size={24} color={colors.text} />
-                                        ) : (
+                                        </Animated.View>
+                                    ) : (
+                                        <Animated.View style={checkAnimatedStyle}>
                                             <Ionicons name="checkmark" size={24} color={colors.text} />
-                                        )}
-                                    </Animated.View>
+                                        </Animated.View>
+                                    )}
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -186,7 +206,7 @@ export function QRCodeModal({
                         {showCopyButton && (
                             <TouchableOpacity
                                 style={[styles.copyButton, { backgroundColor: colors.primary }]}
-                                onPress={handleCopyLink}
+                                onPress={handleShareLink}
                             >
                                 <Text style={styles.copyButtonText}>{"Share Link"}</Text>
                             </TouchableOpacity>

@@ -63,22 +63,6 @@ export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ vali
     let valid: ValidatedAsset[] = [];
 
     for (const asset of assets) {
-        const extension = asset.uri.split('.').pop()?.toLowerCase();
-        if (!extension || !ALLOWED_EXTENSIONS.has(extension as Extensions)) {
-            invalid.push({
-                uri: asset.uri,
-                assetId: asset.assetId ?? 'unknown',
-            });
-            console.error(`Invalid extension: ${extension}`);
-            continue;
-        }
-
-        const assetId = asset.assetId ?? uuidv4();
-        let filename = asset.fileName ?? `${assetId}.${extension}`;
-        let mimeType = asset.mimeType ?? EXTENSION_TO_MIME[extension as Extensions];
-        const type = asset.type === 'video' ? 'video' : 'image';
-        let size = asset.fileSize;
-
         const fileInfo = await new File(asset.uri).info();
         if (!fileInfo.exists) {
             invalid.push({
@@ -88,8 +72,32 @@ export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ vali
             console.error(`File does not exist: ${asset.uri}`);
             continue;
         }
-        if (!size) size = fileInfo.size;
-        const creationTime = fileInfo.modificationTime;
+
+        const assetId = asset.assetId ?? uuidv4();
+        const filename = fileInfo.uri?.split('/').pop()?.split('.').shift() ?? asset.fileName ?? assetId;
+        const type = asset.type === 'video' ? 'video' : 'image';
+        const extension = fileInfo.uri?.split('.').pop()?.toLowerCase() ?? asset.uri.split('.').pop()?.toLowerCase();
+        if (!extension || !ALLOWED_EXTENSIONS.has(extension as Extensions)) {
+            invalid.push({
+                uri: asset.uri,
+                assetId: asset.assetId ?? 'unknown',
+            });
+            console.error(`Invalid extension: ${extension}`);
+            continue;
+        }
+
+        const creationTime = fileInfo.creationTime;
+        const mimeType = asset.mimeType ?? EXTENSION_TO_MIME[extension as Extensions];
+        const size = asset.fileSize ?? fileInfo.size;
+
+        if (!size || size > MAX_SIZE[type]) {
+            invalid.push({
+                uri: asset.uri,
+                assetId: asset.assetId ?? 'unknown',
+            });
+            console.error(`Invalid size: ${size}`);
+            continue;
+        }
 
         const validatedAsset: ValidatedAsset = {
             uri: asset.uri,
@@ -103,11 +111,6 @@ export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ vali
             size,
             creationTime,
         };
-
-        if (!size || size > MAX_SIZE[type]) {
-            invalid.push(validatedAsset);
-            continue;
-        }
 
         valid.push(validatedAsset);
     }

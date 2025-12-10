@@ -1,4 +1,5 @@
 import { api } from '@/convex/_generated/api';
+import Avatar from '@/src/components/Avatar';
 import { TextInputStyles } from '@/src/constants/styles';
 import { useAppTheme } from '@/src/context/AppThemeContext';
 import { useProfile } from '@/src/context/ProfileContext';
@@ -8,12 +9,10 @@ import { useActionSheet } from '@expo/react-native-action-sheet';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import axios from 'axios';
 import { useAction, useMutation } from 'convex/react';
-import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { ActivityIndicator, Alert, Keyboard, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type ProfileFormData = {
     avatar?: ValidatedAsset;
@@ -147,33 +146,16 @@ export function EditProfileScreen() {
                 control={control}
                 name="avatar"
                 render={({ field: { onChange, onBlur, value } }) => (
-                    <Pressable onPress={async () => {
-                        await Haptics.selectionAsync();
-                        showActionSheet(onChange);
-                    }}>
-                        <View style={[styles.avatarContainer, { backgroundColor: colors.secondary + '60', borderColor: colors.border }]}>
-
-                            {!profile.avatarKey && !avatar && (
-                                <Text style={{ fontSize: 24, fontWeight: '600' }}>{profile.nickname.charAt(0)}</Text>
-                            )}
-
-                            {profile.avatarKey && (
-                                <></>
-                            )}
-
-                            {avatar && (
-                                <Image
-                                    source={{ uri: avatar.uri }}
-                                    contentFit="cover"
-                                    style={{ width: '100%', height: '100%' }}
-                                />
-                            )}
-                        </View>
-                    </Pressable>
+                    <Avatar
+                        nickname={profile.nickname}
+                        avatarKey={profile.avatarKey}
+                        ssoAvatarUrl={profile.ssoAvatarUrl}
+                        localUri={avatar?.uri}
+                        onPress={() => showActionSheet(onChange)}
+                        size={100}
+                    />
                 )}
             />
-
-
 
             {/* Nickname */}
             <Controller
