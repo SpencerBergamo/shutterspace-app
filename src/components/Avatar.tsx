@@ -17,11 +17,10 @@ export default function Avatar({
     avatarKey,
     ssoAvatarUrl,
     localUri,
+    size = 40,
     onPress,
 }: AvatarProps) {
     const { colors } = useAppTheme();
-
-    const avatarBaseUrl = 'https://avatar.shutterspace.app';
 
     async function handlePress() {
         if (onPress) {
@@ -30,32 +29,37 @@ export default function Avatar({
         }
     }
 
-    const onImageRenderError = (e: any) => {
-        console.error("Error rendering avatar: ", e);
-    }
+    const containerStyle = {
+        width: size,
+        height: size,
+        backgroundColor: colors.secondary + '60',
+        borderColor: colors.border,
+    };
+
+    const imageStyle = {
+        width: size,
+        height: size,
+    };
 
     return (
-        <TouchableOpacity onPress={handlePress} style={[styles.container, { backgroundColor: colors.secondary + '60', borderColor: colors.border }]}>
+        <TouchableOpacity onPress={handlePress} style={[styles.container, containerStyle]}>
             {ssoAvatarUrl ? (
                 <Image
                     source={{ uri: ssoAvatarUrl }}
-                    style={{ width: '100%', height: '100%' }}
+                    style={imageStyle}
                     contentFit="cover"
-                    onError={onImageRenderError}
                 />
             ) : avatarKey ? (
                 <Image
-                    source={{ uri: `${avatarBaseUrl}/${avatarKey}` }}
-                    style={{ width: '100%', height: '100%' }}
+                    source={{ uri: `https://avatar.shutterspace.app/${avatarKey}` }}
+                    style={imageStyle}
                     contentFit="cover"
-                    onError={onImageRenderError}
                 />
             ) : localUri ? (
                 <Image
                     source={{ uri: localUri }}
-                    style={{ width: '100%', height: '100%' }}
+                    style={imageStyle}
                     contentFit="cover"
-                    onError={onImageRenderError}
                 />
             ) : (
                 <Text style={styles.initial}>{nickname.charAt(0)}</Text>
@@ -66,8 +70,6 @@ export default function Avatar({
 
 const styles = StyleSheet.create({
     container: {
-        width: 40,
-        height: 40,
         borderRadius: 12,
         overflow: 'hidden',
         borderWidth: 1,
@@ -79,5 +81,4 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
     },
-
-})
+});

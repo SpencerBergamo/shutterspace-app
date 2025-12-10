@@ -100,6 +100,7 @@ export function HomeScreen() {
                         <Avatar
                             nickname={profile.nickname}
                             avatarKey={profile.avatarKey}
+                            ssoAvatarUrl={profile.ssoAvatarUrl}
                             onPress={() => router.push('settings')}
                         />
                         <View style={styles.greetingContainer}>

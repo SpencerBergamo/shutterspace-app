@@ -126,7 +126,13 @@ export function AlbumInviteScreen() {
     return (
         <View style={styles.container}>
             <Stack.Screen options={{
-                headerTitle: invitation?.title ?? 'Loading...',
+                headerTransparent: true,
+                headerBlurEffect: 'light',
+                headerTitle: invitation.title,
+                headerStyle: {
+                    backgroundColor: 'transparent',
+                },
+
             }} />
 
             {albumCover && <AlbumCover albumId={invitation.albumId} />}
