@@ -8,6 +8,7 @@ type MimeType =
     | 'video/quicktime'
     | 'video/mov'
     | 'image/jpeg'
+    | 'image/jpg'
     | 'image/png'
     | 'image/heic';
 
@@ -16,6 +17,7 @@ type Extensions =
     | 'mov'
     | 'quicktime'
     | 'jpeg'
+    | 'jpg'
     | 'png'
     | 'heic';
 
@@ -24,6 +26,7 @@ const ALLOWED_EXTENSIONS = new Set<Extensions>([
     'mov',
     'quicktime',
     'jpeg',
+    'jpg',
     'png',
     'heic',
 ]);
@@ -33,7 +36,7 @@ const EXTENSION_TO_MIME: Record<string, MimeType> = {
     mov: 'video/quicktime',
     quicktime: 'video/quicktime',
     jpeg: 'image/jpeg',
-    jpg: 'image/jpeg',
+    jpg: 'image/jpg',
     png: 'image/png',
     heic: 'image/heic',
 };
