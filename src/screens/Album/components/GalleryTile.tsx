@@ -85,7 +85,7 @@ export default function GalleryTile({ media, itemSize, onPress, onLongPress, onR
                     {duration ? (
                         <Text style={styles.videoDurationText}>{formatVideoDuration(duration)}</Text>
                     ) : (
-                        <Ionicons name="play-circle-outline" size={24} color="white" />
+                        <Ionicons name="play-outline" size={24} color="white" />
                     )}
                 </View>
             )}

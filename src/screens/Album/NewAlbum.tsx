@@ -7,7 +7,7 @@ import { validateAlbumTitle } from "@/src/utils/validators";
 import { useTheme } from "@react-navigation/native";
 import { useAction } from "convex/react";
 import { router } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
@@ -44,6 +44,12 @@ export function NewAlbumScreen() {
             openInvites: true,
         }
     });
+
+    useEffect(() => {
+        setTimeout(() => {
+            titleInputRef.current?.focus();
+        }, 600);
+    }, [titleInputRef]);
 
     const handleCreate = useCallback(async (data: FormData) => {
         setIsLoading(true);
@@ -83,7 +89,6 @@ export function NewAlbumScreen() {
                         ref={titleInputRef}
                         placeholder="What's this album for?"
                         value={value}
-                        autoFocus
                         autoCapitalize="words"
                         autoCorrect={false}
                         spellCheck={false}

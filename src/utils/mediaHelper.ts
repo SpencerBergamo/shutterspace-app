@@ -106,6 +106,7 @@ export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ vali
             uri: asset.uri,
             width: asset.width,
             height: asset.height,
+            duration: asset.duration,
             assetId,
             filename,
             extension,

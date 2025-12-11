@@ -34,7 +34,7 @@ export default function useAlbumCover(albumId: Id<'albums'>): UseAlbumCoverResul
                 setRequesting(false);
             }
         })();
-    }, [albumId]);
+    }, [albumId, lastMedia]);
 
     return { requesting, coverUrl, mediaId: lastMedia?._id };
 }

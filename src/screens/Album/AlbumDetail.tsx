@@ -5,6 +5,7 @@ import { useAppTheme } from "@/src/context/AppThemeContext";
 import useFabStyles from "@/src/hooks/useFabStyles";
 import { useMedia } from "@/src/hooks/useMedia";
 import GalleryTile from "@/src/screens/Album/components/GalleryTile";
+import UploadProgressHeader from "@/src/screens/Album/components/UploadProgressHeader";
 import { Media } from "@/src/types/Media";
 import { validateAssets } from "@/src/utils/mediaHelper";
 import { Ionicons } from "@expo/vector-icons";
@@ -73,7 +74,7 @@ export function AlbumScreen() {
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbum } = useAlbums();
     const album = getAlbum(albumId);
-    const { media, pendingMedia, uploadMedia, removePendingMedia } = useMedia(albumId);
+    const { media, pendingMedia, uploadMedia, removePendingMedia, retryAllFailedUploads, clearFailedUploads } = useMedia(albumId);
 
     // Refs
     const settingsModalRef = useRef<BottomSheetModal>(null);
@@ -321,6 +322,13 @@ export function AlbumScreen() {
                 contentContainerStyle={{ padding: 0 }}
                 removeClippedSubviews={false}
 
+                ListHeaderComponent={
+                    <UploadProgressHeader
+                        pendingMedia={pendingMedia}
+                        onRetryAll={retryAllFailedUploads}
+                        onClearFailed={clearFailedUploads}
+                    />
+                }
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Images size={48} color="#ccc" style={{ margin: 16 }} />
