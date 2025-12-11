@@ -1,21 +1,31 @@
+import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { useProfile } from "@/src/context/ProfileContext";
 import { useMedia } from "@/src/hooks/useMedia";
 import ViewerItem from "@/src/screens/InteractiveViewer/components/ViewerItem";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAction, useQuery } from "convex/react";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet } from "react-native";
+import { Alert, Dimensions, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export function InteractiveViewerScreen() {
+    const insets = useSafeAreaInsets();
     const { albumId, index } = useLocalSearchParams<{ albumId: Id<'albums'>, index: string }>();
     const { media } = useMedia(albumId);
+    const { profileId } = useProfile();
+    const membership = useQuery(api.albumMembers.getMembership, { albumId });
+    const deleteMedia = useAction(api.media.deleteMedia);
 
     // Scroll View State
     const initialIndex = parseInt(index);
     const [currentIndex, setCurrentIndex] = useState<number>(initialIndex);
     const [isZoomed, setIsZoomed] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
 
     const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -36,6 +46,38 @@ export function InteractiveViewerScreen() {
             });
         }
     }, [initialIndex]);
+
+    const currentMedia = media[currentIndex];
+    const canDelete = membership === 'host' || membership === 'moderator' || currentMedia?.createdBy === profileId;
+
+    const handleDelete = useCallback(async () => {
+        if (!currentMedia || !canDelete) return;
+        try {
+            if (media.length === 1) {
+                await deleteMedia({ albumId, mediaId: currentMedia._id });
+                router.back();
+                return;
+            }
+
+            const nextIndex = currentIndex >= media.length - 1 ? currentIndex - 1 : currentIndex;
+
+            await deleteMedia({ albumId, mediaId: currentMedia._id });
+
+            setTimeout(() => {
+                scrollViewRef.current?.scrollTo({
+                    x: nextIndex * SCREEN_WIDTH,
+                    animated: false,
+                });
+                setCurrentIndex(nextIndex);
+            }, 100);
+        } catch (error) {
+            console.error('Failed to delete media:', error);
+            Alert.alert("Error", "Failed to delete media. Please try again.");
+        } finally {
+            setIsDeleting(false);
+        }
+
+    }, [currentMedia, canDelete, media.length, currentIndex, deleteMedia, albumId]);
 
     return (
         <GestureHandlerRootView style={styles.container}>
@@ -69,6 +111,28 @@ export function InteractiveViewerScreen() {
                     />
                 ))}
             </ScrollView>
+
+            <View style={[styles.bottomBar, { bottom: insets.bottom }]}>
+                <Ionicons name="download-outline" size={24} color="white" />
+                <Pressable
+                    disabled={!canDelete || isDeleting}
+                    onPress={() => {
+                        Alert.alert("Delete Media", "Are you sure you want to delete this item?", [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                                text: "Delete",
+                                style: "destructive",
+                                onPress: handleDelete,
+                            },
+                        ]);
+                    }} >
+                    <Ionicons
+                        name="trash-outline"
+                        size={24}
+                        color={canDelete && !isDeleting ? "#FF3B30" : "#666666"}
+                    />
+                </Pressable>
+            </View>
         </GestureHandlerRootView>
     );
 }
@@ -108,6 +172,16 @@ const styles = StyleSheet.create({
         borderRadius: 40,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    bottomBar: {
+        flexDirection: 'row',
+        position: 'absolute',
+        bottom: 0,
+        left: 16,
+        right: 16,
+        justifyContent: 'space-evenly',
         alignItems: 'center',
     },
 });

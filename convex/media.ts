@@ -1,12 +1,11 @@
 import { Media } from "@/src/types/Media";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { api, internal } from "./_generated/api";
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 
 export const getMediaForAlbum = query({
     args: {
         albumId: v.id("albums"),
-        profileId: v.id('profiles'),
     }, handler: async (ctx, args) => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId: args.albumId });
         if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
@@ -18,14 +17,13 @@ export const getMediaForAlbum = query({
     }
 });
 
-export const getAlbumCoverMedia = query({
+export const getLastMedia = query({
     args: { albumId: v.id('albums') },
     handler: async (ctx, { albumId }): Promise<Media | null> => {
-        const album = await ctx.db.get(albumId);
-        if (!album) return null;
-        if (!album.thumbnail) return null;
-
-        return await ctx.db.get(album.thumbnail) ?? null;
+        return await ctx.db.query('media')
+            .withIndex('by_albumId', q => q.eq('albumId', albumId))
+            .order('desc')
+            .first();
     }
 })
 
@@ -93,23 +91,47 @@ export const createMedia = mutation({
     },
 })
 
-export const deleteMedia = mutation({
+export const deleteMedia = action({
     args: {
-        mediaId: v.id("media"),
-        profileId: v.id("profiles"),
-    }, handler: async (ctx, { mediaId, profileId }) => {
+        albumId: v.id('albums'),
+        mediaId: v.id('media'),
+    }, handler: async (ctx, { albumId, mediaId }) => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) throw new Error("Profile not found");
+
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
+
+        const media = await ctx.runQuery(internal.media.getMedia, { mediaId });
+
+        const canDelete = membership === 'host' || membership === 'moderator' || media.createdBy === profile._id;
+        if (!canDelete) throw new Error("You don't have permission to delete this media");
+
+        await ctx.runMutation(internal.media.deleteMediaDoc, { mediaId });
+
+        if (media.identifier.type === 'image') {
+            await ctx.runAction(internal.r2.deleteObject, { objectKey: `album/${albumId}/${media.identifier.imageId}` });
+        } else if (media.identifier.type === 'video') {
+            await ctx.runAction(internal.cloudflare.deleteVideo, { videoUID: media.identifier.videoUid });
+        }
+
+    }
+})
+
+export const getMedia = internalQuery({
+    args: { mediaId: v.id('media') },
+    handler: async (ctx, { mediaId }) => {
         const media = await ctx.db.get(mediaId);
         if (!media) throw new Error("Media not found");
 
-        const membership = await ctx.db.query('albumMembers')
-            .withIndex('by_profileId', q => q.eq('profileId', profileId))
-            .first();
+        return media;
+    }
+})
 
-        if (!membership) throw new Error("You are not a member of this album");
-
-        const canDelete = membership.role === 'host' || membership.role === 'moderator' || media.createdBy === profileId;
-        if (!canDelete) throw new Error("You don't have permission to delete this media");
-
+export const deleteMediaDoc = internalMutation({
+    args: {
+        mediaId: v.id("media"),
+    }, handler: async (ctx, { mediaId }) => {
         await ctx.db.delete(mediaId);
     }
 });

@@ -46,7 +46,7 @@ export function AddFriendsPrompt({ friendCount, onPress }: AddFriendsPromptProps
                 </View>
 
                 <View style={[styles.qrBadge, { backgroundColor: colors.background }]}>
-                    <Ionicons name="qr-code" size={20} color={colors.grey1} />
+                    <Ionicons name="chevron-forward" size={20} color={colors.grey1} />
                 </View>
             </View>
         </TouchableOpacity>

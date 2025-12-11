@@ -29,13 +29,13 @@ export const getFriendByFriendshipId = query({
         if (!profile) return null;
 
         const friendship = await ctx.db.get(friendshipId);
-        if (!friendship) throw new Error('Friendship does not exist');
+        if (!friendship) return null;
 
         if (friendship.senderId !== profile._id && friendship.recipientId !== profile._id) throw new Error("You are not a part of this friendship");
 
         const friendId = friendship.senderId === profile._id ? friendship.recipientId : friendship.senderId;
         const friend = await ctx.db.get(friendId);
-        if (!friend) throw new Error('Friend does not exist');
+        if (!friend) return null;
 
         return {
             _id: friend._id,

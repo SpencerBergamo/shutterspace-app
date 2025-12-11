@@ -32,10 +32,10 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
 
     const prepareImageUpload = useAction(api.r2.prepareImageUpload);
     const prepareVideoUpload = useAction(api.cloudflare.prepareVideoUpload);
-    const media = useQuery(api.media.getMediaForAlbum, { albumId, profileId }) ?? [];
+    const media = useQuery(api.media.getMediaForAlbum, { albumId }) ?? [];
     const createMedia = useMutation(api.media.createMedia).withOptimisticUpdate(
         (localStore, args) => {
-            const currentMedia = localStore.getQuery(api.media.getMediaForAlbum, { albumId, profileId });
+            const currentMedia = localStore.getQuery(api.media.getMediaForAlbum, { albumId });
 
             if (currentMedia !== undefined) {
                 const now = Date.now();
@@ -47,7 +47,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                     ...args,
                 }
 
-                localStore.setQuery(api.media.getMediaForAlbum, { albumId, profileId }, [
+                localStore.setQuery(api.media.getMediaForAlbum, { albumId }, [
                     ...currentMedia,
                     newMedia,
                 ]);
@@ -159,9 +159,6 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                 dateTaken: asset.exif?.DateTimeOriginal,
                 location: undefined,
             })
-
-            // Note: pending item will be automatically filtered out in displayItems
-            // once the real media with matching assetId appears in the query
         }
     }, [albumId, prepareImageUpload, prepareVideoUpload, createMedia, removePendingMedia]);
 

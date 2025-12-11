@@ -17,7 +17,7 @@ interface QRCodeModalProps {
     showCopyButton?: boolean;
 }
 
-export function QRCodeModal({
+export default function QRCodeModal({
     visible,
     onClose,
     value,
@@ -50,6 +50,12 @@ export function QRCodeModal({
         } else {
             contentOpacity.value = 0;
             contentTranslateY.value = 20;
+            // Reset icon animations when modal closes
+            copyIconOpacity.value = 1;
+            copyIconScale.value = 1;
+            checkIconOpacity.value = 0;
+            checkIconScale.value = 0;
+            setCurrentIcon('copy');
         }
     }, [visible]);
 
@@ -127,21 +133,14 @@ export function QRCodeModal({
         }
     }
 
-    const handleClose = () => {
-        onClose();
-        setTimeout(() => {
-            setCurrentIcon('copy');
-        }, 500);
-    }
-
     return (
         <Modal
             visible={visible}
             transparent
             animationType="fade"
-            onRequestClose={handleClose}
+            onRequestClose={onClose}
         >
-            <Pressable style={styles.overlay} onPress={handleClose}>
+            <Pressable style={styles.overlay} onPress={onClose}>
                 <Animated.View
                     style={[styles.modalContainer, { backgroundColor: colors.background }, contentAnimatedStyle]}
                 >
@@ -215,7 +214,7 @@ export function QRCodeModal({
                         {/* Close Button */}
                         <TouchableOpacity
                             style={[styles.closeButton, { backgroundColor: colors.grey2 }]}
-                            onPress={handleClose}
+                            onPress={onClose}
                         >
                             <Text style={[styles.closeButtonText, { color: colors.text }]}>Close</Text>
                         </TouchableOpacity>

@@ -1,18 +1,19 @@
 import { api } from "@/convex/_generated/api";
 import Avatar from "@/src/components/Avatar";
-import { QRCodeModal } from "@/src/components/QRCodeModal";
+import QRCodeModal from "@/src/components/QRCodeModal";
 import { useAlbums } from '@/src/context/AlbumsContext';
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { useProfile } from "@/src/context/ProfileContext";
 import useFabStyles from "@/src/hooks/useFabStyles";
-import AlbumCover from "@/src/screens/Album/components/AlbumCover";
+import { formatAlbumDate } from "@/src/utils/formatters";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
 import { router, Stack } from "expo-router";
 import * as Orientation from 'expo-screen-orientation';
 import { Plus } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, Platform, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { FlatList, Platform, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import AlbumCoverImage from "../Album/components/AlbumCoverImage";
 import { AddFriendsPrompt } from "./components/AddFriendsPrompt";
 
 export function HomeScreen() {
@@ -79,7 +80,7 @@ export function HomeScreen() {
     }, [width, orientation]);
 
     const renderHeader = useCallback(() => {
-        const friendCount = friendships?.length ?? 0;
+        const friendCount = friendships?.filter(f => f.status === 'accepted').length ?? 0;
 
         // Show prompt for users with fewer than 5 friends
         if (friendCount >= 5) return null;
@@ -91,6 +92,22 @@ export function HomeScreen() {
             />
         );
     }, [friendships]);
+
+    const renderItem = useCallback(({ item }: { item: typeof albums[number] }) => (
+        <Pressable
+            onPress={() => router.push(`/album/${item._id}`)}
+            style={[styles.albumCover, { width: gridConfig.itemSize }]}
+        >
+            <View style={[styles.albumCoverImage, { width: gridConfig.itemSize, height: gridConfig.itemSize }]}>
+                <AlbumCoverImage album={item} />
+            </View>
+
+            <Text style={[styles.albumTitle, { color: colors.text }]}>{item.title}</Text>
+            <Text style={[styles.albumDate, { color: colors.text + '80' }]}>
+                {formatAlbumDate(item._creationTime)}
+            </Text>
+        </Pressable>
+    ), [gridConfig.itemSize, colors.text]);
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -144,7 +161,7 @@ export function HomeScreen() {
                 contentContainerStyle={{ paddingHorizontal: gridConfig.gap, gap: gridConfig.gap }}
                 scrollEnabled={albums.length > 0}
                 ListEmptyComponent={
-                    < View style={styles.emptyContainer} >
+                    <View style={styles.emptyContainer} >
                         <View style={[styles.emptyCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
                             <Text style={[styles.emptyTitle, { color: colors.text }]}>
                                 Welcome to Shutterspace!
@@ -168,14 +185,7 @@ export function HomeScreen() {
                 ListHeaderComponentStyle={{
                     marginTop: 16,
                 }}
-                renderItem={({ item }) => (
-                    <AlbumCover
-                        album={item}
-                        width={gridConfig.itemSize}
-                        height={gridConfig.itemSize}
-                        onPress={() => router.push(`/album/${item._id}`)}
-                    />
-                )}
+                renderItem={renderItem}
             />
 
             < View style={position} >
@@ -247,6 +257,26 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 3.84,
         elevation: 1,
+    },
+
+    // Album Cover
+    albumCover: {
+        flexDirection: 'column',
+        marginBottom: 16,
+    },
+    albumCoverImage: {
+        borderRadius: 16,
+        backgroundColor: '#DEDEDEFF',
+        overflow: 'hidden',
+        marginBottom: 8,
+    },
+    albumTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    albumDate: {
+        fontSize: 12,
     },
 
     // Fab

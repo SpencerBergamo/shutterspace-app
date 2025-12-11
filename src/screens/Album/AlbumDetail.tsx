@@ -2,24 +2,22 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAlbums } from "@/src/context/AlbumsContext";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { useProfile } from "@/src/context/ProfileContext";
 import useFabStyles from "@/src/hooks/useFabStyles";
-import { PendingMedia, useMedia } from "@/src/hooks/useMedia";
-import AlbumDeletionAlert from "@/src/screens/Album/components/AlbumDeletionAlert";
+import { useMedia } from "@/src/hooks/useMedia";
 import GalleryTile from "@/src/screens/Album/components/GalleryTile";
-import PendingGalleryTile from "@/src/screens/Album/components/PendingGalleryTile";
 import { Media } from "@/src/types/Media";
 import { validateAssets } from "@/src/utils/mediaHelper";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { } from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import * as Orientation from 'expo-screen-orientation';
 import { Images } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, FlatList, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { NotFoundScreen } from "../Home";
 import AlbumSettingsSheet from "./components/AlbumSettingsSheet";
 
 const GAP = 2;
@@ -72,7 +70,6 @@ export function AlbumScreen() {
     }, [width, orientation]);
 
     // Data
-    const { profileId } = useProfile();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbum } = useAlbums();
     const album = getAlbum(albumId);
@@ -85,44 +82,16 @@ export function AlbumScreen() {
     const [isCreatingInvite, setIsCreatingInvite] = useState(false);
     const [isLeavingAlbum, setIsLeavingAlbum] = useState(false);
     const [isDeletingAlbum, setIsDeletingAlbum] = useState(false);
-    const [isCancelingDeletion, setIsCancelingDeletion] = useState(false);
     const [selectionMode, setSelectionMode] = useState(false);
-    const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+    const [selectedItems, setSelectedItems] = useState<Set<Id<'media'>>>(new Set());
 
     // Convex
     const inviteCode = useQuery(api.inviteCodes.getInviteCode, { albumId }) ?? undefined;
     const leaveAlbum = useMutation(api.albumMembers.leaveAlbum);
-    const deleteAlbum = useMutation(api.albums.deleteAlbum);
-    const cancelDeletion = useMutation(api.albums.cancelAlbumDeletion);
+    const deleteAlbum = useAction(api.albums.deleteAlbum);
+    const deleteMedia = useAction(api.media.deleteMedia);
 
     const albumCover = media.find(m => m._id === album?.thumbnail) ?? null;
-
-    // Combine pending media with actual media for optimistic UI
-    type DisplayItem =
-        | { type: 'media'; data: Media; index: number }
-        | { type: 'pending'; data: PendingMedia };
-
-    const displayItems: DisplayItem[] = useMemo(() => {
-        const items: DisplayItem[] = [];
-        const processedAssetIds = new Set<string>();
-
-        // Add pending media first (newest at top, sorted by timestamp descending)
-        const sortedPending = [...pendingMedia].sort((a, b) => b.timestamp - a.timestamp);
-        sortedPending.forEach(pending => {
-            items.push({ type: 'pending', data: pending });
-            processedAssetIds.add(pending.assetId);
-        });
-
-        // Add actual media (already sorted by Convex query in descending order)
-        // Skip any that have a pending counterpart (shouldn't happen after cleanup effect)
-        media.forEach((m, idx) => {
-            if (!processedAssetIds.has(m.assetId)) {
-                items.push({ type: 'media', data: m, index: idx });
-            }
-        });
-
-        return items;
-    }, [media, pendingMedia]);
 
     const handleMediaRetry = useCallback(async (mediaId: Id<'media'>) => {
         try {
@@ -135,6 +104,17 @@ export function AlbumScreen() {
             Alert.alert("Failed Upload", "Failed to retry the upload. Please try again.");
         }
     }, [albumId, media]);
+
+    const handleDeleteMediaSelection = useCallback(async () => {
+        try {
+            for (const item of selectedItems) {
+                await deleteMedia({ albumId, mediaId: item });
+            }
+        } catch (e) {
+            console.error("Failed to delete media selection: ", e);
+            Alert.alert("Failed to delete media selection", "Failed to delete the media selection. Please try again.");
+        }
+    }, []);
 
     const handleSettingsPress = useCallback(() => {
         settingsModalRef.current?.present();
@@ -149,7 +129,7 @@ export function AlbumScreen() {
 
             await Share.share({
                 title: `You're invited to "${album.title}" on ShutterSpace!`,
-                message: `Join my album "${album.title}" https://shutterspace.app/invite/${inviteCode}!`,
+                message: `https://shutterspace.app/invite/${inviteCode}`,
                 url: `https://shutterspace.app/invite/${inviteCode}`,
 
             });
@@ -175,37 +155,20 @@ export function AlbumScreen() {
     }, [albumId]);
 
     const handleDeleteAlbum = useCallback(async () => {
-        setIsDeletingAlbum(true);
+        if (!album || album.isDeleted) return;
+
         try {
-            await deleteAlbum({ albumId });
+            setIsDeletingAlbum(true);
             settingsModalRef.current?.dismiss();
+            await deleteAlbum({ albumId });
+            router.back();
         } catch (e) {
             console.error("Failed to delete album: ", e);
+            Alert.alert("Error", "Failed to delete album. Please try again.");
         } finally {
             setIsDeletingAlbum(false);
         }
-    }, []);
-
-    const handleCancelDeletion = useCallback(async () => {
-        setIsCancelingDeletion(true);
-        try {
-            await cancelDeletion({ albumId });
-            Alert.alert(
-                'Album Restored',
-                'Your album has been successfully restored and will not be deleted.',
-                [{ text: 'OK' }]
-            );
-        } catch (e) {
-            console.error("Failed to cancel deletion: ", e);
-            Alert.alert(
-                'Error',
-                'Failed to restore the album. Please try again.',
-                [{ text: 'OK' }]
-            );
-        } finally {
-            setIsCancelingDeletion(false);
-        }
-    }, [albumId, cancelDeletion]);
+    }, [albumId, deleteAlbum, settingsModalRef]);
 
     const handleMediaUpload = useCallback(async () => {
         try {
@@ -261,9 +224,8 @@ export function AlbumScreen() {
     }, []);
 
     const handleSelectAll = useCallback(() => {
-        const allMediaIds = displayItems
-            .filter(item => item.type === 'media')
-            .map(item => item.data._id);
+        const allMediaIds = media
+            .map(item => item._id);
 
         const allSelected = allMediaIds.length > 0 && allMediaIds.every(id => selectedItems.has(id));
 
@@ -272,42 +234,29 @@ export function AlbumScreen() {
         } else {
             setSelectedItems(new Set(allMediaIds));
         }
-    }, [displayItems, selectedItems]);
+    }, [media, selectedItems]);
 
-    const renderItem = useCallback(({ item }: { item: DisplayItem }) => {
-        if (item.type === 'pending') {
-            return (
-                <PendingGalleryTile
-                    pendingMedia={item.data}
-                    itemSize={gridConfig.itemSize}
-                />
-            );
-        }
 
-        const media = item.data;
-        const isSelected = selectedItems.has(media._id);
+
+    const renderItem = useCallback(({ item, index }: { item: Media, index: number }) => {
+
+        const isSelected = selectedItems.has(item._id);
+        const placeholder = pendingMedia.find(p => p.assetId === item.assetId)?.uri;
 
         return (
             <GalleryTile
-                media={media}
+                media={item}
+                placeholder={placeholder}
                 itemSize={gridConfig.itemSize}
-                onPress={() => handleTilePress(media._id, item.index)}
-                onLongPress={() => handleLongPress(media._id)}
-                onRetry={(mediaId) => {
-                    Alert.alert("Upload Failed", "This asset failed to upload. Would you like to retry?", [
-                        { text: "Retry", onPress: () => handleMediaRetry(mediaId) },
-                        { text: "Delete", style: 'destructive', onPress: () => { } },
-                        { text: "Cancel", style: 'cancel' },
-                    ]);
-                }}
-                onReady={() => {
-                    removePendingMedia(media.assetId);
-                }}
+                onPress={() => handleTilePress(item._id, index)}
+                onLongPress={() => { }}
+                onRetry={handleMediaRetry}
+                onReady={() => removePendingMedia(item.assetId)}
                 selectionMode={selectionMode}
                 isSelected={isSelected}
             />
-        );
-    }, [displayItems, removePendingMedia, gridConfig.itemSize, selectionMode, selectedItems, handleTilePress, handleLongPress]);
+        )
+    }, [media, removePendingMedia, gridConfig.itemSize, selectionMode, selectedItems, handleTilePress, handleLongPress]);
 
     if (!album) return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -322,6 +271,19 @@ export function AlbumScreen() {
             </View>
         </View>
     );
+
+    if (media === undefined) {
+        return (
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
+                <Stack.Screen options={{
+                    headerTitle: album.title,
+                }} />
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        )
+    }
+
+    if (album.isDeleted) return <NotFoundScreen />
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -347,29 +309,18 @@ export function AlbumScreen() {
                 )
             }} />
 
-            {/* Deletion Alert */}
-            {album.isDeleted && (
-                <AlbumDeletionAlert
-                    isHost={album.hostId === profileId}
-                    deletionDate={album.deletionScheduledAt ? new Date(album.deletionScheduledAt).toLocaleDateString() : "N/A"}
-                    isCancelingDeletion={isCancelingDeletion}
-                    handleCancelDeletion={handleCancelDeletion}
-                />
-            )}
-
             {/* Media Grid */}
             <FlatList
-                data={displayItems}
+                data={media}
                 initialNumToRender={20}
-                maxToRenderPerBatch={displayItems.length}
-                keyExtractor={(item: DisplayItem) =>
-                    item.type === 'pending' ? item.data.assetId : item.data.assetId
-                }
+                maxToRenderPerBatch={media.length}
+                keyExtractor={(item: Media) => item._id}
                 key={gridConfig.numColumns.toString()}
                 numColumns={gridConfig.numColumns}
                 columnWrapperStyle={{ gap: GAP }}
                 contentContainerStyle={{ padding: 0 }}
                 removeClippedSubviews={false}
+
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Images size={48} color="#ccc" style={{ margin: 16 }} />
@@ -427,10 +378,7 @@ export function AlbumScreen() {
                                     {
                                         text: "Delete",
                                         style: "destructive",
-                                        onPress: () => {
-                                            Alert.alert("Delete", "Feature coming soon!");
-                                            handleCancelSelection();
-                                        }
+                                        onPress: handleDeleteMediaSelection,
                                     }
                                 ]
                             );

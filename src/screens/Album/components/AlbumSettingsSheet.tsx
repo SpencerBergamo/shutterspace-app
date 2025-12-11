@@ -179,7 +179,7 @@ export default function AlbumSettingsSheet({
                             </Text>
                             <Text style={styles.optionSubtitle}>Share an invite link</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+                        <Ionicons name="share-outline" size={20} color="#C7C7CC" />
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -204,13 +204,9 @@ export default function AlbumSettingsSheet({
                     <Text style={styles.sectionTitle}>Manage</Text>
 
                     <TouchableOpacity
+                        disabled
                         style={styles.settingsOption}
-                        onPress={() => {
-                            ref.current?.dismiss();
-                            setTimeout(() => {
-                                Alert.alert("Album Settings", "Where you will be able to change the album settings, including privacy, notifications, and more. Feature Coming Soon!");
-                            }, 200);
-                        }}
+                        onPress={() => { }}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: '#F5F5F5' }]}>
                             <Ionicons name="settings" size={20} color="#8E8E93" />
@@ -219,17 +215,14 @@ export default function AlbumSettingsSheet({
                             <Text style={styles.optionTitle}>Album Settings</Text>
                             <Text style={styles.optionSubtitle}>Privacy, notifications, and more</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+                        {/* <Ionicons name="chevron-forward" size={20} color="#C7C7CC" /> */}
+                        <Text style={{ color: '#8E8E93', fontSize: 11, fontWeight: '600' }}>COMING SOON</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
+                        disabled
                         style={styles.settingsOption}
-                        onPress={() => {
-                            ref.current?.dismiss();
-                            setTimeout(() => {
-                                Alert.alert("Download All", "Feature Coming Soon!");
-                            }, 200);
-                        }}
+                        onPress={() => { }}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: '#E5F6FF' }]}>
                             <Ionicons name="download" size={20} color="#007AFF" />
@@ -238,7 +231,8 @@ export default function AlbumSettingsSheet({
                             <Text style={styles.optionTitle}>Download All</Text>
                             <Text style={styles.optionSubtitle}>Save all photos to your device</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+                        {/* <Ionicons name="chevron-forward" size={20} color="#C7C7CC" /> */}
+                        <Text style={{ color: '#8E8E93', fontSize: 11, fontWeight: '600' }}>COMING SOON</Text>
                     </TouchableOpacity>
                 </View>
 

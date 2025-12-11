@@ -123,7 +123,7 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
                 setRequesting(false);
             }
         })();
-    }, [media, getImageURL, getVideoThumbnailURL]);
+    }, [media?._id, getImageURL, getVideoThumbnailURL]);
 
 
     return { requesting, thumbnail, handleImageError, requestingVideo, requestVideo };

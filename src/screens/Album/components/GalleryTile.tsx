@@ -5,10 +5,12 @@ import { Media } from "@/src/types/Media";
 import { formatVideoDuration } from "@/src/utils/formatters";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from "expo-image";
+import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
 interface GalleryTileProps {
     media: Media;
+    placeholder?: string;
     itemSize: number;
     onPress: (mediaId: Id<'media'>) => void;
     onLongPress: (mediaId: Id<'media'>) => void;
@@ -20,15 +22,17 @@ interface GalleryTileProps {
 
 export default function GalleryTile({ media, itemSize, onPress, onLongPress, onRetry, onReady, selectionMode = false, isSelected = false }: GalleryTileProps) {
     const { profileId } = useProfile();
-    const { requesting, thumbnail } = useSignedUrls({ media });
+    const { requesting, thumbnail: uri } = useSignedUrls({ media });
+
+    const [imageError, setImageError] = useState(false);
 
     const mediaId = media._id;
     const type = media.identifier.type;
     const isVideo = type === 'video';
     const duration = type === 'video' ? media.identifier.duration : null;
-    const isOwner = profileId === media.createdBy;
+    const isOwner = media.createdBy === profileId;
 
-    if (media.status === 'error') {
+    if (media.status === 'error' || imageError) {
         return (
             <Pressable
                 disabled={!isOwner}
@@ -52,21 +56,26 @@ export default function GalleryTile({ media, itemSize, onPress, onLongPress, onR
         );
     }
 
+
     return (
         <Pressable
+            disabled={media.status === 'pending'}
             onPress={() => onPress(mediaId)}
             onLongPress={() => onLongPress(mediaId)}
             style={[styles.container, { width: itemSize, height: itemSize }]}
         >
-            {thumbnail && (
+            {uri && (
                 <Image
-                    source={{ uri: thumbnail, cacheKey: mediaId }}
+                    source={{ uri, cacheKey: mediaId }}
                     transition={0}
                     style={{ width: '100%', height: '100%' }}
                     contentFit="cover"
                     cachePolicy={'memory-disk'}
                     recyclingKey={mediaId}
-                    onError={(e) => { }}
+                    onError={(e) => {
+                        console.error("Gallery Tile ERROR: ", e);
+                        setImageError(true);
+                    }}
                     onDisplay={() => onReady(mediaId)}
                 />
             )}
@@ -82,19 +91,21 @@ export default function GalleryTile({ media, itemSize, onPress, onLongPress, onR
             )}
 
             {requesting && (
-                <View style={styles.uploadingOverlay}>
-                    <ActivityIndicator size="small" color="black" />
-                </View>
+                <ActivityIndicator size="small" color="grey" />
             )}
 
             {/* Selection Overlay */}
             {selectionMode && (
                 <View style={styles.selectionOverlay}>
-                    <View style={[styles.checkboxContainer, isSelected && styles.checkboxSelected]}>
-                        {isSelected && (
-                            <Ionicons name="checkmark" size={18} color="white" />
-                        )}
-                    </View>
+                    {isOwner ? (
+                        <View style={[styles.checkboxContainer, isSelected && styles.checkboxSelected]}>
+                            {isSelected && (
+                                <Ionicons name="checkmark" size={18} color="white" />
+                            )}
+                        </View>
+                    ) : (
+                        <Ionicons name="lock-closed-outline" size={18} color="white" />
+                    )}
                 </View>
             )}
         </Pressable>

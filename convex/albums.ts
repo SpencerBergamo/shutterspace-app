@@ -37,7 +37,7 @@ export const createAlbum = action({
         if (!profile) return null;
 
         // create the alblum doc
-        const albumId: Id<'albums'> = await ctx.runMutation(internal.albums.insert, { hostId: profile._id, title, description, openInvites });
+        const albumId: Id<'albums'> = await ctx.runMutation(internal.albums.createAlbumDoc, { hostId: profile._id, title, description, openInvites });
 
         // create an invite code entry
         const code: string = await ctx.runAction(internal.crypto.generateRandomCode, { length: 10 });
@@ -77,7 +77,6 @@ export const joinViaInviteCode = mutation({
             role,
             joinedAt: Date.now(),
         });
-
     },
 });
 
@@ -121,43 +120,35 @@ export const updateAlbum = mutation({
     },
 });
 
-export const deleteAlbum = mutation({
+// Public API for deleting an album and all its media
+export const deleteAlbum = action({
     args: { albumId: v.id('albums') },
     handler: async (ctx, { albumId }) => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership !== 'host') throw new Error('Not the host of this album');
 
-        const duration = 1000 * 60 * 60 * 24 * 30; // 30 days
-        const id = await ctx.scheduler.runAfter(duration, internal.albums.scheduledDeletion, { albumId });
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) throw new Error('Profile not found');
 
-        await ctx.db.patch(albumId, {
-            isDeleted: true,
-            deletionScheduledAt: Date.now() + duration,
-            scheduledDeletionId: id,
-        });
+        const media = await ctx.runQuery(api.media.getMediaForAlbum, { albumId });
 
-        return { success: true, scheduledDeletion }
-    }
-})
+        for (const m of media) {
+            const canDelete = membership === 'host' || membership === 'moderator' || m.createdBy === profile._id;
+            if (!canDelete) throw new Error('You don\'t have permission to delete this media');
 
-export const cancelAlbumDeletion = mutation({
-    args: { albumId: v.id('albums') },
-    handler: async (ctx, { albumId }) => {
-        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-        if (!membership || membership !== 'host') throw new Error('Not the host of this album');
+            // Delete the Media object
+            await ctx.runMutation(internal.media.deleteMediaDoc, { mediaId: m._id });
 
-        const album = await ctx.db.get(albumId);
-        if (!album || !album.scheduledDeletionId) throw new Error('Album not found');
+            // Delete the file from R2 or Cloudflare Stream
+            if (m.identifier.type === 'image') {
+                await ctx.runAction(internal.r2.deleteObject, { objectKey: `album/${albumId}/${m.identifier.imageId}` });
+            } else if (m.identifier.type === 'video') {
+                await ctx.runAction(internal.cloudflare.deleteVideo, { videoUID: m.identifier.videoUid })
+            }
+        }
 
-        await ctx.db.system.get(album.scheduledDeletionId);
+        await ctx.runMutation(internal.albums.deleteAlbumDoc, { albumId });
 
-        await ctx.scheduler.cancel(album.scheduledDeletionId);
-
-        await ctx.db.patch(albumId, {
-            isDeleted: false,
-            deletionScheduledAt: undefined,
-            scheduledDeletionId: undefined,
-        });
     }
 })
 
@@ -200,7 +191,7 @@ export const getAlbumCover = action({
 })
 
 // --- Internal ---
-export const insert = internalMutation({
+export const createAlbumDoc = internalMutation({
     args: {
         hostId: v.id('profiles'),
         title: v.string(),
@@ -218,6 +209,13 @@ export const insert = internalMutation({
             isDeleted: false,
         });
     },
+})
+
+export const deleteAlbumDoc = internalMutation({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        await ctx.db.delete(albumId);
+    }
 })
 
 export const getAlbumById = internalQuery({
@@ -238,10 +236,3 @@ export const updateThumbnail = internalMutation({
         await ctx.db.patch(albumId, { thumbnail });
     }
 });
-
-export const scheduledDeletion = internalMutation({
-    args: { albumId: v.id('albums') },
-    handler: async (ctx, { albumId }) => {
-        await ctx.db.delete(albumId);
-    }
-})

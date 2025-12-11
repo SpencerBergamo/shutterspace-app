@@ -145,14 +145,14 @@ export function EditProfileScreen() {
             <Controller
                 control={control}
                 name="avatar"
-                render={({ field: { onChange, onBlur, value } }) => (
+                render={({ field: { onChange } }) => (
                     <Avatar
                         nickname={profile.nickname}
                         avatarKey={profile.avatarKey}
                         ssoAvatarUrl={profile.ssoAvatarUrl}
                         localUri={avatar?.uri}
                         onPress={() => showActionSheet(onChange)}
-                        size={100}
+                        size={80}
                     />
                 )}
             />

@@ -80,6 +80,21 @@ export const getPublicThumbnail = internalAction({
     }
 })
 
+export const deleteVideo = internalAction({
+    args: { videoUID: v.string() },
+    handler: async (ctx, { videoUID }) => {
+        const url = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/stream/${videoUID}`;
+        await axios.delete(url, {
+            headers: {
+                Authorization: `Bearer ${API_TOKEN}`,
+            }
+        }).catch(e => {
+            console.error('Failed to delete video from Cloudflare Stream', e);
+            throw new Error('Failed to delete video');
+        });
+    }
+})
+
 async function constructSig(videoUID: string) {
     const base64PEM = process.env.CLOUDFLARE_STREAM_PEM;
     const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;
