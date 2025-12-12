@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
-import { Image } from "expo-image";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { useState } from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { useAppTheme } from "../context/AppThemeContext";
 
 interface AvatarProps {
@@ -10,6 +10,7 @@ interface AvatarProps {
     localUri?: string;
     size?: number;
     onPress?: () => void;
+    onLongPress?: () => void;
 }
 
 export default function Avatar({
@@ -19,8 +20,11 @@ export default function Avatar({
     localUri,
     size = 40,
     onPress,
+    onLongPress,
 }: AvatarProps) {
     const { colors } = useAppTheme();
+
+    const [imageError, setImageError] = useState(false);
 
     async function handlePress() {
         if (onPress) {
@@ -32,34 +36,25 @@ export default function Avatar({
     const containerStyle = {
         width: size,
         height: size,
+        borderRadius: size / 2,
         backgroundColor: colors.secondary + '60',
         borderColor: colors.border,
     };
 
-    const imageStyle = {
-        width: size,
-        height: size,
-    };
+    const avatarUrl = ssoAvatarUrl || (avatarKey ? `https://avatar.shutterspace.app/${avatarKey}` : null) || localUri;
 
     return (
-        <TouchableOpacity onPress={handlePress} style={[styles.container, containerStyle]}>
-            {ssoAvatarUrl ? (
+        <TouchableOpacity onPress={handlePress} onLongPress={onLongPress} style={[styles.container, containerStyle]}>
+            {avatarUrl || !imageError ? (
                 <Image
-                    source={{ uri: ssoAvatarUrl }}
-                    style={imageStyle}
-                    contentFit="cover"
-                />
-            ) : avatarKey ? (
-                <Image
-                    source={{ uri: `https://avatar.shutterspace.app/${avatarKey}` }}
-                    style={imageStyle}
-                    contentFit="cover"
-                />
-            ) : localUri ? (
-                <Image
-                    source={{ uri: localUri }}
-                    style={imageStyle}
-                    contentFit="cover"
+                    key={avatarUrl}
+                    source={{ uri: avatarUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode='cover'
+                    onError={(error) => {
+                        console.error('Avatar image failed to load:', error);
+                        setImageError(true);
+                    }}
                 />
             ) : (
                 <Text style={styles.initial}>{nickname.charAt(0)}</Text>
@@ -70,7 +65,6 @@ export default function Avatar({
 
 const styles = StyleSheet.create({
     container: {
-        borderRadius: 12,
         overflow: 'hidden',
         borderWidth: 1,
         alignItems: 'center',

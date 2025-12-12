@@ -17,19 +17,40 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import * as Orientation from 'expo-screen-orientation';
 import { Images } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { Alert, FlatList, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { NotFoundScreen } from "../Home";
 import AlbumSettingsSheet from "./components/AlbumSettingsSheet";
 
 const GAP = 2;
 
 export function AlbumScreen() {
+    // Data (must be called before any early returns)
+    const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
+    const { getAlbum } = useAlbums();
+    const album = getAlbum(albumId);
+    const { media, pendingMedia, uploadMedia, removePendingMedia, retryAllFailedUploads, clearFailedUploads } = useMedia(albumId);
 
     // Layout
     const [orientation, setOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
     const { width } = useWindowDimensions();
     const { colors } = useAppTheme();
     const { position, button, iconSize } = useFabStyles();
+
+    // Refs
+    const settingsModalRef = useRef<BottomSheetModal>(null);
+
+    // States
+    const [isCreatingInvite, setIsCreatingInvite] = useState(false);
+    const [isLeavingAlbum, setIsLeavingAlbum] = useState(false);
+    const [isDeletingAlbum, setIsDeletingAlbum] = useState(false);
+    const [selectionMode, setSelectionMode] = useState(false);
+    const [selectedItems, setSelectedItems] = useState<Set<Id<'media'>>>(new Set());
+
+    // Convex
+    const inviteCode = useQuery(api.inviteCodes.getInviteCode, { albumId }) ?? undefined;
+    const leaveAlbum = useMutation(api.albumMembers.leaveAlbum);
+    const deleteAlbum = useAction(api.albums.deleteAlbum);
+    const deleteMedia = useAction(api.media.deleteMedia);
 
     // Orientation Subscription
     useEffect(() => {
@@ -70,33 +91,11 @@ export function AlbumScreen() {
         };
     }, [width, orientation]);
 
-    // Data
-    const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
-    const { getAlbum } = useAlbums();
-    const album = getAlbum(albumId);
-    const { media, pendingMedia, uploadMedia, removePendingMedia, retryAllFailedUploads, clearFailedUploads } = useMedia(albumId);
-
-    // Refs
-    const settingsModalRef = useRef<BottomSheetModal>(null);
-
-    // States
-    const [isCreatingInvite, setIsCreatingInvite] = useState(false);
-    const [isLeavingAlbum, setIsLeavingAlbum] = useState(false);
-    const [isDeletingAlbum, setIsDeletingAlbum] = useState(false);
-    const [selectionMode, setSelectionMode] = useState(false);
-    const [selectedItems, setSelectedItems] = useState<Set<Id<'media'>>>(new Set());
-
-    // Convex
-    const inviteCode = useQuery(api.inviteCodes.getInviteCode, { albumId }) ?? undefined;
-    const leaveAlbum = useMutation(api.albumMembers.leaveAlbum);
-    const deleteAlbum = useAction(api.albums.deleteAlbum);
-    const deleteMedia = useAction(api.media.deleteMedia);
-
-    const albumCover = media.find(m => m._id === album?.thumbnail) ?? null;
+    const albumCover = media?.find(m => m._id === album?.thumbnail) ?? null;
 
     const handleMediaRetry = useCallback(async (mediaId: Id<'media'>) => {
         try {
-            const item = media.find(m => m._id === mediaId);
+            const item = media?.find(m => m._id === mediaId);
             if (!item) throw new Error("Media not found");
 
             throw new Error("Not implemented");
@@ -225,10 +224,9 @@ export function AlbumScreen() {
     }, []);
 
     const handleSelectAll = useCallback(() => {
-        const allMediaIds = media
-            .map(item => item._id);
+        const allMediaIds = media?.map(item => item._id);
 
-        const allSelected = allMediaIds.length > 0 && allMediaIds.every(id => selectedItems.has(id));
+        const allSelected = allMediaIds && allMediaIds.length > 0 && allMediaIds.every(id => selectedItems.has(id));
 
         if (allSelected) {
             setSelectedItems(new Set());
@@ -273,17 +271,6 @@ export function AlbumScreen() {
         </View>
     );
 
-    if (media === undefined) {
-        return (
-            <View style={{ flex: 1, backgroundColor: colors.background }}>
-                <Stack.Screen options={{
-                    headerTitle: album.title,
-                }} />
-                <ActivityIndicator size="large" color={colors.primary} />
-            </View>
-        )
-    }
-
     if (album.isDeleted) return <NotFoundScreen />
 
     return (
@@ -303,8 +290,10 @@ export function AlbumScreen() {
                             <Text style={{ fontSize: 17, color: colors.text }}>Select All</Text>
                         </TouchableOpacity>
                     ) : (
-                        <TouchableOpacity onPress={handleSettingsPress}>
-                            <Ionicons name="ellipsis-horizontal" size={24} />
+                        <TouchableOpacity
+                            style={{ padding: 8, borderWidth: 1, borderColor: colors.border, borderRadius: 999 }}
+                            onPress={handleSettingsPress}>
+                            <Ionicons name="ellipsis-horizontal" size={18} />
                         </TouchableOpacity>
                     )
                 )
@@ -314,7 +303,7 @@ export function AlbumScreen() {
             <FlatList
                 data={media}
                 initialNumToRender={20}
-                maxToRenderPerBatch={media.length}
+                maxToRenderPerBatch={media?.length}
                 keyExtractor={(item: Media) => item._id}
                 key={gridConfig.numColumns.toString()}
                 numColumns={gridConfig.numColumns}
@@ -401,7 +390,7 @@ export function AlbumScreen() {
             <AlbumSettingsSheet
                 ref={settingsModalRef}
                 album={album}
-                mediaCount={media.length + pendingMedia.length}
+                mediaCount={media?.length ?? 0 + pendingMedia.length}
                 lastMedia={albumCover}
                 handleInviteMembers={handleInviteMembers}
                 handleLeaveAlbum={handleLeaveAlbum}

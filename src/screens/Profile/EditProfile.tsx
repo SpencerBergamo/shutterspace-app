@@ -56,6 +56,13 @@ export function EditProfileScreen() {
 
 
     const handleLibrarySelection = async (onChange: (value: ValidatedAsset) => void) => {
+
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert("Error", "Failed to access media library. Please go to settings and grant access.");
+            return;
+        }
+
         const picker = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
             allowsEditing: true,
@@ -73,20 +80,32 @@ export function EditProfileScreen() {
     }
 
     const handleCameraSelection = async (onChange: (value: ValidatedAsset) => void) => {
-        const picker = await ImagePicker.launchCameraAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-        });
+        try {
 
-        if (picker.canceled || !picker.assets || picker.assets.length === 0) return;
-        const { valid } = await validateAssets(picker.assets);
-        if (valid.length === 0) return;
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert("Error", "Failed to access camera. Please go to settings and grant access.");
+                return;
+            }
 
-        const asset = valid[0];
-        setAvatar(asset);
-        onChange(asset);
+            const picker = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 1,
+            });
+
+            if (picker.canceled || !picker.assets || picker.assets.length === 0) return;
+            const { valid } = await validateAssets(picker.assets);
+            if (valid.length === 0) return;
+
+            const asset = valid[0];
+            setAvatar(asset);
+            onChange(asset);
+        } catch (e) {
+            console.error("Failed to select camera: ", e);
+            Alert.alert("Error", "Failed to select camera. Please try again.");
+        }
     }
 
     const saveChanges = async (data: ProfileFormData) => {

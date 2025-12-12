@@ -2,68 +2,22 @@
 
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import QRCodeModal from "@/src/components/QRCodeModal";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { useProfile } from "@/src/context/ProfileContext";
-import useFabStyles from "@/src/hooks/useFabStyles";
-import { Friendship, FriendshipStatus } from "@/src/types/Friend";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
-import { useCallback, useMemo } from "react";
-import { ActivityIndicator, Alert, AlertButton, FlatList, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Stack } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
-
-interface FriendCardProps {
-    friendshipId: Id<'friendships'>;
-    status: FriendshipStatus;
-    isRecipient: boolean;
-    onAction: () => void;
-}
-
-function FriendCard({ friendshipId, status, isRecipient, onAction }: FriendCardProps) {
-    const { colors } = useAppTheme();
-
-    const friend = useQuery(api.friendships.getFriendByFriendshipId, { friendshipId });
-
-    return (
-        <View style={[styles.friendItem, styles.shadow]}>
-            <View style={[styles.avatar, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '600' }}>
-                    {friend ? friend.nickname.charAt(0).toUpperCase() : ''}
-                </Text>
-            </View>
-            <Text style={[styles.friendName, { color: colors.text }]}>
-                {friend ? friend.nickname : 'Loading...'}
-            </Text>
-            {status !== 'accepted' && (
-                <Text style={{ color: "grey", fontStyle: 'italic' }}>{status}</Text>
-            )}
-            <TouchableOpacity
-                style={styles.removeButton}
-                onPress={onAction}
-            >
-                {status === 'pending' && isRecipient ? (
-                    <Ionicons name="checkmark-outline" size={20} color="#09ADA9" />
-                ) : status === 'pending' ? (
-                    <Ionicons name="close" size={20} color="#FF3B30" />
-                ) : (
-                    <View />
-                )}
-            </TouchableOpacity>
-        </View>
-    );
-}
+import FriendListCard from "./components/FriendListCard";
 
 export function FriendsListScreen() {
-
-    const { position, button, iconSize } = useFabStyles();
     const { colors } = useAppTheme();
     const { profile } = useProfile();
     const friendships = useQuery(api.friendships.getFriendships);
-
-    const friendshipList = useMemo(() => {
-        //ignore blocked friendshps
-        return friendships?.filter(friendship => friendship.status !== 'blocked');
-    }, [friendships])
+    const [qrModalVisible, setQrModalVisible] = useState(false);
 
     // Data
     const shareUrl = `https://shutterspace.app/shareId/${profile.shareCode}`;
@@ -72,56 +26,48 @@ export function FriendsListScreen() {
     const acceptFriendRequest = useMutation(api.friendships.acceptFriendRequest);
     const removeFriend = useMutation(api.friendships.removeFriend);
 
-    const handleShareProfile = async () => {
-        await Share.share({ url: shareUrl });
-    }
+    const friendshipList = useMemo(() => {
+        //ignore blocked friendshps
+        return friendships?.filter(friendship => friendship.status !== 'blocked');
+    }, [friendships]);
 
-    const handleFriendItem = useCallback(async (friendship: Friendship) => {
-        const status = friendship.status;
-        const isRecipient = friendship.recipientId === profile._id;
-
-        let title = "";
-        let message = "";
-        let buttons: AlertButton[];
-
-        if (status === 'pending' && isRecipient) {
-            title = "Accept Friend Request";
-            message = "Are you sure you want to accept this friend request?";
-            buttons = [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Accept', style: 'destructive', onPress: async () => {
-                        await acceptFriendRequest({ friendshipId: friendship._id });
-                    }
-                },
-            ]
+    const handleAcceptFriendRequest = useCallback(async (friendshipId: Id<'friendships'>) => {
+        try {
+            await acceptFriendRequest({ friendshipId });
+        } catch (e) {
+            console.error("Error accepting friend request:", e);
+            Alert.alert("Error", "Failed to accept friend request. Please try again.");
         }
-        else if (status === 'pending' && !isRecipient) {
-            title = "Cancel Friend Request";
-            message = "Are you sure you want to cancel this friend request?";
-            buttons = [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Cancel', style: 'destructive', onPress: async () => {
-                        await removeFriend({ friendshipId: friendship._id });
-                    }
-                },
-            ]
-        } else {
-            title = "Remove Friend";
-            message = "Are you sure you want to remove this friend?";
-            buttons = [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Remove', style: 'destructive', onPress: async () => {
-                        await removeFriend({ friendshipId: friendship._id });
-                    }
-                },
-            ]
-        }
+    }, [acceptFriendRequest]);
 
-        Alert.alert(title, message, buttons);
-    }, [friendshipList]);
+    const handleRemoveFriend = useCallback(async (friendshipId: Id<'friendships'>) => {
+        try {
+            await removeFriend({ friendshipId });
+        } catch (e) {
+            console.error("Error removing friend:", e);
+            Alert.alert("Error", "Failed to remove friend. Please try again.");
+        }
+    }, [removeFriend]);
+
+
+    const renderEmptyComponent = useCallback(() => {
+        return (
+            <View style={styles.emptyContainer}>
+                <View style={[styles.emptyContent, { borderColor: colors.border }]}>
+                    <View style={[styles.emptyContentText]}>
+                        <Text style={[styles.emptyContentTitle, { color: colors.text }]}>No friends found</Text>
+                        <Text style={[styles.emptyContentDescription, { color: colors.caption }]}>Scan this QR code to add me on Shutterspace</Text>
+                    </View>
+
+                    <QRCode
+                        value={shareUrl}
+                        size={200}
+                        backgroundColor="white"
+                    />
+                </View>
+            </View>
+        )
+    }, []);
 
     if (friendships === undefined) {
         return (
@@ -133,37 +79,39 @@ export function FriendsListScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <Stack.Screen options={{
+
+                headerTitle: 'My Friends',
+                headerRight: () => (
+                    <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                        <TouchableOpacity
+                            style={[styles.navButton, { borderColor: colors.border }]}
+                            onPress={() => setQrModalVisible(true)}
+                        >
+                            <Ionicons name="qr-code" size={18} color={colors.grey1} />
+                        </TouchableOpacity>
+                    </View>
+                )
+            }} />
+
             <FlatList
                 data={friendshipList}
                 initialNumToRender={friendshipList?.length}
                 keyExtractor={(item) => item._id}
                 contentContainerStyle={styles.listContent}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <View style={[styles.emptyCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                            <QRCode
-                                value={shareUrl}
-                                size={175}
-                            />
-                            <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                                No Friends Yet
-                            </Text>
-                            <Text style={[styles.emptyDescription, { color: colors.text }]}>
-                                Share your profile to connect with friends and start sharing photos together.
-                            </Text>
-                        </View>
-                    </View>
-                }
+                ListEmptyComponent={renderEmptyComponent}
                 renderItem={({ item }) => (
-                    <FriendCard
+                    <FriendListCard
                         friendshipId={item._id}
                         status={item.status}
                         isRecipient={item.recipientId === profile._id}
-                        onAction={() => handleFriendItem(item)}
+                        onAccept={() => handleAcceptFriendRequest(item._id)}
+                        onCancel={() => handleRemoveFriend(item._id)}
+                        onManage={() => { }}
                     />
                 )}
             />
-
+            {/* 
             <View style={position}>
                 <TouchableOpacity
                     style={button}
@@ -171,7 +119,16 @@ export function FriendsListScreen() {
                 >
                     <Ionicons name="share-outline" size={iconSize} color={colors.border} />
                 </TouchableOpacity>
-            </View>
+            </View> */}
+
+            <QRCodeModal
+                visible={qrModalVisible}
+                onClose={() => setQrModalVisible(false)}
+                value={shareUrl}
+                displayValue={profile.shareCode}
+                title="Share Your Profile"
+                description="Scan this QR code to add me on Shutterspace"
+            />
         </View>
     );
 }
@@ -189,69 +146,45 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
 
+    // Navbar
+    navButton: {
+        borderRadius: 999,
+        padding: 12,
+        borderWidth: 1,
+    },
+
     // List
     listContent: {
         padding: 16,
         flexGrow: 1,
     },
-    friendItem: {
-        backgroundColor: "#fff",
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
-        borderRadius: 12,
-        marginBottom: 8,
-    },
-    avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        borderWidth: 1,
-        marginRight: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    friendName: {
-        flex: 1,
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    removeButton: {
-        padding: 8,
-    },
 
-    // Empty Container
+    // Empty Component
     emptyContainer: {
-        flex: 1,
+        paddingHorizontal: 16,
+    },
+    emptyContent: {
+        flexDirection: 'column',
         justifyContent: 'flex-start',
         alignItems: 'center',
-    },
-    emptyCard: {
-        borderRadius: 16,
-        padding: 32,
+        gap: 16,
         borderWidth: 1,
+        borderRadius: 16,
+        padding: 16,
+    },
+    emptyContentText: {
+        flexDirection: 'column',
+        justifyContent: 'flex-start',
         alignItems: 'center',
-        maxWidth: 400,
-        width: '100%',
+        gap: 8,
     },
-    emptyAvatar: {
-        width: 96,
-        height: 96,
-        borderRadius: 48,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 24,
-    },
-    emptyTitle: {
-        fontSize: 24,
-        fontWeight: '700',
+    emptyContentTitle: {
+        fontSize: 18,
+        fontWeight: '600',
         textAlign: 'center',
-        marginTop: 24,
-        marginBottom: 12,
     },
-    emptyDescription: {
-        fontSize: 15,
+    emptyContentDescription: {
+        fontSize: 14,
         textAlign: 'center',
-        lineHeight: 22,
     },
 })

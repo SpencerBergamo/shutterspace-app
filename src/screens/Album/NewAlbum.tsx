@@ -97,6 +97,7 @@ export function NewAlbumScreen() {
                         returnKeyType="next"
                         selectionColor={theme.colors.primary}
                         onChangeText={onChange}
+                        placeholderTextColor={colors.caption}
                         onBlur={onBlur}
                         onSubmitEditing={() => descriptionInputRef.current?.focus()}
                         style={[TextInputStyles, {
@@ -144,6 +145,7 @@ export function NewAlbumScreen() {
                         returnKeyType="done"
                         selectionColor={theme.colors.primary}
                         onChangeText={onChange}
+                        placeholderTextColor={colors.caption}
                         onBlur={onBlur}
                         onSubmitEditing={() => descriptionInputRef.current?.blur()}
                         style={[TextInputStyles, {

@@ -1,5 +1,5 @@
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { KeyRound } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Switch, Text, View } from "react-native";
 
 interface OpenInvitesFieldProps {
@@ -14,7 +14,7 @@ export default function OpenInvitesField({ openInvites, onToggle }: OpenInvitesF
         <View style={styles.container}>
             <View style={styles.content}>
                 <View style={styles.titleContainer}>
-                    <KeyRound size={16} color={colors.text} />
+                    <Ionicons name="key-outline" size={16} color={colors.text} />
                     <Text style={styles.title}>Open Invites</Text>
                 </View>
 

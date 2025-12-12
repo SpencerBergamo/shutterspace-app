@@ -7,12 +7,10 @@ import * as Crypto from 'expo-crypto';
 import { Link, router } from "expo-router";
 import { GalleryVerticalEnd, Mail, QrCode, SmilePlus } from 'lucide-react-native';
 import { useRef, useState } from 'react';
-import { Dimensions, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import 'react-native-get-random-values';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 interface OnboardingSlide {
     title: string;
@@ -40,14 +38,18 @@ const onboardingSlides: OnboardingSlide[] = [
 
 export function WelcomeScreen() {
     const { colors } = useAppTheme();
+    const { width: screenWidth } = useWindowDimensions();
     const insets = useSafeAreaInsets();
 
     const [currentSlide, setCurrentSlide] = useState<number>(0);
     const scrollViewRef = useRef<ScrollView>(null);
 
+    // Calculate slide width based on the screen paddingHorizontal:20
+    const slideWidth = Math.min(screenWidth - 40, MAX_WIDTH);
+
     function handleScroll(event: any) {
         const contentOffset = event.nativeEvent.contentOffset.x;
-        const slide = Math.floor((contentOffset + (screenWidth - 40) / 2) / (screenWidth - 40));
+        const slide = Math.floor((contentOffset + slideWidth / 2) / slideWidth);
         const clampedSlide = Math.max(0, Math.min(slide, onboardingSlides.length - 1));
         setCurrentSlide(clampedSlide);
     }
@@ -102,23 +104,22 @@ export function WelcomeScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: 'white', paddingBottom: insets.bottom }]}>
-            <View style={{
-                flex: 1,
-                width: '100%',
-                alignItems: 'center',
-                justifyContent: 'center',
-            }}>
+            <View style={{ flex: 1, }}>
                 {/* Page View Section */}
                 <ScrollView
                     ref={scrollViewRef}
                     horizontal
-                    pagingEnabled
+                    pagingEnabled={false}
+                    snapToInterval={slideWidth}
+                    snapToAlignment="center"
+                    decelerationRate="fast"
                     showsHorizontalScrollIndicator={false}
                     style={styles.pageViewContainer}
                     onScroll={handleScroll}
+                    scrollEventThrottle={16}
                 >
                     {onboardingSlides.map((slide, index) => (
-                        <View key={index} style={styles.slide}>
+                        <View key={index} style={[styles.slide, { width: slideWidth, maxWidth: MAX_WIDTH }]}>
                             <View style={styles.iconContainer}>
                                 {slide.icon}
                             </View>
@@ -183,7 +184,7 @@ export function WelcomeScreen() {
                             Already have an account?{' '}
                         </Text>
                         <Link href="/sign-in" asChild>
-                            <Pressable>
+                            <Pressable onPress={() => router.push('/sign-in')}>
                                 <Text style={[styles.signInLink, { color: colors.primary }]}>
                                     Sign In
                                 </Text>
@@ -204,13 +205,10 @@ const styles = StyleSheet.create({
     pageViewContainer: {
         flex: 1,
         marginTop: 60,
-        maxWidth: MAX_WIDTH,
     },
     slide: {
-        maxWidth: MAX_WIDTH,
-        width: '100%',
-        alignItems: 'center',
         justifyContent: 'center',
+        alignItems: 'center',
         paddingHorizontal: 20,
     },
     iconContainer: {

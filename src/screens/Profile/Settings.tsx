@@ -86,7 +86,7 @@ export function SettingsScreen() {
                 contentContainerStyle={{ paddingBottom: 20 }}
             >
                 {/* User Info Section */}
-                <View style={[styles.section, { marginTop: 20 }]}>
+                <View style={styles.section}>
                     <TouchableOpacity
                         style={styles.profileOption}
                         onPress={() => router.push('profile/edit')}

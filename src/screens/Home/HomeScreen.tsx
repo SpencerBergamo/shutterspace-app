@@ -88,7 +88,7 @@ export function HomeScreen() {
         return (
             <AddFriendsPrompt
                 friendCount={friendCount}
-                onPress={() => setQrModalVisible(true)}
+                onPress={() => router.push('/friends')}
             />
         );
     }, [friendships]);
@@ -109,43 +109,47 @@ export function HomeScreen() {
         </Pressable>
     ), [gridConfig.itemSize, colors.text]);
 
+    const renderHeaderLeft = useCallback(() => (
+        <View style={styles.headerLeft}>
+            <Avatar
+                nickname={profile.nickname}
+                avatarKey={profile.avatarKey}
+                ssoAvatarUrl={profile.ssoAvatarUrl}
+                onPress={() => router.push('settings')}
+            />
+            <View style={styles.greetingContainer}>
+                <Text style={[styles.greeting, { color: colors.text }]}>
+                    Hi, {profile.nickname}
+                </Text>
+                {!profile.avatarKey && (
+                    <TouchableOpacity
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                        onPress={() => router.push('profile/edit')}
+                    >
+                        <Text style={[styles.completeProfile, { color: colors.primary }]}>
+                            Complete profile
+                        </Text>
+                        <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+                    </TouchableOpacity>
+                )}
+            </View>
+        </View>
+    ), [profile.nickname, profile.avatarKey, profile.ssoAvatarUrl, colors.text, colors.primary]);
+
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Stack.Screen options={{
-                headerLeft: () => (
-                    <View style={styles.headerLeft}>
-                        <Avatar
-                            nickname={profile.nickname}
-                            avatarKey={profile.avatarKey}
-                            ssoAvatarUrl={profile.ssoAvatarUrl}
-                            onPress={() => router.push('settings')}
-                        />
-                        <View style={styles.greetingContainer}>
-                            <Text style={[styles.greeting, { color: colors.text }]}>
-                                Hi, {profile.nickname}
-                            </Text>
-                            {!profile.avatarKey && (
-                                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} onPress={() => router.push('profile/edit')}>
-
-                                    <Text style={[styles.completeProfile, { color: colors.primary }]}>
-                                        Complete profile
-                                    </Text>
-                                    <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    </View>
-                ),
+                headerLeft: renderHeaderLeft,
                 headerTitle: '',
                 headerRight: () => (
                     <TouchableOpacity
-                        onPress={() => setQrModalVisible(true)}
-                        style={[styles.headerRight, { backgroundColor: colors.background, shadowColor: colors.shadow }]}
+                        onPress={() => router.push('/friends')}
+                        style={[styles.headerRight, { borderColor: colors.border }]}
                         activeOpacity={0.7}
                     >
-                        <Ionicons name="qr-code" size={24} color={colors.grey1} />
+                        <Ionicons name="people" size={18} color={colors.grey1} />
                     </TouchableOpacity>
-                )
+                ),
             }} />
 
             <FlatList
@@ -248,15 +252,11 @@ const styles = StyleSheet.create({
         lineHeight: 16,
     },
     headerRight: {
-        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 1,
+        borderRadius: 999,
+        padding: 12,
+        borderWidth: 1,
     },
 
     // Album Cover

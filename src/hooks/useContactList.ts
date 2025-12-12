@@ -2,28 +2,19 @@ import * as Contacts from 'expo-contacts';
 import { useEffect, useState } from "react";
 
 interface UseContactListResult {
-    isLoading: boolean;
     hasPermission: boolean;
     contacts: Contacts.Contact[] | null;
     requestPermissions: () => Promise<void>;
 }
 
 export default function useContactList(): UseContactListResult {
-    const [status, setStatus] = useState<Contacts.PermissionStatus>(Contacts.PermissionStatus.UNDETERMINED);
-    const [contactState, setContactState] = useState<{
-        isLoading: boolean,
-        hasPermission: boolean,
-        contacts: Contacts.Contact[] | null,
-    }>({
-        isLoading: true,
-        hasPermission: false,
-        contacts: null,
-    });
+    const [permission, setPermission] = useState<Contacts.PermissionStatus>(Contacts.PermissionStatus.UNDETERMINED);
+    const [contacts, setContacts] = useState<Contacts.Contact[] | null>(null);
 
     const requestPermissions = async () => {
         try {
             const { status } = await Contacts.requestPermissionsAsync();
-            setStatus(status);
+            setPermission(status);
         } catch (e) {
             console.error('Failed to request permissions', e);
         }
@@ -34,7 +25,7 @@ export default function useContactList(): UseContactListResult {
         const getContacts = async () => {
             try {
                 const { status } = await Contacts.getPermissionsAsync();
-                setStatus(status);
+                setPermission(status);
 
                 if (status !== Contacts.PermissionStatus.GRANTED) return;
 
@@ -46,30 +37,19 @@ export default function useContactList(): UseContactListResult {
                     ],
                 });
 
-                setContactState({
-                    isLoading: false,
-                    hasPermission: true,
-                    contacts: data,
-                });
+                setContacts(data);
             } catch (e) {
                 console.error('Failed to check permissions', e);
-            } finally {
-                setContactState(prev => {
-                    return {
-                        ...prev,
-                        isLoading: false,
-                    }
-                })
+                setPermission(Contacts.PermissionStatus.UNDETERMINED);
             }
         }
 
         getContacts();
-    }, [status]);
+    }, [permission]);
 
     return {
-        isLoading: contactState.isLoading,
-        hasPermission: contactState.hasPermission,
-        contacts: contactState.contacts,
+        hasPermission: permission === Contacts.PermissionStatus.GRANTED,
+        contacts,
         requestPermissions,
     }
 }

@@ -7,7 +7,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useTheme } from "@react-navigation/native";
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
@@ -37,7 +37,13 @@ export function SignInScreen() {
             email: '',
             password: '',
         }
-    })
+    });
+
+    useEffect(() => {
+        setTimeout(() => {
+            emailInputRef.current?.focus();
+        }, 600);
+    }, [emailInputRef]);
 
     async function handleSignin(data: SignInFormData) {
         try {
@@ -119,7 +125,6 @@ export function SignInScreen() {
                         <TextInput
                             ref={emailInputRef}
                             value={value}
-                            autoFocus
                             autoComplete="email"
                             placeholder="Email"
                             keyboardType="email-address"
@@ -128,6 +133,7 @@ export function SignInScreen() {
                             autoCapitalize="none"
                             spellCheck={false}
                             onChangeText={onChange}
+                            placeholderTextColor={colors.caption}
                             onBlur={onBlur}
                             onSubmitEditing={() => passwordInputRef.current?.focus()}
                             style={[TextInputStyles, {
@@ -167,6 +173,7 @@ export function SignInScreen() {
                                 autoCapitalize="none"
                                 spellCheck={false}
                                 onChangeText={onChange}
+                                placeholderTextColor={colors.caption}
                                 onBlur={onBlur}
                                 onSubmitEditing={handleSubmit(handleSignin)}
                                 style={[TextInputStyles, {

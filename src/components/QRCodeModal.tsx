@@ -231,10 +231,15 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 32,
+        paddingHorizontal: 30,
+    },
+    contentContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignContent: 'center',
     },
     modalContainer: {
-        borderRadius: 12,
+        borderRadius: 24,
         width: '100%',
         height: 'auto',
         maxWidth: 400,
@@ -258,6 +263,7 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         gap: 6,
         alignItems: 'center',
+        maxWidth: 200,
     },
     title: {
         fontSize: 20,

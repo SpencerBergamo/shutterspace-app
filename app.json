@@ -85,7 +85,7 @@
       [
         "expo-contacts",
         {
-          "contactsPermission": "Shutterspace uses contacts to share links via SMS."
+          "contactsPermission": "Allow Shutterspace to access your contacts."
         }
       ],
       [

@@ -10,7 +10,7 @@ import { useMutation } from "convex/react";
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { Link } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from 'react-hook-form';
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
@@ -48,6 +48,12 @@ export function SignUpScreen() {
             password: '',
         },
     });
+
+    useEffect(() => {
+        setTimeout(() => {
+            emailInputRef.current?.focus();
+        }, 600);
+    }, [emailInputRef]);
 
     async function handleSignup(data: SignUpFormData) {
         try {
@@ -140,7 +146,6 @@ export function SignUpScreen() {
                         <TextInput
                             ref={emailInputRef}
                             value={value}
-                            autoFocus
                             autoComplete="email"
                             placeholder="Email"
                             keyboardType="email-address"
@@ -150,6 +155,7 @@ export function SignUpScreen() {
                             spellCheck={false}
                             onChangeText={onChange}
                             onBlur={onBlur}
+                            placeholderTextColor={colors.caption}
                             onSubmitEditing={() => passwordInputRef.current?.focus()}
                             style={[TextInputStyles, {
                                 backgroundColor: colors.background,
@@ -187,6 +193,7 @@ export function SignUpScreen() {
                                 autoCapitalize="none"
                                 spellCheck={false}
                                 onChangeText={onChange}
+                                placeholderTextColor={colors.caption}
                                 onBlur={onBlur}
                                 onSubmitEditing={handleSubmit(handleSignup)}
                                 passwordRules={passwordRules}

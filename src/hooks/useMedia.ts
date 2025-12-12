@@ -22,7 +22,7 @@ export type PendingMedia = {
 };
 
 interface UseMediaResult {
-    media: Media[];
+    media: Media[] | undefined;
     pendingMedia: PendingMedia[];
     uploadMedia: (assets: ValidatedAsset[]) => Promise<void>;
     removePendingMedia: (assetId: string) => void;
@@ -36,7 +36,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
 
     const prepareImageUpload = useAction(api.r2.prepareImageUpload);
     const prepareVideoUpload = useAction(api.cloudflare.prepareVideoUpload);
-    const media = useQuery(api.media.getMediaForAlbum, { albumId }) ?? [];
+    const media = useQuery(api.media.getMediaForAlbum, { albumId });
     const createMedia = useMutation(api.media.createMedia).withOptimisticUpdate(
         (localStore, args) => {
             const currentMedia = localStore.getQuery(api.media.getMediaForAlbum, { albumId });
@@ -67,7 +67,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
 
     // Clean up pending media when real media with matching assetId appears
     useEffect(() => {
-        if (media.length === 0 || pendingMedia.length === 0) return;
+        if (!media || media?.length === 0 || pendingMedia.length === 0) return;
 
         const mediaAssetIds = new Set(media.map(m => m.assetId));
         setPendingMedia(prev => prev.filter(p => !mediaAssetIds.has(p.assetId)));
@@ -139,7 +139,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
         if (!pending) return;
 
         // Mark as uploading
-        setPendingMedia(prev => prev.map(p => 
+        setPendingMedia(prev => prev.map(p =>
             p.assetId === assetId ? { ...p, status: 'uploading' as const, error: undefined } : p
         ));
 
@@ -175,11 +175,11 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
             removePendingMedia(assetId);
         } catch (e) {
             console.error('Retry failed:', e);
-            setPendingMedia(prev => prev.map(p => 
-                p.assetId === assetId ? { 
-                    ...p, 
-                    status: 'error' as const, 
-                    error: e instanceof Error ? e.message : 'Upload failed' 
+            setPendingMedia(prev => prev.map(p =>
+                p.assetId === assetId ? {
+                    ...p,
+                    status: 'error' as const,
+                    error: e instanceof Error ? e.message : 'Upload failed'
                 } : p
             ));
         }
@@ -231,11 +231,11 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
             } catch (e) {
                 console.error('Failed to upload media:', e);
                 // Mark this specific asset as failed
-                setPendingMedia(prev => prev.map(p => 
-                    p.assetId === asset.assetId ? { 
-                        ...p, 
-                        status: 'error' as const, 
-                        error: e instanceof Error ? e.message : 'Upload failed' 
+                setPendingMedia(prev => prev.map(p =>
+                    p.assetId === asset.assetId ? {
+                        ...p,
+                        status: 'error' as const,
+                        error: e instanceof Error ? e.message : 'Upload failed'
                     } : p
                 ));
             }
