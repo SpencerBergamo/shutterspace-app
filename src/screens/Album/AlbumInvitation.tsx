@@ -114,7 +114,7 @@ export function AlbumInvitationScreen() {
 
                 {/* Description */}
                 {invitation.description && <BlurView intensity={40} tint="light" style={styles.messageCard}>
-                    <Text style={styles.messageText}>"{invitation.message}"</Text>
+                    <Text style={styles.messageText}>"{invitation.description}"</Text>
                 </BlurView>}
 
                 {/* Action Buttons */}
