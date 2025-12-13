@@ -61,7 +61,10 @@ export default defineSchema({
         .index('by_updatedAt', ['updatedAt'])
         .index('by_dateRange', ['dateRange'])
         .index('by_location', ['location'])
-        .index('by_isDeleted', ['isDeleted']),
+        .index('by_isDeleted', ['isDeleted'])
+        .searchIndex('by_title', {
+            searchField: "title"
+        }),
 
     albumMembers: defineTable({
         albumId: v.id("albums"),
