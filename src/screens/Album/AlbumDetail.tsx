@@ -1,8 +1,8 @@
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import FloatingActionButton from "@/src/components/FloatingActionButton";
 import { useAlbums } from "@/src/context/AlbumsContext";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import useFabStyles from "@/src/hooks/useFabStyles";
 import { useMedia } from "@/src/hooks/useMedia";
 import GalleryTile from "@/src/screens/Album/components/GalleryTile";
 import UploadProgressHeader from "@/src/screens/Album/components/UploadProgressHeader";
@@ -34,7 +34,6 @@ export function AlbumScreen() {
     const [orientation, setOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
     const { width } = useWindowDimensions();
     const { colors } = useAppTheme();
-    const { position, button, iconSize } = useFabStyles();
 
     // Refs
     const settingsModalRef = useRef<BottomSheetModal>(null);
@@ -170,17 +169,32 @@ export function AlbumScreen() {
         }
     }, [albumId, deleteAlbum, settingsModalRef]);
 
-    const handleMediaUpload = useCallback(async () => {
+    const handleMediaUpload = useCallback(async (camera: boolean = false) => {
         try {
-            const picker = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images', 'videos'],
-                allowsMultipleSelection: true,
-                exif: true,
-                videoMaxDuration: 60,
-            });
+            let result: ImagePicker.ImagePickerResult;
 
-            if (picker.canceled || !picker.assets || picker.assets.length === 0) return;
-            const { valid, invalid } = await validateAssets(picker.assets);
+            if (camera) {
+                await ImagePicker.requestCameraPermissionsAsync();
+
+                result = await ImagePicker.launchCameraAsync({
+                    mediaTypes: ['images', 'videos'],
+                    allowsMultipleSelection: true,
+                    exif: true,
+                    videoMaxDuration: 60,
+                });
+            } else {
+                await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+                result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ['images', 'videos'],
+                    allowsMultipleSelection: true,
+                    exif: true,
+                    videoMaxDuration: 60,
+                });
+            }
+
+            if (!result || result.canceled || !result.assets || result.assets.length === 0) return;
+            const { valid, invalid } = await validateAssets(result.assets);
 
             if (invalid.length > 0) {
                 console.warn("Invalid assets: ", invalid.length);
@@ -331,14 +345,26 @@ export function AlbumScreen() {
 
             {/* Floating Action Button */}
             {!selectionMode && (
-                <View style={position}>
-                    <TouchableOpacity
-                        style={button}
-                        onPress={handleMediaUpload}
-                    >
-                        <Ionicons name="add" size={iconSize} color="white" />
-                    </TouchableOpacity>
-                </View>
+                <FloatingActionButton
+                    selectIcon="add"
+                    items={[
+                        {
+                            selectIcon: "image-outline",
+                            label: "Add Photos",
+                            onPress: handleMediaUpload,
+                        },
+                        {
+                            selectIcon: "camera-outline",
+                            label: "Take Photo",
+                            onPress: () => handleMediaUpload(true),
+                        },
+                        {
+                            selectIcon: "share-outline",
+                            label: "Invite Friends",
+                            onPress: () => { }
+                        },
+                    ]}
+                />
             )}
 
             {/* Selection Action Bar */}

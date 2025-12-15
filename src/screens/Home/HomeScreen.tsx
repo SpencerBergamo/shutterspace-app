@@ -1,10 +1,10 @@
 import { api } from "@/convex/_generated/api";
 import Avatar from "@/src/components/Avatar";
+import FloatingActionButton from "@/src/components/FloatingActionButton";
 import QRCodeModal from "@/src/components/QRCodeModal";
 import { useAlbums } from '@/src/context/AlbumsContext';
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { useProfile } from "@/src/context/ProfileContext";
-import useFabStyles from "@/src/hooks/useFabStyles";
 import { formatAlbumDate } from "@/src/utils/formatters";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
@@ -19,7 +19,6 @@ import { AddFriendsPrompt } from "./components/AddFriendsPrompt";
 export function HomeScreen() {
     // Layout
     const { colors } = useAppTheme();
-    const { position, button, iconSize } = useFabStyles();
     const { width } = useWindowDimensions();
 
     const [orientation, setOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
@@ -192,14 +191,19 @@ export function HomeScreen() {
                 renderItem={renderItem}
             />
 
-            < View style={position} >
+            {/* < View style={position} >
                 <TouchableOpacity
                     style={button}
                     onPress={() => router.push('/new-album')}
                 >
                     <Ionicons name="add" size={iconSize} color="white" />
                 </TouchableOpacity>
-            </View >
+            </View > */}
+
+            <FloatingActionButton
+                selectIcon="add"
+                onPress={() => router.push('/new-album')}
+            />
 
             <QRCodeModal
                 visible={qrModalVisible}

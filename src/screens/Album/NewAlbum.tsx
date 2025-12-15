@@ -2,11 +2,10 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { TextInputStyles } from "@/src/constants/styles";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import OpenInvitesField from "@/src/screens/Album/components/OpenInvitesField";
 import { validateAlbumTitle } from "@/src/utils/validators";
 import { useTheme } from "@react-navigation/native";
 import { useAction } from "convex/react";
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -26,7 +25,6 @@ export function NewAlbumScreen() {
 
     // -- State Management --
     const [isLoading, setIsLoading] = useState(false);
-    const [isOpenInvites, setIsOpenInvites] = useState(true);
 
     // Convex
     const createAlbum = useAction(api.albums.createAlbum);
@@ -72,7 +70,11 @@ export function NewAlbumScreen() {
     }, []);
 
     return (
-        <View style={{ flex: 1, padding: 16, backgroundColor: colors.background }}>
+        <View style={{ flex: 1, paddingHorizontal: 16, backgroundColor: colors.background }}>
+            <Stack.Screen options={{
+                headerTitle: 'New Album',
+            }} />
+
             <Text style={styles.inputLabel}>
                 Title
             </Text>
@@ -162,10 +164,6 @@ export function NewAlbumScreen() {
                 </View>
             )}
 
-            <OpenInvitesField
-                openInvites={isOpenInvites}
-                onToggle={setIsOpenInvites} />
-
             {isLoading ? (<ActivityIndicator size="small" color={theme.colors.primary} />) : (
                 <TouchableOpacity
                     disabled={!isDirty}
@@ -174,8 +172,6 @@ export function NewAlbumScreen() {
                     <Text style={styles.buttonText}>Create Album</Text>
                 </TouchableOpacity>
             )}
-
-
         </View >
     );
 }

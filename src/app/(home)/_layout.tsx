@@ -46,7 +46,7 @@ function HomeLayout() {
 
             {/* Album */}
             <Stack.Screen name="new-album" options={{
-                headerTitle: 'Create New Album',
+                presentation: 'modal',
             }} />
             <Stack.Screen name="album/[albumId]/index" options={{
                 headerShown: true,

@@ -42,7 +42,7 @@ export default function UploadProgressHeader({ pendingMedia, onRetryAll, onClear
         } else {
             // Fade out first, then collapse height
             containerOpacity.value = withTiming(0, { duration: 150 });
-            containerHeight.value = withTiming(0, { 
+            containerHeight.value = withTiming(0, {
                 duration: 200,
                 easing: Easing.inOut(Easing.ease),
             });
