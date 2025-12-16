@@ -68,7 +68,7 @@ const FloatingActionButtonItem = ({ selectIcon, label, onPress, index, isExpande
     )
 }
 
-export default function FloatingActionButton({ items, onPress }: FloatingActionButtonProps) {
+export default function FloatingActionButton({ selectIcon, items, onPress }: FloatingActionButtonProps) {
     const { colors } = useAppTheme();
     const insets = useSafeAreaInsets();
 
@@ -112,7 +112,7 @@ export default function FloatingActionButton({ items, onPress }: FloatingActionB
                     {...item} />
             ))}
             <AnimatedPressable style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleMainPress}>
-                <AnimatedIcon name="add" size={24} color="white" style={iconStyle} />
+                <AnimatedIcon name={selectIcon ?? "add"} size={24} color="white" style={iconStyle} />
             </AnimatedPressable>
         </View>
     )

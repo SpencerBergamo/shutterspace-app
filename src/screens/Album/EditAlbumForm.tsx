@@ -3,7 +3,6 @@ import { Id } from "@/convex/_generated/dataModel";
 import { MAX_WIDTH, TextInputStyles } from "@/src/constants/styles";
 import { useAlbums } from "@/src/context/AlbumsContext";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import OpenInvitesField from "@/src/screens/Album/components/OpenInvitesField";
 import { validateAlbumTitle, validateDescription } from "@/src/utils/validators";
 import { usePreventRemove, useTheme } from "@react-navigation/native";
 import { useMutation } from "convex/react";
@@ -33,7 +32,6 @@ export function EditAlbumScreen() {
     const descriptionInputRef = useRef<TextInput>(null);
 
     // State
-    const [isOpenInvites, setIsOpenInvites] = useState<boolean>(album.openInvites);
     const [isSaving, setIsSaving] = useState<boolean>(false);
 
     // Convex
@@ -67,7 +65,6 @@ export function EditAlbumScreen() {
                 albumId,
                 title: data.title,
                 description: data.description,
-                openInvites: isOpenInvites,
             });
 
             reset(data); // Reset form state with the saved values
@@ -99,36 +96,33 @@ export function EditAlbumScreen() {
                         validate: validateAlbumTitle,
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
-                        <TextInput
-                            ref={titleInputRef}
-                            value={value}
-                            placeholder="Album Title"
-                            placeholderTextColor="#999999"
-                            maxLength={50}
-                            autoCapitalize="words"
-                            autoCorrect={false}
-                            spellCheck={false}
-                            textAlign="left"
-                            keyboardType="default"
-                            returnKeyType="next"
-                            selectionColor={theme.colors.primary}
-                            onChangeText={onChange}
-                            onBlur={onBlur}
-                            onSubmitEditing={() => titleInputRef.current?.focus()}
-                            style={[TextInputStyles, {
-                                backgroundColor: colors.background,
-                                borderColor: colors.border,
-                                color: colors.text,
-                                marginBottom: 16
-                            }]}
-                        />
+                        <View style={{ flexDirection: 'column', gap: 2, marginBottom: 16 }}>
+                            <TextInput
+                                ref={titleInputRef}
+                                value={value}
+                                placeholder="Album Title"
+                                placeholderTextColor="#999999"
+                                maxLength={50}
+                                autoCapitalize="words"
+                                autoCorrect={false}
+                                spellCheck={false}
+                                textAlign="left"
+                                keyboardType="default"
+                                returnKeyType="next"
+                                selectionColor={theme.colors.primary}
+                                onChangeText={onChange}
+                                onBlur={onBlur}
+                                onSubmitEditing={() => titleInputRef.current?.focus()}
+                                style={[TextInputStyles, {
+                                    backgroundColor: colors.background,
+                                    borderColor: colors.border,
+                                    color: colors.text,
+                                }]}
+                            />
+                            {errors.title && <Text style={{ color: '#FF3B30' }}>{errors?.title?.message}</Text>}
+                        </View>
                     )}
                 />
-                {errors.title && (
-                    <View style={{}}>
-                        <Text>{errors.title.message}</Text>
-                    </View>
-                )}
 
                 {/* Album Description */}
                 <Controller
@@ -139,40 +133,35 @@ export function EditAlbumScreen() {
                         validate: validateDescription,
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
-                        <TextInput
-                            ref={descriptionInputRef}
-                            value={value}
-                            placeholder="What should your members know?"
-                            placeholderTextColor="#999999"
-                            maxLength={300}
-                            autoCapitalize="sentences"
-                            autoCorrect
-                            spellCheck={false}
-                            textAlign="left"
-                            keyboardType="default"
-                            returnKeyType="done"
-                            selectionColor={theme.colors.primary}
-                            onChangeText={onChange}
-                            onBlur={onBlur}
-                            onSubmitEditing={() => descriptionInputRef.current?.blur()}
-                            style={[TextInputStyles, {
-                                backgroundColor: colors.background,
-                                borderColor: colors.border,
-                                color: colors.text,
-                                marginBottom: 16
-                            }]}
-                        />
+                        <View style={{ flexDirection: 'column', gap: 2, alignItems: 'flex-end', marginBottom: 16 }}>
+                            <TextInput
+                                ref={descriptionInputRef}
+                                value={value}
+                                placeholder="What should your members know?"
+                                placeholderTextColor="#999999"
+                                maxLength={300}
+                                multiline={true}
+                                textAlignVertical="top"
+                                autoCapitalize="sentences"
+                                autoCorrect
+                                spellCheck={false}
+                                textAlign="left"
+                                keyboardType="default"
+                                returnKeyType="done"
+                                selectionColor={theme.colors.primary}
+                                onChangeText={onChange}
+                                onBlur={onBlur}
+                                onSubmitEditing={() => descriptionInputRef.current?.blur()}
+                                style={[TextInputStyles, {
+                                    backgroundColor: colors.background,
+                                    borderColor: colors.border,
+                                    color: colors.text,
+                                }]}
+                            />
+                            <Text style={{ color: colors.caption, fontSize: 12 }}>{value?.length ?? 0}/300</Text>
+                            {errors.description && <Text style={{ color: '#FF3B30' }}>{errors?.description?.message}</Text>}
+                        </View>
                     )}
-                />
-                {errors.description && (
-                    <View style={{}}>
-                        <Text>{errors.description.message}</Text>
-                    </View>
-                )}
-
-                <OpenInvitesField
-                    openInvites={isOpenInvites}
-                    onToggle={setIsOpenInvites}
                 />
 
                 {/* Save Changes Button */}

@@ -40,6 +40,8 @@ export const getFriendByFriendshipId = query({
         return {
             _id: friend._id,
             nickname: friend.nickname,
+            ssoAvatarUrl: friend.ssoAvatarUrl,
+            avatarKey: friend.avatarKey,
         }
 
     }

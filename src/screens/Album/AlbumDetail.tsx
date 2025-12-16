@@ -5,7 +5,6 @@ import { useAlbums } from "@/src/context/AlbumsContext";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { useMedia } from "@/src/hooks/useMedia";
 import GalleryTile from "@/src/screens/Album/components/GalleryTile";
-import UploadProgressHeader from "@/src/screens/Album/components/UploadProgressHeader";
 import { Media } from "@/src/types/Media";
 import { validateAssets } from "@/src/utils/mediaHelper";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,7 +27,8 @@ export function AlbumScreen() {
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbum } = useAlbums();
     const album = getAlbum(albumId);
-    const { media, pendingMedia, uploadMedia, removePendingMedia, retryAllFailedUploads, clearFailedUploads } = useMedia(albumId);
+    const { media, pendingMedia, uploadMedia, removePendingMedia } = useMedia(albumId);
+    const memberships = useQuery(api.albumMembers.getMemberships, albumId ? { albumId } : "skip");
 
     // Layout
     const [orientation, setOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
@@ -304,11 +304,24 @@ export function AlbumScreen() {
                             <Text style={{ fontSize: 17, color: colors.text }}>Select All</Text>
                         </TouchableOpacity>
                     ) : (
-                        <TouchableOpacity
-                            style={{ padding: 8, borderWidth: 1, borderColor: colors.border, borderRadius: 999 }}
-                            onPress={handleSettingsPress}>
-                            <Ionicons name="ellipsis-horizontal" size={18} />
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+
+                            <TouchableOpacity
+                                style={[styles.headerRightButton, { borderColor: colors.border }]}
+                                onPress={() => router.push(`album/${albumId}/members`)}
+                            >
+                                <Text style={[styles.headerRightButtonText, { color: colors.text }]}>{memberships?.length}</Text>
+
+                                <Ionicons name="people-outline" size={18} color={colors.text} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.headerRightButton, { borderColor: colors.border }]}
+                                onPress={handleSettingsPress}
+                            >
+                                <Ionicons name="ellipsis-horizontal" size={18} color={colors.text} />
+                            </TouchableOpacity>
+                        </View>
                     )
                 )
             }} />
@@ -322,16 +335,8 @@ export function AlbumScreen() {
                 key={gridConfig.numColumns.toString()}
                 numColumns={gridConfig.numColumns}
                 columnWrapperStyle={{ gap: GAP }}
-                contentContainerStyle={{ padding: 0 }}
+                contentContainerStyle={{ paddingTop: GAP }}
                 removeClippedSubviews={false}
-
-                ListHeaderComponent={
-                    <UploadProgressHeader
-                        pendingMedia={pendingMedia}
-                        onRetryAll={retryAllFailedUploads}
-                        onClearFailed={clearFailedUploads}
-                    />
-                }
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Images size={48} color="#ccc" style={{ margin: 16 }} />
@@ -361,7 +366,9 @@ export function AlbumScreen() {
                         {
                             selectIcon: "share-outline",
                             label: "Invite Friends",
-                            onPress: () => { }
+                            onPress: () => {
+                                router.push('friends');
+                            }
                         },
                     ]}
                 />
@@ -488,77 +495,19 @@ const styles = StyleSheet.create({
         color: '#333',
     },
 
-    // Modal Styles
-    modalContent: {
-        padding: 20
-    },
-    infoSection: {
-        // backgroundColor: '#F9F9F9',
-        backgroundColor: 'white',
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 24,
-        gap: 8,
-    },
-    infoRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 8,
-    },
-    infoText: {
-        fontSize: 14,
-        color: '#666',
-        flex: 1,
-    },
-    section: {
-        marginBottom: 24,
-    },
-    sectionTitle: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#8E8E93',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-        marginBottom: 12,
-        marginLeft: 4,
-    },
-    settingsOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
-        borderRadius: 12,
-        backgroundColor: '#FFFFFF',
-        marginBottom: 8,
-    },
-    optionIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    optionContent: {
-        flex: 1,
-    },
-    optionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#000',
-        marginBottom: 2,
-    },
-    optionSubtitle: {
-        fontSize: 13,
-        color: '#8E8E93',
-    },
-    dangerOption: {
+    headerRightButton: {
+        padding: 8,
         borderWidth: 1,
-        borderColor: '#FFE5E5',
+        borderRadius: 999,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
     },
-    settingsOptionText: {
+    headerRightButtonText: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#535252FF',
+        color: '#333',
     },
 
     // Selection Styles

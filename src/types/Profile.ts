@@ -11,3 +11,10 @@ export interface Profile {
     ssoAvatarUrl?: string;
     shareCode?: string;
 }
+
+export interface PublicProfile {
+    _id: Id<'profiles'>;
+    nickname: string;
+    avatarKey?: string;
+    ssoAvatarUrl?: string;
+}

@@ -56,6 +56,9 @@ function HomeLayout() {
                 animation: 'fade',
                 animationDuration: 200,
             }} />
+            <Stack.Screen name="album/[albumId]/members" options={{
+                headerTitle: 'Album Members',
+            }} />
 
 
             {/* Friends */}

@@ -1,5 +1,5 @@
 import { Album } from "@/src/types/Album";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
@@ -7,15 +7,16 @@ import { action, internalMutation, internalQuery, mutation, query } from "./_gen
 export const getUserAlbums = query({
     args: {}, handler: async (ctx): Promise<Album[]> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
-        if (!profile) return [];
+        if (!profile) throw new ConvexError('User not found');
 
+        // get memberships the user has
         const memberships = await ctx.db
             .query('albumMembers')
             .withIndex('by_profileId', q => q.eq('profileId', profile._id))
             .collect();
-
         if (memberships.length === 0) return [];
 
+        // get album docs for each membership
         const docs = await Promise.all(
             memberships.map((m) => ctx.db.get(m.albumId))
         );

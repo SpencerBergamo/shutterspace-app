@@ -191,15 +191,6 @@ export function HomeScreen() {
                 renderItem={renderItem}
             />
 
-            {/* < View style={position} >
-                <TouchableOpacity
-                    style={button}
-                    onPress={() => router.push('/new-album')}
-                >
-                    <Ionicons name="add" size={iconSize} color="white" />
-                </TouchableOpacity>
-            </View > */}
-
             <FloatingActionButton
                 selectIcon="add"
                 onPress={() => router.push('/new-album')}

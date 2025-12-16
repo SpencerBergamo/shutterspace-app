@@ -1,4 +1,4 @@
-import { MemberRole } from "@/src/types/Album";
+import { MemberRole, Membership } from "@/src/types/Album";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
@@ -18,6 +18,18 @@ export const getMembership = query({
             .first();
 
         return membership?.role ?? 'not-a-member';
+    }
+})
+
+export const getMemberships = query({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }): Promise<Membership[]> => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
+
+        return await ctx.db.query('albumMembers')
+            .withIndex('by_albumId', q => q.eq('albumId', albumId))
+            .collect();
     }
 })
 

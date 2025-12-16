@@ -15,4 +15,6 @@ export interface Friendship {
 export interface Friend {
     _id: Id<'profiles'>;
     nickname: string;
+    ssoAvatarUrl?: string;
+    avatarKey?: string;
 }

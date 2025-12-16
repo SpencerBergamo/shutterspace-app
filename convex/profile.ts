@@ -1,5 +1,5 @@
-import { Profile } from "@/src/types/Profile";
-import { v } from "convex/values";
+import { Profile, PublicProfile } from "@/src/types/Profile";
+import { ConvexError, v } from "convex/values";
 import { api } from "./_generated/api";
 import { internalQuery, mutation, query } from "./_generated/server";
 
@@ -60,6 +60,24 @@ export const updateProfile = mutation({
         });
     },
 });
+
+export const getPublicProfileById = query({
+    args: { profileId: v.id('profiles') },
+    handler: async (ctx, { profileId }): Promise<PublicProfile> => {
+        const session = await ctx.auth.getUserIdentity();
+        if (!session) throw new ConvexError('Unauthorized');
+
+        const profile = await ctx.db.get(profileId);
+        if (!profile) throw new ConvexError('Profile not found');
+
+        return {
+            _id: profile._id,
+            nickname: profile.nickname,
+            avatarKey: profile.avatarKey,
+            ssoAvatarUrl: profile.ssoAvatarUrl,
+        };
+    }
+})
 
 export const getUserByShareCode = query({
     args: { code: v.string() },

@@ -2,8 +2,6 @@ import { Id } from "@/convex/_generated/dataModel";
 import * as ImagePicker from "expo-image-picker";
 import { Profile } from "./Profile";
 
-export type MemberRole = 'host' | 'moderator' | 'member' | 'pending' | 'not-a-member';
-
 export interface Album {
     _id: Id<'albums'>;
     _creationTime: number;
@@ -25,6 +23,14 @@ export interface Album {
     isDeleted: boolean;
     deletionScheduledAt?: number;
     scheduledDeletionId?: Id<'_scheduled_functions'>;
+}
+
+export type MemberRole = 'host' | 'moderator' | 'member' | 'pending' | 'not-a-member';
+export interface Membership {
+    _id: Id<'albumMembers'>;
+    profileId: Id<'profiles'>;
+    role: MemberRole;
+    joinedAt: number;
 }
 
 export interface AlbumFormData {

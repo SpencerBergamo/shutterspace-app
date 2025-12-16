@@ -43,6 +43,13 @@ export default function AlbumSettingsSheet({
 
     const { requesting, thumbnail: albumCover } = useSignedUrls({ media: lastMedia ?? undefined });
 
+    const handleActionPress = (func: () => void) => {
+        ref.current?.dismiss();
+        setTimeout(() => {
+            func();
+        }, 200);
+    }
+
     return (
         <BottomSheetModal
             ref={ref}
@@ -144,16 +151,10 @@ export default function AlbumSettingsSheet({
 
                     <TouchableOpacity
                         style={styles.settingsOption}
-                        onPress={async () => {
-                            ref.current?.dismiss();
-
-                            setTimeout(() => {
-                                router.push({
-                                    pathname: './[albumId]/edit',
-                                    params: { albumId: album._id },
-                                });
-                            }, 200);
-                        }}
+                        onPress={() => handleActionPress(() => router.push({
+                            pathname: './[albumId]/edit',
+                            params: { albumId: album._id },
+                        }))}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: '#E8F5FF' }]}>
                             <Ionicons name="pencil" size={20} color="#0066CC" />
@@ -165,7 +166,7 @@ export default function AlbumSettingsSheet({
                         <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
                     </TouchableOpacity>
 
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                         style={styles.settingsOption}
                         onPress={handleInviteMembers}
                         disabled={isCreatingInvite}
@@ -180,13 +181,11 @@ export default function AlbumSettingsSheet({
                             <Text style={styles.optionSubtitle}>Share an invite link</Text>
                         </View>
                         <Ionicons name="share-outline" size={20} color="#C7C7CC" />
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
 
                     <TouchableOpacity
                         style={styles.settingsOption}
-                        onPress={() => {
-                            ref.current?.dismiss();
-                        }}
+                        onPress={() => handleActionPress(() => router.push(`album/${album._id}/members`))}
                     >
                         <View style={[styles.optionIcon, { backgroundColor: '#F0E6FF' }]}>
                             <Ionicons name="people" size={20} color="#8E44AD" />
@@ -197,10 +196,26 @@ export default function AlbumSettingsSheet({
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
                     </TouchableOpacity>
+
+                    {/* <TouchableOpacity
+                        style={styles.settingsOption}
+                        onPress={() => {
+                            ref.current?.dismiss();
+                        }}
+                    >
+                        <View style={[styles.optionIcon, { backgroundColor: '#F5F5F5' }]}>
+                            <Ionicons name="lock-closed" size={20} color="#8E8E93" />
+                        </View>
+                        <View style={styles.optionContent}>
+                            <Text style={styles.optionTitle}>Pause Album</Text>
+                            <Text style={styles.optionSubtitle}>Prevent members from adding new photos and new members</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+                    </TouchableOpacity> */}
                 </View>
 
                 {/* Manage Section */}
-                <View style={styles.section}>
+                {/* <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Manage</Text>
 
                     <TouchableOpacity
@@ -215,7 +230,6 @@ export default function AlbumSettingsSheet({
                             <Text style={styles.optionTitle}>Album Settings</Text>
                             <Text style={styles.optionSubtitle}>Privacy, notifications, and more</Text>
                         </View>
-                        {/* <Ionicons name="chevron-forward" size={20} color="#C7C7CC" /> */}
                         <Text style={{ color: '#8E8E93', fontSize: 11, fontWeight: '600' }}>COMING SOON</Text>
                     </TouchableOpacity>
 
@@ -231,10 +245,9 @@ export default function AlbumSettingsSheet({
                             <Text style={styles.optionTitle}>Download All</Text>
                             <Text style={styles.optionSubtitle}>Save all photos to your device</Text>
                         </View>
-                        {/* <Ionicons name="chevron-forward" size={20} color="#C7C7CC" /> */}
                         <Text style={{ color: '#8E8E93', fontSize: 11, fontWeight: '600' }}>COMING SOON</Text>
                     </TouchableOpacity>
-                </View>
+                </View> */}
 
                 {/* Danger Zone */}
                 <View style={styles.section}>
@@ -252,7 +265,7 @@ export default function AlbumSettingsSheet({
                                         {
                                             text: 'Leave',
                                             style: 'destructive',
-                                            onPress: handleLeaveAlbum,
+                                            onPress: () => handleActionPress(handleLeaveAlbum),
                                         },
                                     ]
                                 );
@@ -280,7 +293,7 @@ export default function AlbumSettingsSheet({
                                         {
                                             text: 'Delete',
                                             style: 'destructive',
-                                            onPress: handleDeleteAlbum,
+                                            onPress: () => handleActionPress(handleDeleteAlbum),
                                         },
                                     ]
                                 );
