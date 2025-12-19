@@ -5,7 +5,7 @@ import { Media } from "@/src/types/Media";
 import { formatVideoDuration } from "@/src/utils/formatters";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from "expo-image";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
 interface GalleryTileProps {
@@ -20,7 +20,7 @@ interface GalleryTileProps {
     isSelected?: boolean;
 }
 
-export default function GalleryTile({ media, itemSize, onPress, onLongPress, onRetry, onReady, selectionMode = false, isSelected = false }: GalleryTileProps) {
+function GalleryTile({ media, itemSize, onPress, onLongPress, onRetry, onReady, selectionMode = false, isSelected = false }: GalleryTileProps) {
     const { profileId } = useProfile();
     const { requesting, thumbnail: uri } = useSignedUrls({ media });
 
@@ -38,7 +38,7 @@ export default function GalleryTile({ media, itemSize, onPress, onLongPress, onR
                 disabled={!isOwner}
                 onPress={() => onRetry(mediaId)}
                 style={{
-                    marginBottom: 1,
+                    marginBottom: 2,
                     width: itemSize,
                     height: itemSize,
                     flexDirection: 'column',
@@ -67,7 +67,7 @@ export default function GalleryTile({ media, itemSize, onPress, onLongPress, onR
             {uri && (
                 <Image
                     source={{ uri, cacheKey: mediaId }}
-                    transition={0}
+                    transition={100}
                     style={{ width: '100%', height: '100%' }}
                     contentFit="cover"
                     cachePolicy={'memory-disk'}
@@ -112,9 +112,18 @@ export default function GalleryTile({ media, itemSize, onPress, onLongPress, onR
     );
 }
 
+export default memo(GalleryTile, (prevProps, nextProps) => {
+    return prevProps.media._id === nextProps.media._id &&
+        prevProps.media.status === nextProps.media.status &&
+        prevProps.itemSize === nextProps.itemSize &&
+        prevProps.selectionMode === nextProps.selectionMode &&
+        prevProps.isSelected === nextProps.isSelected &&
+        prevProps.placeholder === nextProps.placeholder;
+});
+
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 1,
+        marginBottom: 2,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: "#EEEEEEFF",

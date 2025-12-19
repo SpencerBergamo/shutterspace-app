@@ -2,7 +2,8 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Album } from "@/src/types/Album";
 import { useQuery } from "convex/react";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 
 
 interface AlbumsContextType {
@@ -31,14 +32,25 @@ export const AlbumsProvider = ({ children }: { children: React.ReactNode }) => {
         return albums?.find(album => album._id === albumId) ?? null;
     }, [albums]);
 
-    if (albums === undefined) return null;
+    const value = useMemo(() => {
+        if (!albums) return null;
 
-    const value = {
-        isLoading,
-        albums: albums,
-        getAlbum,
+        return {
+            isLoading,
+            albums,
+            getAlbum,
+        }
+    }, [isLoading, albums, getAlbum]);
 
+    if (albums === undefined) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="black" />
+            </View>
+        );
     }
+
+    if (!value) return null;
 
     return <AlbumsContext.Provider value={value}>
         {children}

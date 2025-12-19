@@ -28,7 +28,7 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
     const getVideoThumbnailURL = useAction(api.cloudflare.getVideoThumbnailURL);
     const getVideoPlaybackURL = useAction(api.cloudflare.getVideoPlaybackURL);
 
-    const [requesting, setRequesting] = useState<boolean>(true);
+    const [requesting, setRequesting] = useState<boolean>(false);
     const [requestingVideo, setRequestingVideo] = useState<boolean>(false);
     const [thumbnail, setThumbnail] = useState<string | undefined | null>(undefined);
 
@@ -94,15 +94,15 @@ export default function useSignedUrls({ media }: UseSignedUrlsProps): UseSignedU
             const cloudflareId = type === 'video' ? media.identifier.videoUid : media.identifier.imageId;
             const albumId = media.albumId;
 
-            setRequesting(true);
-
             try {
                 const localUri = await Image.getCachePathAsync(media._id);
                 if (localUri) {
                     setThumbnail(localUri);
                     setRequesting(false);
                     return;
-                };
+                }
+
+                setRequesting(true);
 
                 let requestUrl: string | undefined | null;
                 if (type === 'image') {
