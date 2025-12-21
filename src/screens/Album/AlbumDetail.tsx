@@ -5,6 +5,7 @@ import { useAlbums } from "@/src/context/AlbumsContext";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { useMedia } from "@/src/hooks/useMedia";
 import GalleryTile from "@/src/screens/Album/components/GalleryTile";
+import { Media } from "@/src/types/Media";
 import { validateAssets } from "@/src/utils/mediaHelper";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -14,9 +15,8 @@ import { } from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import * as Orientation from 'expo-screen-orientation';
-import { Images } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { NotFoundScreen } from "../Home";
 import AlbumSettingsSheet from "./components/AlbumSettingsSheet";
 
@@ -72,6 +72,23 @@ export function AlbumScreen() {
         };
     }, []);
 
+    // --------------------------------
+    // Media Map
+    // --------------------------------
+    const mediaMap: Map<Id<'media'>, Media> = useMemo(
+        () => {
+            if (!media) return new Map<Id<'media'>, Media>();
+            const map = new Map();
+            for (const m of media) {
+                map.set(m._id, m);
+            }
+            return map;
+        },
+        [media]
+    );
+
+    const mediaIds = useMemo(() => Array.from(mediaMap.keys()), [mediaMap]);
+
     // ------------------------------
     // Grid Layout
     // ------------------------------
@@ -83,7 +100,7 @@ export function AlbumScreen() {
 
         // Calculate item size accounting for gaps between items only (not edges)
         const totalGapWidth = GAP * (numColumns - 1);
-        const itemSize = (width - totalGapWidth) / numColumns;
+        const itemSize = Math.ceil((width - totalGapWidth) / numColumns);
 
         const newConfig = { itemSize, numColumns, gap: GAP };
         if (
@@ -97,8 +114,6 @@ export function AlbumScreen() {
 
         return newConfig;
     }, [debouncedOrientation]);
-
-    const mediaIds = useMemo(() => media?.map(m => m._id) ?? [], [media]);
 
     const albumCover = useMemo(() =>
         media?.find(m => m._id === album?.thumbnail) ?? null,
@@ -273,7 +288,7 @@ export function AlbumScreen() {
         const isSelected = selectedItems.has(mediaId);
         const placeholder = placeholderMap.get(mediaId);
 
-        const displayMedia = media?.find(m => m._id === mediaId);
+        const displayMedia = mediaMap.get(mediaId);
         if (!displayMedia) return null;
 
         return (
@@ -333,7 +348,11 @@ export function AlbumScreen() {
                 headerRight,
             }} />
 
-            <FlashList
+            {media === undefined && (
+                <ActivityIndicator size="small" color="grey" />
+            )}
+
+            {media && <FlashList
                 key={`grid-${gridConfig.numColumns}`}
                 data={mediaIds}
                 keyExtractor={(item: Id<'media'>) => item}
@@ -341,16 +360,17 @@ export function AlbumScreen() {
                 estimatedItemSize={gridConfig.itemSize}
                 numColumns={gridConfig.numColumns}
                 contentContainerStyle={{ paddingTop: GAP }}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Images size={48} color="#ccc" style={{ margin: 16 }} />
-
-                        <Text style={styles.emptyTitle}>Ready to share memories?</Text>
-                        <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
-                    </View>
-                }
                 renderItem={({ item: mediaId }) => renderItem({ mediaId, index: mediaIds.indexOf(mediaId) })}
-            />
+            />}
+
+            {media === null || media?.length === 0 && (
+                <View style={styles.emptyContainer}>
+                    <Ionicons name="image-outline" size={48} color="#ccc" style={{ margin: 16 }} />
+
+                    <Text style={styles.emptyTitle}>Ready to share memories?</Text>
+                    <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
+                </View>
+            )}
 
             {/* Floating Action Button */}
             {!selectionMode && (

@@ -56,3 +56,4 @@ export interface PrepareUploadResult {
     uploadUrl: string;
     identifier: MediaIdentifier;
 };
+
