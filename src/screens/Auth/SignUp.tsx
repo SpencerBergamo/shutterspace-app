@@ -165,11 +165,10 @@ export function SignUpScreen() {
                         />
                     )}
                 />
-                {errors.email ? (
+                {errors.email && (
                     <View style={styles.errorTextView}>
                         <Text style={{ color: "#FF3B30" }}>{errors.email.message}</Text>
-                    </View>
-                ) : <View style={styles.space} />}
+                    </View>)}
 
                 {/* Password */}
                 <View style={{ position: 'relative', marginBottom: 16 }}>
@@ -218,11 +217,11 @@ export function SignUpScreen() {
                         )}
                     </View>
                 </View>
-                {errors.password ? (
+                {errors.password && (
                     <View style={styles.errorTextView}>
                         <Text style={{ color: "#FF3B30" }}>{errors.password.message}</Text>
                     </View>
-                ) : <View style={styles.space} />}
+                )}
 
 
                 {/* Submit Button */}
