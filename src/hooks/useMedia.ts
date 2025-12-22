@@ -29,7 +29,7 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
     // Subscribe to the raw pendingUploads object to avoid infinite loops
     const pendingUploads = useMediaStore(state => state.pendingUploads);
     const emptyArray = useRef<PendingUpload[]>([]).current;
-    
+
     // Filter pending uploads for this album in useMemo
     const pendingMedia = useMemo(() => {
         const uploads = Object.values(pendingUploads).filter(p => p.albumId === albumId);
@@ -73,8 +73,8 @@ export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
                 height: asset.height,
             }
 
-            const buffer = await fetch(asset.uri).then(res => res.arrayBuffer());
-            await axios.put(imageUploadUrl, buffer, {
+            const blob = await fetch(asset.uri).then(res => res.blob());
+            await axios.put(imageUploadUrl, blob, {
                 headers: { 'Content-Type': asset.mimeType },
             }).catch(e => {
                 console.error('Failed to upload image to R2', e);
