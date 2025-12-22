@@ -72,7 +72,7 @@ export function ProfileInviteScreen() {
 
     const handleClose = async () => {
         await Haptics.selectionAsync();
-        router.back();
+        router.dismissAll();
     };
 
     return (

@@ -193,7 +193,14 @@ export function HomeScreen() {
 
             <FloatingActionButton
                 selectIcon="add"
-                onPress={() => router.push('/new-album')}
+                items={[
+                    {
+                        selectIcon: "camera-outline",
+                        label: "Take Photo",
+                        onPress: () => router.push('/camera'),
+                    }
+
+                ]}
             />
 
             <QRCodeModal

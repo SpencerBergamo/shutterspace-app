@@ -30,6 +30,10 @@ function HomeLayout() {
         }}>
             <Stack.Screen name="index" />
 
+            <Stack.Screen name="camera" options={{
+                headerShown: false,
+            }} />
+
             {/* Profile */}
             <Stack.Screen name="settings" options={{
                 headerTitle: 'Settings',

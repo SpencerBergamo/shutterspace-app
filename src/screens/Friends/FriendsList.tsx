@@ -1,7 +1,6 @@
-
-
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import FloatingActionButton from "@/src/components/FloatingActionButton";
 import QRCodeModal from "@/src/components/QRCodeModal";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { useProfile } from "@/src/context/ProfileContext";
@@ -18,7 +17,6 @@ export function FriendsListScreen() {
     const { profile } = useProfile();
     const friendships = useQuery(api.friendships.getFriendships);
     const [qrModalVisible, setQrModalVisible] = useState(false);
-
     // Data
     const shareUrl = `https://shutterspace.app/shareId/${profile.shareCode}`;
 
@@ -111,15 +109,24 @@ export function FriendsListScreen() {
                     />
                 )}
             />
-            {/* 
-            <View style={position}>
-                <TouchableOpacity
-                    style={button}
-                    onPress={handleShareProfile}
-                >
-                    <Ionicons name="share-outline" size={iconSize} color={colors.border} />
-                </TouchableOpacity>
-            </View> */}
+
+            <FloatingActionButton
+                selectIcon="add"
+                items={[
+                    {
+                        selectIcon: "qr-code-outline",
+                        label: "Share QR Code",
+                        onPress: () => setQrModalVisible(true),
+                    },
+                    {
+                        selectIcon: "camera-outline",
+                        label: "Scan Code",
+                        onPress: () => {
+                            Alert.alert("Scan Code", "Coming Soon!");
+                        },
+                    },
+                ]}
+            />
 
             <QRCodeModal
                 visible={qrModalVisible}

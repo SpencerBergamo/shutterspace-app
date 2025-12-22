@@ -112,8 +112,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Shutterspace needs access to your camera to let you take photos.",
-          "microphonePermission": "Shutterspace needs access to your microphone to let you take videos.",
+          "cameraPermission": "Allow Shutterspace to access your camera to let you take photos and videos.",
+          "microphonePermission": "Allow Shutterspace to access your microphone to let you take videos.",
           "recordAudioAndroid": true
         }
       ],
