@@ -4,9 +4,10 @@ import { useProfile } from "@/src/context/ProfileContext";
 import { useMedia } from "@/src/hooks/useMedia";
 import ViewerItem from "@/src/screens/InteractiveViewer/components/ViewerItem";
 import { Ionicons } from "@expo/vector-icons";
+import { FlashList } from "@shopify/flash-list";
 import { useAction, useQuery } from "convex/react";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert, Dimensions, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,6 +29,8 @@ export function InteractiveViewerScreen() {
     const [isDeleting, setIsDeleting] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
 
+    const mediaIds = useMemo(() => media?.map(m => m._id) || [], [media]);
+
     const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const offsetX = event.nativeEvent.contentOffset.x;
         const index = Math.round(offsetX / SCREEN_WIDTH);
@@ -47,13 +50,15 @@ export function InteractiveViewerScreen() {
         }
     }, [initialIndex]);
 
-    const currentMedia = media[currentIndex];
+    const currentMedia = media?.[currentIndex];
     const canDelete = membership === 'host' || membership === 'moderator' || currentMedia?.createdBy === profileId;
 
     const handleDelete = useCallback(async () => {
         if (!currentMedia || !canDelete) return;
         try {
-            if (media.length === 1) {
+            if (!media) return;
+
+            if (media?.length === 1) {
                 await deleteMedia({ albumId, mediaId: currentMedia._id });
                 router.back();
                 return;
@@ -77,7 +82,9 @@ export function InteractiveViewerScreen() {
             setIsDeleting(false);
         }
 
-    }, [currentMedia, canDelete, media.length, currentIndex, deleteMedia, albumId]);
+    }, [currentMedia, canDelete, media?.length, currentIndex, deleteMedia, albumId]);
+
+    if (!media) return null;
 
     return (
         <GestureHandlerRootView style={styles.container}>
@@ -92,7 +99,39 @@ export function InteractiveViewerScreen() {
                 }}
             />
 
-            <ScrollView
+            <FlashList
+                data={mediaIds}
+                keyExtractor={(item) => item}
+                horizontal
+                pagingEnabled
+                initialScrollIndex={initialIndex}
+                estimatedItemSize={SCREEN_WIDTH}
+                estimatedListSize={{
+                    width: SCREEN_WIDTH,
+                    height: SCREEN_HEIGHT,
+                }}
+                getItemType={() => 'media'}
+                onScroll={onScroll}
+                scrollEventThrottle={16}
+                onContentSizeChange={onContentSizeChange}
+                scrollEnabled={!isZoomed}
+                renderItem={({ item }) => {
+                    const mediaItem = media?.find(m => m._id === item);
+
+                    if (!mediaItem) return null;
+
+                    return (
+                        <ViewerItem
+                            key={mediaItem._id}
+                            media={mediaItem}
+                            isViewable={currentIndex === mediaIds.indexOf(item)}
+                            onZoomChange={setIsZoomed}
+                        />
+                    );
+                }}
+            />
+
+            {/* <ScrollView
                 ref={scrollViewRef}
                 horizontal
                 pagingEnabled
@@ -110,7 +149,7 @@ export function InteractiveViewerScreen() {
                         onZoomChange={setIsZoomed}
                     />
                 ))}
-            </ScrollView>
+            </ScrollView> */}
 
             <View style={[styles.bottomBar, { bottom: insets.bottom }]}>
                 <Ionicons name="download-outline" size={24} color="white" />

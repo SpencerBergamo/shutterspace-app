@@ -9,21 +9,20 @@ import { Media } from "@/src/types/Media";
 import { validateAssets } from "@/src/utils/mediaHelper";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { FlashList } from "@shopify/flash-list";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { } from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import * as Orientation from 'expo-screen-orientation';
-import { Images } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, FlatList, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { NotFoundScreen } from "../Home";
 import AlbumSettingsSheet from "./components/AlbumSettingsSheet";
 
 const GAP = 2;
 
 export function AlbumScreen() {
-    // Data (must be called before any early returns)
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
     const { getAlbum } = useAlbums();
     const album = getAlbum(albumId);
@@ -31,12 +30,14 @@ export function AlbumScreen() {
     const memberships = useQuery(api.albumMembers.getMemberships, albumId ? { albumId } : "skip");
 
     // Layout
-    const [orientation, setOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
+    const [debouncedOrientation, setDebouncedOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
     const { width } = useWindowDimensions();
     const { colors } = useAppTheme();
 
     // Refs
     const settingsModalRef = useRef<BottomSheetModal>(null);
+    const lastConfigRef = useRef<{ itemSize: number, numColumns: number, gap: number } | null>(null);
+    const orientationTimeoutRef = useRef<NodeJS.Timeout>(null);
 
     // States
     const [isCreatingInvite, setIsCreatingInvite] = useState(false);
@@ -54,43 +55,70 @@ export function AlbumScreen() {
     // Orientation Subscription
     useEffect(() => {
         const subscription = Orientation.addOrientationChangeListener((event) => {
-            setOrientation(event.orientationInfo.orientation);
+            clearTimeout(orientationTimeoutRef.current as NodeJS.Timeout);
+            orientationTimeoutRef.current = setTimeout(() => {
+                setDebouncedOrientation(event.orientationInfo.orientation);
+            }, 100);
+
         });
 
-        Orientation.getOrientationAsync().then(setOrientation);
+        Orientation.getOrientationAsync().then((init) => {
+            setDebouncedOrientation(init);
+        });
 
         return () => {
             Orientation.removeOrientationChangeListener(subscription);
+            clearTimeout(orientationTimeoutRef.current as NodeJS.Timeout);
         };
     }, []);
 
+    // --------------------------------
+    // Media Map
+    // --------------------------------
+    const mediaMap: Map<Id<'media'>, Media> = useMemo(
+        () => {
+            if (!media) return new Map<Id<'media'>, Media>();
+            const map = new Map();
+            for (const m of media) {
+                map.set(m._id, m);
+            }
+            return map;
+        },
+        [media]
+    );
+
+    const mediaIds = useMemo(() => Array.from(mediaMap.keys()), [mediaMap]);
+
+    // ------------------------------
     // Grid Layout
+    // ------------------------------
     const gridConfig = useMemo(() => {
-        const isTablet = Platform.OS === 'ios'
-            ? width >= 768  // iPad minimum width
-            : width >= 600; // Android tablet threshold
+        const isPortrait = debouncedOrientation === Orientation.Orientation.PORTRAIT_UP ||
+            debouncedOrientation === Orientation.Orientation.PORTRAIT_DOWN;
 
-        const isPortrait = orientation === Orientation.Orientation.PORTRAIT_UP ||
-            orientation === Orientation.Orientation.PORTRAIT_DOWN;
+        const numColumns = isPortrait ? 3 : 5;
 
-        let numColumns: number;
+        // Calculate item size accounting for gaps between items only (not edges)
+        const totalGapWidth = GAP * (numColumns - 1);
+        const itemSize = Math.ceil((width - totalGapWidth) / numColumns);
 
-        if (isTablet) {
-            numColumns = isPortrait ? 6 : 8;
-        } else {
-            numColumns = isPortrait ? 3 : 5;
+        const newConfig = { itemSize, numColumns, gap: GAP };
+        if (
+            !lastConfigRef.current ||
+            lastConfigRef.current.itemSize !== newConfig.itemSize ||
+            lastConfigRef.current.numColumns !== newConfig.numColumns
+        ) {
+            console.log(`${width}`, newConfig);
+            lastConfigRef.current = newConfig;
         }
 
-        const itemSize = (width - (GAP * (numColumns - 1))) / numColumns;
+        return newConfig;
+    }, [debouncedOrientation]);
 
-        return {
-            itemSize,
-            numColumns,
-            gap: GAP,
-        };
-    }, [width, orientation]);
-
-    const albumCover = media?.find(m => m._id === album?.thumbnail) ?? null;
+    const albumCover = useMemo(() =>
+        media?.find(m => m._id === album?.thumbnail) ?? null,
+        [media, album?.thumbnail]
+    );
 
     const handleMediaRetry = useCallback(async (mediaId: Id<'media'>) => {
         try {
@@ -113,11 +141,11 @@ export function AlbumScreen() {
             console.error("Failed to delete media selection: ", e);
             Alert.alert("Failed to delete media selection", "Failed to delete the media selection. Please try again.");
         }
-    }, []);
+    }, [selectedItems, albumId, deleteMedia]);
 
     const handleSettingsPress = useCallback(() => {
         settingsModalRef.current?.present();
-    }, [settingsModalRef]);
+    }, []);
 
     const handleInviteMembers = useCallback(async () => {
         if (!album || isCreatingInvite) return;
@@ -206,7 +234,7 @@ export function AlbumScreen() {
             console.error("Failed to upload media: ", e);
             Alert.alert("Error", "Some photos failed to upload. Please try again.");
         }
-    }, [albumId]);
+    }, [uploadMedia]);
 
     const handleLongPress = useCallback((mediaId: Id<'media'>) => {
         setSelectionMode(true);
@@ -249,104 +277,100 @@ export function AlbumScreen() {
         }
     }, [media, selectedItems]);
 
+    // Create a Map for O(1) placeholder lookups instead of O(n) .find()
+    const placeholderMap = useMemo(() => {
+        const map = new Map<string, string>();
+        pendingMedia.forEach(p => map.set(p.assetId, p.uri));
+        return map;
+    }, [pendingMedia]);
 
+    const renderItem = useCallback(({ mediaId, index }: { mediaId: Id<'media'>, index: number }) => {
+        const isSelected = selectedItems.has(mediaId);
+        const placeholder = placeholderMap.get(mediaId);
 
-    const renderItem = useCallback(({ item, index }: { item: Media, index: number }) => {
-
-        const isSelected = selectedItems.has(item._id);
-        const placeholder = pendingMedia.find(p => p.assetId === item.assetId)?.uri;
+        const displayMedia = mediaMap.get(mediaId);
+        if (!displayMedia) return null;
 
         return (
             <GalleryTile
-                media={item}
+                media={displayMedia}
                 placeholder={placeholder}
                 itemSize={gridConfig.itemSize}
-                onPress={() => handleTilePress(item._id, index)}
+                onPress={() => handleTilePress(mediaId, index)}
                 onLongPress={() => { }}
                 onRetry={handleMediaRetry}
-                onReady={() => removePendingMedia(item.assetId)}
+                onReady={() => removePendingMedia(displayMedia.assetId)}
                 selectionMode={selectionMode}
                 isSelected={isSelected}
             />
         )
-    }, [media, removePendingMedia, gridConfig.itemSize, selectionMode, selectedItems, handleTilePress, handleLongPress]);
+    }, [gridConfig.itemSize, gridConfig.numColumns, selectionMode, selectedItems, handleTilePress, handleMediaRetry, removePendingMedia, handleLongPress, placeholderMap]);
 
-    if (!album) return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <Stack.Screen options={{
-                headerTitle: 'Album Not Found',
-            }} />
+    if (!album || album.isDeleted) return <NotFoundScreen />
 
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text>
-                    This album may have been deleted or is not available.
-                </Text>
+    const headerLeft = useMemo(() => selectionMode ? () => (
+        <TouchableOpacity onPress={handleCancelSelection}>
+            <Text style={{ fontSize: 17, color: colors.text }}>Cancel</Text>
+        </TouchableOpacity>
+    ) : undefined, [selectionMode, handleCancelSelection, colors.text]);
+
+    const headerRight = useMemo(() => () => (
+        selectionMode ? (
+            <TouchableOpacity onPress={handleSelectAll}>
+                <Text style={{ fontSize: 17, color: colors.text }}>Select All</Text>
+            </TouchableOpacity>
+        ) : (
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
+                    style={[styles.headerRightButton, { borderColor: colors.border }]}
+                    onPress={() => router.push(`album/${albumId}/members`)}
+                >
+                    <Text style={[styles.headerRightButtonText, { color: colors.text }]}>{memberships?.length}</Text>
+                    <Ionicons name="people-outline" size={18} color={colors.text} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.headerRightButton, { borderColor: colors.border }]}
+                    onPress={handleSettingsPress}
+                >
+                    <Ionicons name="ellipsis-horizontal" size={18} color={colors.text} />
+                </TouchableOpacity>
             </View>
-        </View>
-    );
-
-    if (album.isDeleted) return <NotFoundScreen />
+        )
+    ), [selectionMode, handleSelectAll, handleSettingsPress, colors, albumId, memberships?.length]);
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
 
             {/* Header */}
-            <Stack.Screen options={{
+            <Stack.Screen getId={({ params }) => params?.albumId} options={{
                 headerTitle: selectionMode ? `${selectedItems.size} selected` : album.title,
-                headerLeft: selectionMode ? () => (
-                    <TouchableOpacity onPress={handleCancelSelection}>
-                        <Text style={{ fontSize: 17, color: colors.text }}>Cancel</Text>
-                    </TouchableOpacity>
-                ) : undefined,
-                headerRight: () => (
-                    selectionMode ? (
-                        <TouchableOpacity onPress={handleSelectAll}>
-                            <Text style={{ fontSize: 17, color: colors.text }}>Select All</Text>
-                        </TouchableOpacity>
-                    ) : (
-                        <View style={{ flexDirection: 'row', gap: 8 }}>
-
-                            <TouchableOpacity
-                                style={[styles.headerRightButton, { borderColor: colors.border }]}
-                                onPress={() => router.push(`album/${albumId}/members`)}
-                            >
-                                <Text style={[styles.headerRightButtonText, { color: colors.text }]}>{memberships?.length}</Text>
-
-                                <Ionicons name="people-outline" size={18} color={colors.text} />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.headerRightButton, { borderColor: colors.border }]}
-                                onPress={handleSettingsPress}
-                            >
-                                <Ionicons name="ellipsis-horizontal" size={18} color={colors.text} />
-                            </TouchableOpacity>
-                        </View>
-                    )
-                )
+                headerLeft,
+                headerRight,
             }} />
 
-            {/* Media Grid */}
-            <FlatList
-                data={media}
-                initialNumToRender={20}
-                maxToRenderPerBatch={media?.length}
-                keyExtractor={(item: Media) => item._id}
-                key={gridConfig.numColumns.toString()}
-                numColumns={gridConfig.numColumns}
-                columnWrapperStyle={{ gap: GAP }}
-                contentContainerStyle={{ paddingTop: GAP }}
-                removeClippedSubviews={false}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Images size={48} color="#ccc" style={{ margin: 16 }} />
+            {media === undefined && (
+                <ActivityIndicator size="small" color="grey" />
+            )}
 
-                        <Text style={styles.emptyTitle}>Ready to share memories?</Text>
-                        <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
-                    </View>
-                }
-                renderItem={renderItem}
-            />
+            {media && <FlashList
+                key={`grid-${gridConfig.numColumns}`}
+                data={mediaIds}
+                keyExtractor={(item: Id<'media'>) => item}
+                getItemType={() => 'media'}
+                estimatedItemSize={gridConfig.itemSize}
+                numColumns={gridConfig.numColumns}
+                contentContainerStyle={{ paddingTop: GAP }}
+                renderItem={({ item: mediaId }) => renderItem({ mediaId, index: mediaIds.indexOf(mediaId) })}
+            />}
+
+            {media === null || media?.length === 0 && (
+                <View style={styles.emptyContainer}>
+                    <Ionicons name="image-outline" size={48} color="#ccc" style={{ margin: 16 }} />
+
+                    <Text style={styles.emptyTitle}>Ready to share memories?</Text>
+                    <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
+                </View>
+            )}
 
             {/* Floating Action Button */}
             {!selectionMode && (

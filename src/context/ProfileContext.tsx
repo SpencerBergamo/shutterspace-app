@@ -4,7 +4,7 @@ import { Profile } from "@/src/types/Profile";
 import { getAuth } from "@react-native-firebase/auth";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 interface ProfileContextType {
@@ -23,7 +23,6 @@ export const ProfileProvider = ({ children }: {
     // Get Auth
     const auth = getAuth();
     const currentUser = auth.currentUser;
-    if (!currentUser) return null;
 
     // State
     const [isCreatingProfile, setIsCreatingProfile] = useState(false);
@@ -53,6 +52,8 @@ export const ProfileProvider = ({ children }: {
             setIsCreatingProfile(true);
 
             (async () => {
+                if (!currentUser) return;
+
                 try {
                     let provider: 'email' | 'google' | 'apple';
                     const data = currentUser.providerData[0];
@@ -86,6 +87,16 @@ export const ProfileProvider = ({ children }: {
         }
     }, [profile, isCreatingProfile]);
 
+    const value = useMemo(() => {
+        if (!profile) return null;
+        return {
+            profile,
+            profileId: profile._id,
+            isLoading: false,
+            createNewShareCode,
+        };
+    }, [profile, createNewShareCode]);
+
     if (profile === undefined || isCreatingProfile) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -94,16 +105,11 @@ export const ProfileProvider = ({ children }: {
         );
     }
 
-    if (profile === null) {
+    if (!currentUser || profile === null || !value) {
         return null;
     }
 
-    return <ProfileContext.Provider value={{
-        profile,
-        profileId: profile._id,
-        isLoading: false,
-        createNewShareCode,
-    }}>
+    return <ProfileContext.Provider value={value}>
         {children}
     </ProfileContext.Provider>;
 }
