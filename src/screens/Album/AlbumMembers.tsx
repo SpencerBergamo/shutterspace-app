@@ -3,7 +3,6 @@ import { Id } from "@/convex/_generated/dataModel";
 import Avatar from "@/src/components/Avatar";
 import FloatingActionButton from "@/src/components/FloatingActionButton";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { useProfile } from "@/src/context/ProfileContext";
 import { MemberRole, Membership } from "@/src/types/Album";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useMutation, useQuery } from "convex/react";
@@ -138,7 +137,7 @@ const MembershipItem = ({
 
 export function AlbumMembersScreen() {
     const { colors } = useAppTheme();
-    const { profileId } = useProfile();
+    const profile = useQuery(api.profile.getUserProfile);
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
 
     const inviteCode = useQuery(api.inviteCodes.getInviteCode, albumId ? { albumId } : "skip");
@@ -154,11 +153,11 @@ export function AlbumMembersScreen() {
         if (!friendships) return new Map();
         const map = new Map<Id<'profiles'>, { id: Id<'friendships'>, status: 'pending' | 'accepted' | 'rejected' | 'blocked' }>();
         friendships.forEach(f => {
-            const friendId = f.senderId === profileId ? f.recipientId : f.senderId;
+            const friendId = f.senderId === profile?._id ? f.recipientId : f.senderId;
             map.set(friendId, { id: f._id, status: f.status });
         });
         return map;
-    }, [friendships, profileId]);
+    }, [friendships, profile]);
 
     // Sort memberships by pending first, then role, then joinedAt
     const orderedMemberships = useMemo(() => {
@@ -255,7 +254,7 @@ export function AlbumMembersScreen() {
                         <MembershipItem
                             item={item}
                             currentUserRole={currentUserRole}
-                            isCurrentUser={profileId === item.profileId}
+                            isCurrentUser={profile?._id === item.profileId}
                             friendshipId={friendship?.id}
                             friendshipStatus={friendship?.status}
                             onSendFriendRequest={handleSendFriendRequest}
