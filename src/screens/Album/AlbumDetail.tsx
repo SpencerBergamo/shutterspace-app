@@ -1,7 +1,6 @@
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import FloatingActionButton from "@/src/components/FloatingActionButton";
-import { useAlbums } from "@/src/context/AlbumsContext";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { useMedia } from "@/src/hooks/useMedia";
 import GalleryTile from "@/src/screens/Album/components/GalleryTile";
@@ -24,8 +23,7 @@ const GAP = 2;
 
 export function AlbumScreen() {
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
-    const { getAlbum } = useAlbums();
-    const album = getAlbum(albumId);
+    const album = useQuery(api.albums.queryAlbum, { albumId });
     const { media, pendingMedia, uploadMedia, removePendingMedia } = useMedia(albumId);
     const memberships = useQuery(api.albumMembers.getMemberships, albumId ? { albumId } : "skip");
 

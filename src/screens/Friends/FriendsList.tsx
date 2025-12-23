@@ -1,10 +1,7 @@
-
-
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import QRCodeModal from "@/src/components/QRCodeModal";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { useProfile } from "@/src/context/ProfileContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import { Stack } from "expo-router";
@@ -15,7 +12,9 @@ import FriendListCard from "./components/FriendListCard";
 
 export function FriendsListScreen() {
     const { colors } = useAppTheme();
-    const { profile } = useProfile();
+    const profile = useQuery(api.profile.getProfile);
+    if (!profile) return null;
+
     const friendships = useQuery(api.friendships.getFriendships);
     const [qrModalVisible, setQrModalVisible] = useState(false);
 

@@ -2,13 +2,12 @@ import { api } from '@/convex/_generated/api';
 import Avatar from '@/src/components/Avatar';
 import { TextInputStyles } from '@/src/constants/styles';
 import { useAppTheme } from '@/src/context/AppThemeContext';
-import { useProfile } from '@/src/context/ProfileContext';
 import { validateAssets, ValidatedAsset } from '@/src/utils/mediaHelper';
 import { validateNickname } from '@/src/utils/validators';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import axios from 'axios';
-import { useAction, useMutation } from 'convex/react';
+import { useAction, useMutation, useQuery } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -20,7 +19,8 @@ type ProfileFormData = {
 }
 
 export function EditProfileScreen() {
-    const { profile } = useProfile();
+    const profile = useQuery(api.profile.getUserProfile);
+
     const { colors } = useAppTheme();
     const navigation = useNavigation();
     const { showActionSheetWithOptions } = useActionSheet();
@@ -42,7 +42,7 @@ export function EditProfileScreen() {
     } = useForm<ProfileFormData>({
         mode: 'onChange',
         defaultValues: {
-            nickname: profile.nickname,
+            nickname: profile?.nickname,
         }
     })
 
@@ -166,9 +166,9 @@ export function EditProfileScreen() {
                 name="avatar"
                 render={({ field: { onChange } }) => (
                     <Avatar
-                        nickname={profile.nickname}
-                        avatarKey={profile.avatarKey}
-                        ssoAvatarUrl={profile.ssoAvatarUrl}
+                        nickname={profile?.nickname ?? 'No User'}
+                        avatarKey={profile?.avatarKey}
+                        ssoAvatarUrl={profile?.ssoAvatarUrl}
                         localUri={avatar?.uri}
                         onPress={() => showActionSheet(onChange)}
                         size={80}

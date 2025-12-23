@@ -2,9 +2,7 @@ import { api } from "@/convex/_generated/api";
 import Avatar from "@/src/components/Avatar";
 import FloatingActionButton from "@/src/components/FloatingActionButton";
 import QRCodeModal from "@/src/components/QRCodeModal";
-import { useAlbums } from '@/src/context/AlbumsContext';
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { useProfile } from "@/src/context/ProfileContext";
 import { formatAlbumDate } from "@/src/utils/formatters";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
@@ -25,12 +23,9 @@ export function HomeScreen() {
     const [qrModalVisible, setQrModalVisible] = useState(false);
 
     // Data
-    const { profile } = useProfile();
-    const { albums } = useAlbums();
+    const profile = useQuery(api.profile.getUserProfile);
+    const albums = useQuery(api.albums.getUserAlbums) ?? [];
     const friendships = useQuery(api.friendships.getFriendships);
-
-    // Constants
-    const shareUrl = `https://shutterspace.app/shareId/${profile.shareCode}`;
 
     useEffect(() => {
         const subscription = Orientation.addOrientationChangeListener((event) => {
@@ -111,16 +106,16 @@ export function HomeScreen() {
     const renderHeaderLeft = useCallback(() => (
         <View style={styles.headerLeft}>
             <Avatar
-                nickname={profile.nickname}
-                avatarKey={profile.avatarKey}
-                ssoAvatarUrl={profile.ssoAvatarUrl}
+                nickname={profile?.nickname ?? 'No User'}
+                avatarKey={profile?.avatarKey}
+                ssoAvatarUrl={profile?.ssoAvatarUrl}
                 onPress={() => router.push('settings')}
             />
             <View style={styles.greetingContainer}>
                 <Text style={[styles.greeting, { color: colors.text }]}>
-                    Hi, {profile.nickname}
+                    Hi, {profile?.nickname}
                 </Text>
-                {!profile.avatarKey && (
+                {!profile?.avatarKey && (
                     <TouchableOpacity
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
                         onPress={() => router.push('profile/edit')}
@@ -133,7 +128,7 @@ export function HomeScreen() {
                 )}
             </View>
         </View>
-    ), [profile.nickname, profile.avatarKey, profile.ssoAvatarUrl, colors.text, colors.primary]);
+    ), [profile?.nickname, profile?.avatarKey, profile?.ssoAvatarUrl, colors.text, colors.primary]);
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -199,8 +194,8 @@ export function HomeScreen() {
             <QRCodeModal
                 visible={qrModalVisible}
                 onClose={() => setQrModalVisible(false)}
-                value={shareUrl}
-                displayValue={profile.shareCode}
+                value={`https://shutterspace.app/shareId/${profile?.shareCode}`}
+                displayValue={profile?.shareCode}
                 title="Share Profile"
                 description="Share this code with your friends!"
                 showCopyButton={true}

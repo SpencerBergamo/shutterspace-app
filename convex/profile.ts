@@ -3,6 +3,61 @@ import { ConvexError, v } from "convex/values";
 import { api } from "./_generated/api";
 import { internalQuery, mutation, query } from "./_generated/server";
 
+
+// --------------------------------
+// Dec 23: NEW
+// --------------------------------
+export const createNewProfile = mutation({
+    args: {
+        nickname: v.optional(v.string()),
+        ssoAvatar: v.optional(v.string()),
+        authProvider: v.union(
+            v.literal('email'),
+            v.literal('google'),
+            v.literal('apple'),
+        )
+    }, handler: async (ctx, { ssoAvatar, nickname, authProvider }) => {
+        const session = await ctx.auth.getUserIdentity();
+        if (!session) throw new ConvexError('Not Authenticated');
+
+        const fuid = session.user_id as string;
+        const email = session.email as string;
+
+        const profileExists = await ctx.db.query('profiles')
+            .withIndex('by_firebase_uid', q => q.eq('firebaseUID', fuid))
+            .unique();
+
+        if (profileExists) return;
+
+        return await ctx.db.insert('profiles', {
+            firebaseUID: fuid,
+            joined: Date.now(),
+            authProvider: authProvider,
+            email: email,
+            nickname: nickname ?? email.split('@')[0],
+            ssoAvatarUrl: ssoAvatar ?? session.pictureUrl,
+        })
+    }
+})
+
+export const getUserProfile = query({
+    args: {}, handler: async (ctx) => {
+        const session = await ctx.auth.getUserIdentity();
+        if (!session) throw new ConvexError('Not Authenticated');
+
+        const fuid = session.user_id as string;
+
+        return await ctx.db.query('profiles')
+            .withIndex('by_firebase_uid', q => q.eq('firebaseUID', fuid))
+            .first();
+    }
+})
+
+// --------------------------------
+// OLD
+// --------------------------------
+
+// OLD
 export const createProfile = mutation({
     args: {
         nickname: v.optional(v.string()),
@@ -29,6 +84,7 @@ export const createProfile = mutation({
     }
 })
 
+// OLD
 export const getProfile = query({
     args: {}, handler: async (ctx): Promise<Profile | null> => {
         const session = await ctx.auth.getUserIdentity();

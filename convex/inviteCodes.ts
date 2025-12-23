@@ -66,6 +66,14 @@ export const acceptInvite = mutation({
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new Error('Profile not found');
 
+        // Check if user is already a member
+        const existingMembership = await ctx.db.query('albumMembers')
+            .withIndex('by_album_profileId', q => q.eq('albumId', invite.albumId)
+                .eq('profileId', profile._id))
+            .first();
+
+        if (existingMembership) return;
+
         const openInvites = invite.openInvites ?? true;
         const role = openInvites ? invite.role : 'pending';
 

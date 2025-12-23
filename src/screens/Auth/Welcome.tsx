@@ -1,7 +1,9 @@
+import { api } from '@/convex/_generated/api';
 import { MAX_WIDTH } from '@/src/constants/styles';
 import { useAppTheme } from '@/src/context/AppThemeContext';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { useMutation } from 'convex/react';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { Link, router } from "expo-router";
@@ -44,6 +46,8 @@ export function WelcomeScreen() {
     const [currentSlide, setCurrentSlide] = useState<number>(0);
     const scrollViewRef = useRef<ScrollView>(null);
 
+    const createNewProfile = useMutation(api.profile.createNewProfile);
+
     // Calculate slide width based on the screen paddingHorizontal:20
     const slideWidth = Math.min(screenWidth - 40, MAX_WIDTH);
 
@@ -81,6 +85,11 @@ export function WelcomeScreen() {
 
             const credential = AppleAuthProvider.credential(response.identityToken, nonce);
             await signInWithCredential(getAuth(), credential);
+
+            return await createNewProfile({
+                nickname: response.fullName?.toString(),
+                authProvider: 'apple',
+            })
         } catch (e) {
             console.error('Apple Auth FAIL', e);
         }
@@ -96,7 +105,13 @@ export function WelcomeScreen() {
             if (!result.data?.idToken) throw new Error('No ID Token Found');
 
             const credential = GoogleAuthProvider.credential(result.data.idToken);
-            return signInWithCredential(getAuth(), credential);
+            await signInWithCredential(getAuth(), credential);
+
+            return await createNewProfile({
+                ssoAvatar: result.data.user.photo ?? undefined,
+                nickname: result.data.user.name ?? undefined,
+                authProvider: 'google',
+            });
         } catch (e) {
             console.error('Google auth FAIL', e);
         }

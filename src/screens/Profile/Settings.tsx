@@ -1,10 +1,11 @@
+import { api } from '@/convex/_generated/api';
 import Avatar from '@/src/components/Avatar';
 import { ASSETS } from '@/src/constants/assets';
 import { useAppTheme } from '@/src/context/AppThemeContext';
-import { useProfile } from '@/src/context/ProfileContext';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '@react-native-firebase/auth';
+import { useQuery } from 'convex/react';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
@@ -16,7 +17,7 @@ import { Alert, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, 
 export function SettingsScreen() {
     const auth = getAuth();
     const { colors } = useAppTheme();
-    const { profile } = useProfile();
+    const profile = useQuery(api.profile.getUserProfile);
 
     const handleOpenUrl = async (url: string) => {
         const supported = await Linking.canOpenURL(url);
@@ -94,14 +95,14 @@ export function SettingsScreen() {
                         <View style={{ marginRight: 12 }}>
 
                             <Avatar
-                                nickname={profile.nickname}
-                                avatarKey={profile.avatarKey}
+                                nickname={profile?.nickname ?? 'No User'}
+                                avatarKey={profile?.avatarKey}
                                 size={40}
                             />
                         </View>
                         <View style={styles.optionContent}>
-                            <Text style={styles.optionTitle}>{profile.nickname}</Text>
-                            <Text style={styles.optionSubtitle}>{profile.email}</Text>
+                            <Text style={styles.optionTitle}>{profile?.nickname}</Text>
+                            <Text style={styles.optionSubtitle}>{profile?.email}</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
                     </TouchableOpacity>
@@ -118,8 +119,8 @@ export function SettingsScreen() {
                                 await Haptics.selectionAsync();
                                 await Share.share({
                                     title: 'Join me on Shutterspace!',
-                                    message: `Check out my profile: https://shutterspace.app/shareId/${profile.shareCode}`,
-                                    url: `https://shutterspace.app/shareId/${profile.shareCode}`,
+                                    message: `Check out my profile: https://shutterspace.app/shareId/${profile?.shareCode}`,
+                                    url: `https://shutterspace.app/shareId/${profile?.shareCode}`,
                                 });
                             } catch (e) {
                                 console.error("Failed to share profile: ", e);

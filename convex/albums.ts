@@ -4,6 +4,27 @@ import { api, internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 
+
+// --------------------
+// Dec 23 2025
+// --------------------
+export const queryAlbum = query({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!membership || membership === 'not-a-member') return null;
+
+        return await ctx.db.get(albumId);
+    }
+});
+
+export const queryPaginatedAlbums = query({
+    args: {}, handler: async () => { }
+})
+
+// --------------------
+// OLD
+// --------------------
 export const getUserAlbums = query({
     args: {}, handler: async (ctx): Promise<Album[]> => {
         const profile = await ctx.runQuery(api.profile.getProfile);

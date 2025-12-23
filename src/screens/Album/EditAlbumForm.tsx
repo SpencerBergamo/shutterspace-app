@@ -1,16 +1,16 @@
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { MAX_WIDTH, TextInputStyles } from "@/src/constants/styles";
-import { useAlbums } from "@/src/context/AlbumsContext";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { validateAlbumTitle, validateDescription } from "@/src/utils/validators";
 import { usePreventRemove, useTheme } from "@react-navigation/native";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { NotFoundScreen } from "../Home";
 
 type FormData = {
     title: string;
@@ -22,10 +22,9 @@ export function EditAlbumScreen() {
     const { colors } = useAppTheme();
     const navigation = useNavigation();
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
-    const { getAlbum } = useAlbums();
+    const album = useQuery(api.albums.queryAlbum, { albumId });
 
-    const album = getAlbum(albumId);
-    if (!album) return null;
+    if (!album) return <NotFoundScreen />;
 
     // Refs
     const titleInputRef = useRef<TextInput>(null);

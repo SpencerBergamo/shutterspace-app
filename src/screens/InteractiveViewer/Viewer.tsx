@@ -1,6 +1,5 @@
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useProfile } from "@/src/context/ProfileContext";
 import { useMedia } from "@/src/hooks/useMedia";
 import ViewerItem from "@/src/screens/InteractiveViewer/components/ViewerItem";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,7 +17,7 @@ export function InteractiveViewerScreen() {
     const insets = useSafeAreaInsets();
     const { albumId, index } = useLocalSearchParams<{ albumId: Id<'albums'>, index: string }>();
     const { media } = useMedia(albumId);
-    const { profileId } = useProfile();
+    const profile = useQuery(api.profile.getUserProfile);
     const membership = useQuery(api.albumMembers.getMembership, { albumId });
     const deleteMedia = useAction(api.media.deleteMedia);
 
@@ -51,7 +50,7 @@ export function InteractiveViewerScreen() {
     }, [initialIndex]);
 
     const currentMedia = media?.[currentIndex];
-    const canDelete = membership === 'host' || membership === 'moderator' || currentMedia?.createdBy === profileId;
+    const canDelete = membership === 'host' || membership === 'moderator' || currentMedia?.createdBy === profile?._id;
 
     const handleDelete = useCallback(async () => {
         if (!currentMedia || !canDelete) return;

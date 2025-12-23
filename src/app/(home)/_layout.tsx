@@ -1,23 +1,24 @@
-import { AlbumsProvider, useAlbums } from "@/src/context/AlbumsContext";
+import { api } from "@/convex/_generated/api";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { ProfileProvider, useProfile } from "@/src/context/ProfileContext";
+import { useQuery } from "convex/react";
 // import { useTheme } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
-function HomeLayout() {
+export default function HomeLayout() {
     const { colors } = useAppTheme();
 
-    const { isLoading: profileLoading } = useProfile();
-    const { isLoading: albumsLoading } = useAlbums();
+    const profile = useQuery(api.profile.getUserProfile);
 
-    if (profileLoading || albumsLoading) {
+    if (profile === undefined) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color={colors.text} />
             </View>
         )
     }
+
+    if (profile === null) router.replace('/welcome');
 
     return (
         <Stack screenOptions={{
@@ -77,16 +78,5 @@ function HomeLayout() {
                 }
             }} />
         </Stack>
-    );
-}
-
-
-export default function Layout() {
-    return (
-        <ProfileProvider>
-            <AlbumsProvider>
-                <HomeLayout />
-            </AlbumsProvider>
-        </ProfileProvider>
     );
 }

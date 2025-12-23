@@ -1,7 +1,6 @@
 import { api } from "@/convex/_generated/api";
 import Avatar from "@/src/components/Avatar";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { useProfile } from "@/src/context/ProfileContext";
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from "convex/react";
 import { BlurView } from "expo-blur";
@@ -13,7 +12,8 @@ import { ActivityIndicator, Alert, Animated, Pressable, StyleSheet, Text, Toucha
 
 export function ProfileInviteScreen() {
     const { colors } = useAppTheme();
-    const { profile } = useProfile();
+    const profile = useQuery(api.profile.getUserProfile);
+
     const { code }: { code: string } = useLocalSearchParams<{ code: string }>();
 
     // Convex

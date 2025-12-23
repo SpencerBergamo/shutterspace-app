@@ -35,7 +35,7 @@ export function SignUpScreen() {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
     // Convex
-    const createProfileMutation = useMutation(api.profile.createProfile);
+    const createNewProfile = useMutation(api.profile.createNewProfile);
 
     const {
         control,
@@ -59,7 +59,7 @@ export function SignUpScreen() {
         try {
             const user = await auth.createUserWithEmailAndPassword(data.email, data.password);
 
-            return await createProfileMutation({
+            return await createNewProfile({
                 nickname: user.user.displayName ?? data.email.split('@')[0],
                 authProvider: 'email',
             });
@@ -98,7 +98,8 @@ export function SignUpScreen() {
             const credential = AppleAuthProvider.credential(response.identityToken, rawNonce);
             await signInWithCredential(getAuth(), credential);
 
-            return await createProfileMutation({
+            return await createNewProfile({
+                nickname: response.fullName?.toString(),
                 authProvider: 'apple',
             });
         } catch (e) {
@@ -113,9 +114,12 @@ export function SignUpScreen() {
             if (!result.data?.idToken) throw new Error('No ID Token Found');
 
             const credential = GoogleAuthProvider.credential(result.data.idToken);
+
             await signInWithCredential(getAuth(), credential);
 
-            return await createProfileMutation({
+            return await createNewProfile({
+                ssoAvatar: result.data.user.photo ?? undefined,
+                nickname: result.data.user.name ?? undefined,
                 authProvider: 'google',
             });
         } catch (e) {

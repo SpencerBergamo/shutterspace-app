@@ -16,22 +16,22 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { ConvexProviderWithAuth, ConvexReactClient, useConvexAuth } from "convex/react";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 SplashScreen.preventAutoHideAsync();
 
-function AppLayout({ onAuthReady }: { onAuthReady: () => void }) {
+function AppLayout() {
     const { colors } = useAppTheme();
     const { isLoading, isAuthenticated } = useConvexAuth();
 
     useEffect(() => {
-        if (!isLoading) {
-            onAuthReady();
+        if (!isLoading && isAuthenticated) {
+            SplashScreen.hideAsync();
         }
-    }, [isLoading, onAuthReady]);
+    }, [isLoading, isAuthenticated]);
 
     if (isLoading) return null;
 
@@ -71,7 +71,6 @@ const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL! as stri
 export default function RootLayout() {
 
     const [fontsLoaded, fontError] = useFonts(ASSETS.fonts);
-    const [authReady, setAuthReady] = useState(false);
 
     useEffect(() => {
         GoogleSignin.configure({
@@ -80,12 +79,6 @@ export default function RootLayout() {
             offlineAccess: true,
         })
     }, []);
-
-    useEffect(() => {
-        if (fontsLoaded && authReady) {
-            SplashScreen.hideAsync();
-        }
-    }, [fontsLoaded, authReady]);
 
     if (!fontsLoaded && !fontError) return null;
 
@@ -97,7 +90,7 @@ export default function RootLayout() {
                         <AppThemeProvider>
                             <ActionSheetProvider>
                                 <BottomSheetModalProvider>
-                                    <AppLayout onAuthReady={() => setAuthReady(true)} />
+                                    <AppLayout />
                                 </BottomSheetModalProvider>
                             </ActionSheetProvider>
                         </AppThemeProvider>
