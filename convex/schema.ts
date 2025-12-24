@@ -76,6 +76,7 @@ export default defineSchema({
             v.literal('pending'),
         ),
         joinedAt: v.number(),
+        updatedAt: v.optional(v.number()),
     }).index("by_albumId", ["albumId"])
         .index("by_profileId", ["profileId"])
         .index("by_album_profileId", ["albumId", "profileId"]),

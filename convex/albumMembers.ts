@@ -1,16 +1,86 @@
 import { MemberRole, Membership } from "@/src/types/Album";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
 
 
+// --------------------
+// DEC 23
+// --------------------
+export const queryMembership = query({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }): Promise<MemberRole> => {
+        const profile = await ctx.runQuery(api.profile.getUserProfile);
+        if (!profile) throw new ConvexError("User Not Found");
+
+        const membership = await ctx.db.query('albumMembers')
+            .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
+                .eq('profileId', profile._id))
+            .first();
+
+        return membership?.role ?? 'not-a-member';
+    }
+});
+
+export const queryAllMemberships = query({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }): Promise<Membership[]> => {
+        const session = await ctx.auth.getUserIdentity();
+        if (!session) throw new ConvexError("Not Authenticated");
+
+        return await ctx.db.query('albumMembers').withIndex('by_albumId', q => q.eq('albumId', albumId)).collect();
+    }
+});
+
+export const addMembers = mutation({
+    args: {
+        albumId: v.id('albums'),
+        newMembers: v.array(v.id('profiles')),
+    }, handler: async (ctx, { albumId, newMembers }) => {
+        const album = await ctx.db.get(albumId);
+        if (!album) throw new ConvexError('Album not found');
+
+        const profile = await ctx.runQuery(api.profile.getUserProfile);
+        if (!profile) throw new ConvexError('No User Found');
+
+        // check if the user is a member of the album or if the album is open invites
+        const existingMemberships = await ctx.runQuery(api.albumMembers.queryAllMemberships, { albumId });
+        const memberRole = existingMemberships.find(m => m.profileId === profile._id)?.role ?? 'not-a-member';
+        if (!album.openInvites && memberRole !== 'host') throw new ConvexError('Not Authorized');
+
+        const updatedAt = Date.now();
+
+        // update album updatedAt
+        await ctx.db.patch(albumId, { updatedAt });
+
+        // Update existing memberships
+        await Promise.all(existingMemberships.map(async (m) => {
+            await ctx.db.patch(m._id, { updatedAt });
+        }));
+
+        // Add new members
+        return await Promise.all(newMembers.map(async (memberId) => {
+            await ctx.db.insert('albumMembers', {
+                albumId,
+                profileId: memberId,
+                role: 'member',
+                joinedAt: updatedAt,
+                updatedAt,
+            });
+        }))
+    }
+})
+
+// --------------------
+// OLD
+// --------------------
 export const getMembership = query({
     args: {
         albumId: v.id("albums"),
     }, handler: async (ctx, { albumId }): Promise<MemberRole> => {
-        const profile = await ctx.runQuery(api.profile.getProfile);
-        if (!profile) throw new Error("User Not Found");
+        const profile = await ctx.runQuery(api.profile.getUserProfile);
+        if (!profile) throw new ConvexError("User Not Found");
 
         const membership = await ctx.db.query('albumMembers')
             .withIndex('by_album_profileId', q => q.eq('albumId', albumId)

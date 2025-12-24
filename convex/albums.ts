@@ -1,4 +1,5 @@
 import { Album } from "@/src/types/Album";
+import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
@@ -11,7 +12,7 @@ import { action, internalMutation, internalQuery, mutation, query } from "./_gen
 export const queryAlbum = query({
     args: { albumId: v.id('albums') },
     handler: async (ctx, { albumId }) => {
-        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        const membership = await ctx.runQuery(api.albumMembers.queryMembership, { albumId });
         if (!membership || membership === 'not-a-member') return null;
 
         return await ctx.db.get(albumId);
@@ -19,7 +20,54 @@ export const queryAlbum = query({
 });
 
 export const queryPaginatedAlbums = query({
-    args: {}, handler: async () => { }
+    args: {
+        albumId: v.id('albums'),
+        page: paginationOptsValidator,
+    }, handler: async () => {
+
+    }
+})
+
+export const createNewAlbum = mutation({
+    args: {
+        title: v.string(),
+        description: v.optional(v.string()),
+    }, handler: async (ctx, { title, description }): Promise<Id<'albums'>> => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) throw new ConvexError('No User Found');
+
+        const albumId = await ctx.db.insert('albums', {
+            hostId: profile._id,
+            title,
+            description,
+            isDynamicThumbnail: true,
+            openInvites: true,
+            updatedAt: Date.now(),
+            isDeleted: false,
+        });
+
+        await ctx.db.insert('albumMembers', {
+            albumId,
+            profileId: profile._id,
+            role: 'host',
+            joinedAt: Date.now(),
+        })
+
+        return albumId;
+    }
+});
+
+export const createAlbumInviteCode = action({
+    args: { albumId: v.id('albums') }, handler: async (ctx, { albumId }) => {
+        const profile = await ctx.runQuery(api.profile.getUserProfile);
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+
+        if (!profile || !membership || membership === 'not-a-member') throw new ConvexError("Not Authorized");
+
+
+
+
+    }
 })
 
 // --------------------
@@ -120,23 +168,28 @@ export const updateAlbum = mutation({
             address: v.optional(v.string()),
         })),
         expiresAt: v.optional(v.number()),
-    }, handler: async (ctx, { albumId, ...args }) => {
-        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-        if (!membership || membership === 'not-a-member') throw new Error('Not authorized to update this album');
+    }, handler: async (ctx, { albumId, title, description }) => {
+        const profile = await ctx.runQuery(api.profile.getUserProfile);
+        if (!profile) throw new ConvexError('No User Found');
+
+        const albumMemberships = await ctx.runQuery(api.albumMembers.queryAllMemberships, { albumId });
+        const memberRole = albumMemberships.find(m => m.profileId === profile._id)?.role ?? 'not-a-member';
+        if (!memberRole || (memberRole !== 'host' && memberRole !== 'moderator')) throw new ConvexError('Not Authorized');
 
         const album = await ctx.db.get(albumId);
-        if (!album) throw new Error('Album not found');
+        if (!album) throw new ConvexError('Album not found');
 
         const updates = {
-            title: args.title ?? album.title,
-            description: args.description ?? album.description,
-            isDynamicThumbnail: args.isDynamicThumbnail ?? true,
-            openInvites: args.openInvites ?? true,
-            dateRange: args.dateRange ?? album.dateRange,
-            location: args.location ?? album.location,
+            title: title ?? album.title,
+            description: description ?? album.description,
             updatedAt: Date.now(),
-            expiresAt: args.expiresAt ?? album.expiresAt,
         }
+
+        await Promise.all(albumMemberships.map(async (m) => {
+            await ctx.db.patch(m._id, {
+                updatedAt: updates.updatedAt,
+            })
+        }));
 
         return await ctx.db.patch(albumId, updates);
     },
