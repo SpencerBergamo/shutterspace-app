@@ -66,7 +66,7 @@ export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ vali
     let valid: ValidatedAsset[] = [];
 
     for (const asset of assets) {
-        const fileInfo = await new File(asset.uri).info();
+        const fileInfo = new File(asset.uri).info();
         if (!fileInfo.exists) {
             invalid.push({
                 uri: asset.uri,

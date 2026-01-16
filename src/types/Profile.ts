@@ -10,6 +10,7 @@ export interface Profile {
     avatarKey?: string;
     ssoAvatarUrl?: string;
     shareCode?: string;
+    storageQuota?: number;
 }
 
 export interface PublicProfile {

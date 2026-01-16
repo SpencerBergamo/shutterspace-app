@@ -16,6 +16,7 @@ export default defineSchema({
         ssoAvatarUrl: v.optional(v.string()), // URL for SSO avatars
         shareCode: v.optional(v.string()),
         shareCodeUpdatedAt: v.optional(v.number()),
+        storageQuota: v.optional(v.number()),
         isDeleted: v.optional(v.boolean()),
     }).index('by_firebase_uid', ['firebaseUID'])
         .index('by_shareCode', ['shareCode']),

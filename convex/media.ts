@@ -83,6 +83,10 @@ export const createMedia = mutation({
             isDeleted: false,
         });
 
+        await ctx.db.patch(profile._id, {
+            storageQuota: (profile.storageQuota ?? 0) + (args.size ?? 0),
+        })
+
         if (args.setThumbnail) {
             await ctx.db.patch(args.albumId, {
                 thumbnail: mediaId,
