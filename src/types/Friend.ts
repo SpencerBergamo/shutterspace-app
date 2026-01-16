@@ -8,7 +8,7 @@ export interface Friendship {
     senderId: Id<'profiles'>;
     recipientId: Id<'profiles'>;
     status: FriendshipStatus;
-    createdAt: number;
+    createdAt?: number;
     updatedAt: number;
 }
 

@@ -51,5 +51,7 @@ secret-keys/
 
 audit-report.json
 
+planning/*
+
 docs/*
 apps/

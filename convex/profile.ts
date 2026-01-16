@@ -56,8 +56,6 @@ export const getUserProfile = query({
 // --------------------------------
 // OLD
 // --------------------------------
-
-// OLD
 export const createProfile = mutation({
     args: {
         nickname: v.optional(v.string()),
@@ -84,7 +82,6 @@ export const createProfile = mutation({
     }
 })
 
-// OLD
 export const getProfile = query({
     args: {}, handler: async (ctx): Promise<Profile | null> => {
         const session = await ctx.auth.getUserIdentity();

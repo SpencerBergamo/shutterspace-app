@@ -33,6 +33,22 @@ export const queryAllMemberships = query({
     }
 });
 
+export const addNewMember = mutation({
+    args: {
+        albumId: v.id('albums'),
+        memberId: v.id('profiles'),
+    }, handler: async (ctx, { albumId, memberId }) => {
+        const album = await ctx.db.get(albumId);
+        if (!album) throw new ConvexError("Album not found");
+
+        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
+        if (!album.openInvites && membership !== 'host' && membership !== 'moderator') throw new ConvexError("Not authorized");
+
+
+
+    }
+})
+
 export const addMembers = mutation({
     args: {
         albumId: v.id('albums'),

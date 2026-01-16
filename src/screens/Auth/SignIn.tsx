@@ -9,7 +9,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Image, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import 'react-native-get-random-values';
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { v4 as uuidv4 } from 'uuid';
@@ -50,6 +50,7 @@ export function SignInScreen() {
             await signInWithEmailAndPassword(getAuth(), data.email, data.password);
         } catch (e) {
             console.warn('Firebase Password Sgnup (FAIL)', e);
+            Alert.alert('Error', 'Failed to sign in with email and password');
         }
     }
 
@@ -81,6 +82,7 @@ export function SignInScreen() {
             return signInWithCredential(getAuth(), credential);
         } catch (e) {
             console.error('Apple Auth FAIL', e);
+            Alert.alert('Error', 'Failed to sign in with Apple');
         }
     };
 
@@ -94,6 +96,7 @@ export function SignInScreen() {
             return signInWithCredential(getAuth(), credential);
         } catch (e) {
             console.error('Google auth FAIL', e);
+            Alert.alert('Error', 'Failed to sign in with Google');
         }
     }
 
@@ -144,11 +147,11 @@ export function SignInScreen() {
                         />
                     )}
                 />
-                {errors.email && (
-                    <View style={styles.errorTextView}>
-                        <Text style={{ color: "#FF3B30" }}>{errors.email.message}</Text>
-                    </View>
-                )}
+
+                <View style={styles.errorTextView}>
+                    <Text style={{ color: "#FF3B30" }}>{errors.email?.message}</Text>
+                </View>
+
 
                 <View style={{ position: 'relative' }}>
 
@@ -198,11 +201,9 @@ export function SignInScreen() {
                         )}
                     </View>
                 </View>
-                {errors.password && (
-                    <View style={styles.errorTextView}>
-                        <Text style={{ color: "#FF3B30" }}>{errors.password.message}</Text>
-                    </View>
-                )}
+                <View style={styles.errorTextView}>
+                    <Text style={{ color: "#FF3B30" }}>{errors.password?.message}</Text>
+                </View>
 
 
                 {/* Submit Button */}
@@ -263,6 +264,12 @@ const styles = StyleSheet.create({
     passwordTextView: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+    },
+
+    inputDescription: {
+        fontSize: 12,
+        color: '#666',
+        marginBottom: 4,
     },
 
     errorTextView: {

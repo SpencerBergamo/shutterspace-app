@@ -21,6 +21,7 @@ export default defineSchema({
         .index('by_shareCode', ['shareCode']),
 
     friendships: defineTable({
+        members: v.optional(v.array(v.id('profiles'))),
         senderId: v.id('profiles'),
         recipientId: v.id('profiles'),
         status: v.union(
@@ -29,11 +30,10 @@ export default defineSchema({
             v.literal('blocked'),
             v.literal('rejected'),
         ),
-        createdAt: v.number(),
+        createdAt: v.optional(v.number()),
         updatedAt: v.number(),
     }).index('by_senderId', ['senderId'])
-        .index('by_recipientId', ['recipientId'])
-        .index('by_pair', ['senderId', 'recipientId']),
+        .index('by_recipientId', ['recipientId']),
 
     albums: defineTable({
         hostId: v.id("profiles"),

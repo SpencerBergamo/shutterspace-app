@@ -1,5 +1,5 @@
 import { Album } from "@/src/types/Album";
-import { paginationOptsValidator } from "convex/server";
+import { paginationOptsValidator, PaginationResult } from "convex/server";
 import { ConvexError, v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
@@ -19,12 +19,30 @@ export const queryAlbum = query({
     }
 });
 
-export const queryPaginatedAlbums = query({
+export const queryUserAlbums = query({
     args: {
-        albumId: v.id('albums'),
-        page: paginationOptsValidator,
-    }, handler: async () => {
+        paginationOpts: paginationOptsValidator,
+    }, handler: async (ctx, { paginationOpts }): Promise<PaginationResult<Album>> => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) throw new ConvexError('No User Found');
 
+        const memberships = await ctx.db.query('albumMembers')
+            .withIndex('by_profileId', q => q.eq('profileId', profile._id))
+            .order('desc')
+            .paginate(paginationOpts);
+
+        const albumIds = memberships.page.map(m => m.albumId);
+        const albums = await Promise.all(albumIds.map(async (id) => {
+            return await ctx.db.get(id);
+        }));
+
+        // filter out deleted albums
+        const filteredAlbums = albums.filter((album): album is Album => album !== null && !album.isDeleted);
+
+        return {
+            ...memberships,
+            page: filteredAlbums,
+        }
     }
 })
 
@@ -32,7 +50,8 @@ export const createNewAlbum = mutation({
     args: {
         title: v.string(),
         description: v.optional(v.string()),
-    }, handler: async (ctx, { title, description }): Promise<Id<'albums'>> => {
+        members: v.optional(v.array(v.id('profiles'))),
+    }, handler: async (ctx, { title, description, members }): Promise<Id<'albums'>> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new ConvexError('No User Found');
 
@@ -46,12 +65,27 @@ export const createNewAlbum = mutation({
             isDeleted: false,
         });
 
+        // create host member entry
         await ctx.db.insert('albumMembers', {
             albumId,
             profileId: profile._id,
             role: 'host',
             joinedAt: Date.now(),
+            updatedAt: Date.now(),
         })
+
+        // create member entries
+        if (members && members.length > 0) {
+            await Promise.all(members.map((m) => {
+                ctx.db.insert('albumMembers', {
+                    albumId,
+                    profileId: m,
+                    role: 'member',
+                    joinedAt: Date.now(),
+                    updatedAt: Date.now(),
+                })
+            }))
+        }
 
         return albumId;
     }

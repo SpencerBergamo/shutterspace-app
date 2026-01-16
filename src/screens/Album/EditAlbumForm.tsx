@@ -5,7 +5,7 @@ import { useAppTheme } from "@/src/context/AppThemeContext";
 import { validateAlbumTitle, validateDescription } from "@/src/utils/validators";
 import { usePreventRemove, useTheme } from "@react-navigation/native";
 import { useMutation, useQuery } from "convex/react";
-import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
+import { router, Stack, useLocalSearchParams, useNavigation } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -66,6 +66,7 @@ export function EditAlbumScreen() {
                 description: data.description,
             });
 
+            router.back();
             reset(data); // Reset form state with the saved values
         } catch (e) {
             console.error("Failed to save changes: ", e);
@@ -132,7 +133,7 @@ export function EditAlbumScreen() {
                         validate: validateDescription,
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
-                        <View style={{ flexDirection: 'column', gap: 2, alignItems: 'flex-end', marginBottom: 16 }}>
+                        <View style={{ flexDirection: 'column', gap: 2, marginBottom: 16 }}>
                             <TextInput
                                 ref={descriptionInputRef}
                                 value={value}
@@ -157,7 +158,9 @@ export function EditAlbumScreen() {
                                     color: colors.text,
                                 }]}
                             />
-                            <Text style={{ color: colors.caption, fontSize: 12 }}>{value?.length ?? 0}/300</Text>
+                            <View style={{ width: '100%', alignItems: 'flex-end', justifyContent: 'center' }}>
+                                <Text style={{ color: colors.caption, fontSize: 12 }}>{value?.length ?? 0}/300</Text>
+                            </View>
                             {errors.description && <Text style={{ color: '#FF3B30' }}>{errors?.description?.message}</Text>}
                         </View>
                     )}

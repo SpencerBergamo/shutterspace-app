@@ -51,6 +51,11 @@ export default function HomeLayout() {
             }} />
             <Stack.Screen name="album/[albumId]/index" options={{
                 headerShown: true,
+                headerTitle: '',
+            }} />
+            <Stack.Screen name="album/[albumId]/settings" options={{
+                headerShown: true,
+                headerTitle: 'Album Settings',
             }} />
             <Stack.Screen name="viewer/[index]/index" options={{
                 headerShown: true,
@@ -63,7 +68,10 @@ export default function HomeLayout() {
 
 
             {/* Friends */}
-            <Stack.Screen name="friends" options={{}} />
+            <Stack.Screen name="friends" />
+            <Stack.Screen name="share-profile" options={{
+                presentation: 'formSheet',
+            }} />
 
             <Stack.Screen name="contact-us" options={{
                 headerTitle: 'Contact Us',

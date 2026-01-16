@@ -3,16 +3,17 @@ import Avatar from "@/src/components/Avatar";
 import FloatingActionButton from "@/src/components/FloatingActionButton";
 import QRCodeModal from "@/src/components/QRCodeModal";
 import { useAppTheme } from "@/src/context/AppThemeContext";
+import { Album } from "@/src/types/Album";
 import { formatAlbumDate } from "@/src/utils/formatters";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "convex/react";
+import { FlashList } from "@shopify/flash-list";
+import { usePaginatedQuery, useQuery } from "convex/react";
 import { router, Stack } from "expo-router";
 import * as Orientation from 'expo-screen-orientation';
 import { Plus } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, Platform, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import AlbumCoverImage from "../Album/components/AlbumCoverImage";
-import { AddFriendsPrompt } from "./components/AddFriendsPrompt";
 
 export function HomeScreen() {
     // Layout
@@ -24,8 +25,12 @@ export function HomeScreen() {
 
     // Data
     const profile = useQuery(api.profile.getUserProfile);
-    const albums = useQuery(api.albums.getUserAlbums) ?? [];
-    const friendships = useQuery(api.friendships.getFriendships);
+    const { results: albums, status, loadMore } = usePaginatedQuery(
+        api.albums.queryUserAlbums,
+        {},
+        { initialNumItems: 12 }
+    );
+
 
     useEffect(() => {
         const subscription = Orientation.addOrientationChangeListener((event) => {
@@ -73,26 +78,25 @@ export function HomeScreen() {
         }
     }, [width, orientation]);
 
-    const renderHeader = useCallback(() => {
-        const friendCount = friendships?.filter(f => f.status === 'accepted').length ?? 0;
+    const handleLoadMore = useCallback(() => {
+        if (status === 'CanLoadMore') {
+            loadMore(12);
+        }
+    }, [status]);
 
-        // Show prompt for users with fewer than 5 friends
-        if (friendCount >= 5) return null;
-
-        return (
-            <AddFriendsPrompt
-                friendCount={friendCount}
-                onPress={() => router.push('/friends')}
-            />
-        );
-    }, [friendships]);
-
-    const renderItem = useCallback(({ item }: { item: typeof albums[number] }) => (
+    const renderItem = useCallback(({ item }: { item: Album }) => (
         <Pressable
             onPress={() => router.push(`/album/${item._id}`)}
-            style={[styles.albumCover, { width: gridConfig.itemSize }]}
+            style={[styles.albumCover, {
+                width: gridConfig.itemSize,
+                marginHorizontal: gridConfig.gap / 2,
+            }]}
         >
-            <View style={[styles.albumCoverImage, { width: gridConfig.itemSize, height: gridConfig.itemSize }]}>
+            <View style={[styles.albumCoverImage, {
+                width: gridConfig.itemSize,
+                height: gridConfig.itemSize,
+                aspectRatio: 1,
+            }]}>
                 <AlbumCoverImage album={item} />
             </View>
 
@@ -101,7 +105,7 @@ export function HomeScreen() {
                 {formatAlbumDate(item._creationTime)}
             </Text>
         </Pressable>
-    ), [gridConfig.itemSize, colors.text]);
+    ), [gridConfig.itemSize, gridConfig.gap, colors.text]);
 
     const renderHeaderLeft = useCallback(() => (
         <View style={styles.headerLeft}>
@@ -111,24 +115,18 @@ export function HomeScreen() {
                 ssoAvatarUrl={profile?.ssoAvatarUrl}
                 onPress={() => router.push('settings')}
             />
-            <View style={styles.greetingContainer}>
-                <Text style={[styles.greeting, { color: colors.text }]}>
-                    Hi, {profile?.nickname}
-                </Text>
-                {!profile?.avatarKey && (
-                    <TouchableOpacity
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                        onPress={() => router.push('profile/edit')}
-                    >
-                        <Text style={[styles.completeProfile, { color: colors.primary }]}>
-                            Complete profile
-                        </Text>
-                        <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-                    </TouchableOpacity>
-                )}
-            </View>
         </View>
     ), [profile?.nickname, profile?.avatarKey, profile?.ssoAvatarUrl, colors.text, colors.primary]);
+
+    const renderFooter = useCallback(() => {
+        return (
+            <View style={{ paddingVertical: 16 }}>
+                {status === 'CanLoadMore' || status === 'LoadingMore' || status === 'LoadingFirstPage' && (
+                    <ActivityIndicator size="small" color={colors.text} />
+                )}
+            </View>
+        )
+    }, [status, colors.text]);
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -146,18 +144,16 @@ export function HomeScreen() {
                 ),
             }} />
 
-            <FlatList
+            <FlashList
                 key={gridConfig.numColumns}
                 data={albums}
                 keyExtractor={(item) => item._id}
                 numColumns={gridConfig.numColumns}
-                columnWrapperStyle={{
-                    gap: gridConfig.gap,
-                    justifyContent: 'flex-start',
-                    alignItems: 'flex-start',
+                estimatedItemSize={gridConfig.itemSize + gridConfig.gap}
+                contentContainerStyle={{
+                    paddingVertical: 16,
+                    paddingHorizontal: gridConfig.gap / 2,
                 }}
-                contentContainerStyle={{ paddingHorizontal: gridConfig.gap, gap: gridConfig.gap }}
-                scrollEnabled={albums.length > 0}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer} >
                         <View style={[styles.emptyCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
@@ -179,10 +175,9 @@ export function HomeScreen() {
                         </View>
                     </View >
                 }
-                ListHeaderComponent={renderHeader}
-                ListHeaderComponentStyle={{
-                    marginTop: 16,
-                }}
+                onEndReachedThreshold={0.3}
+                onEndReached={handleLoadMore}
+                ListFooterComponent={renderFooter}
                 renderItem={renderItem}
             />
 

@@ -1,11 +1,12 @@
+import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useProfile } from "@/src/context/ProfileContext";
 import useSignedUrls from "@/src/hooks/useSignedUrls";
 import { Media } from "@/src/types/Media";
 import { formatVideoDuration } from "@/src/utils/formatters";
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useQuery } from "convex/react";
 import { Image } from "expo-image";
-import { memo, useState } from "react";
+import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
 interface GalleryTileProps {
@@ -20,8 +21,10 @@ interface GalleryTileProps {
     isSelected?: boolean;
 }
 
-function GalleryTile({ media, itemSize, onPress, onLongPress, onRetry, onReady, selectionMode = false, isSelected = false }: GalleryTileProps) {
-    const { profileId } = useProfile();
+export default function GalleryTile({ media, itemSize, onPress, onLongPress, onRetry, onReady, selectionMode = false, isSelected = false }: GalleryTileProps) {
+    const profile = useQuery(api.profile.getUserProfile);
+    if (!profile) return null;
+
     const { requesting, thumbnail: uri } = useSignedUrls({ media });
 
     const [imageError, setImageError] = useState(false);
@@ -30,7 +33,7 @@ function GalleryTile({ media, itemSize, onPress, onLongPress, onRetry, onReady, 
     const type = media.identifier.type;
     const isVideo = type === 'video';
     const duration = type === 'video' ? media.identifier.duration : null;
-    const isOwner = media.createdBy === profileId;
+    const isOwner = media.createdBy === profile._id;
 
     if (media.status === 'error' || imageError) {
         return (
@@ -111,15 +114,6 @@ function GalleryTile({ media, itemSize, onPress, onLongPress, onRetry, onReady, 
         </Pressable>
     );
 }
-
-export default memo(GalleryTile, (prevProps, nextProps) => {
-    return prevProps.media._id === nextProps.media._id &&
-        prevProps.media.status === nextProps.media.status &&
-        prevProps.itemSize === nextProps.itemSize &&
-        prevProps.selectionMode === nextProps.selectionMode &&
-        prevProps.isSelected === nextProps.isSelected &&
-        prevProps.placeholder === nextProps.placeholder;
-});
 
 const styles = StyleSheet.create({
     container: {

@@ -23,7 +23,7 @@ export type DisplayMedia = PendingUpload | Media;
 export const useMedia = (albumId: Id<'albums'>): UseMediaResult => {
     const prepareImageUpload = useAction(api.r2.prepareImageUpload);
     const prepareVideoUpload = useAction(api.cloudflare.prepareVideoUpload);
-    const media = useQuery(api.media.getMediaForAlbum, { albumId });
+    const media = useQuery(api.media.getMediaForAlbum, albumId ? { albumId } : "skip");
     const createMedia = useMutation(api.media.createMedia);
 
     // Subscribe to the raw pendingUploads object to avoid infinite loops

@@ -1,10 +1,9 @@
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 import { TextInputStyles } from "@/src/constants/styles";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { validateAlbumTitle } from "@/src/utils/validators";
 import { useTheme } from "@react-navigation/native";
-import { useAction } from "convex/react";
+import { useMutation } from "convex/react";
 import { router, Stack } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -27,7 +26,7 @@ export function NewAlbumScreen() {
     const [isLoading, setIsLoading] = useState(false);
 
     // Convex
-    const createAlbum = useAction(api.albums.createAlbum);
+    const createNewAlbum = useMutation(api.albums.createNewAlbum);
 
     const {
         control,
@@ -43,6 +42,7 @@ export function NewAlbumScreen() {
         }
     });
 
+    // focus title input manually
     useEffect(() => {
         setTimeout(() => {
             titleInputRef.current?.focus();
@@ -53,18 +53,17 @@ export function NewAlbumScreen() {
         setIsLoading(true);
 
         try {
-            const albumId: Id<'albums'> | null = await createAlbum(data);
+            const albumId = await createNewAlbum({
+                title: data.title,
+                description: data.description,
+            });
 
-            if (albumId) {
-                reset();
-                router.replace(`/album/${albumId}`);
-                return;
-            }
-
-            Alert.alert("Failed to create album", "Please try again.");
+            router.replace(`/album/${albumId}`);
         } catch (e) {
             console.error("Failed to create album", e);
+            Alert.alert("Failed to create album", "Please try again.");
         } finally {
+            reset();
             setIsLoading(false);
         }
     }, []);

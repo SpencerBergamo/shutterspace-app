@@ -7,48 +7,39 @@ import GalleryTile from "@/src/screens/Album/components/GalleryTile";
 import { Media } from "@/src/types/Media";
 import { validateAssets } from "@/src/utils/mediaHelper";
 import { Ionicons } from "@expo/vector-icons";
-import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { FlashList } from "@shopify/flash-list";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { } from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import * as Orientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Platform, Share, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { NotFoundScreen } from "../Home";
-import AlbumSettingsSheet from "./components/AlbumSettingsSheet";
 
 const GAP = 2;
 
 export function AlbumScreen() {
     const { albumId } = useLocalSearchParams<{ albumId: Id<'albums'> }>();
-    const album = useQuery(api.albums.queryAlbum, { albumId });
-    const { media, pendingMedia, uploadMedia, removePendingMedia } = useMedia(albumId);
-    const memberships = useQuery(api.albumMembers.getMemberships, albumId ? { albumId } : "skip");
 
     // Layout
     const [debouncedOrientation, setDebouncedOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
     const { width } = useWindowDimensions();
     const { colors } = useAppTheme();
 
+    // Data
+    const album = useQuery(api.albums.queryAlbum, { albumId });
+    const { media, pendingMedia, uploadMedia, removePendingMedia } = useMedia(albumId);
+    const memberships = useQuery(api.albumMembers.getMemberships, albumId ? { albumId } : "skip");
+    const deleteMedia = useAction(api.media.deleteMedia);
+
     // Refs
-    const settingsModalRef = useRef<BottomSheetModal>(null);
     const lastConfigRef = useRef<{ itemSize: number, numColumns: number, gap: number } | null>(null);
     const orientationTimeoutRef = useRef<NodeJS.Timeout>(null);
 
     // States
-    const [isCreatingInvite, setIsCreatingInvite] = useState(false);
-    const [isLeavingAlbum, setIsLeavingAlbum] = useState(false);
-    const [isDeletingAlbum, setIsDeletingAlbum] = useState(false);
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedItems, setSelectedItems] = useState<Set<Id<'media'>>>(new Set());
-
-    // Convex
-    const inviteCode = useQuery(api.inviteCodes.getInviteCode, { albumId }) ?? undefined;
-    const leaveAlbum = useMutation(api.albumMembers.leaveAlbum);
-    const deleteAlbum = useAction(api.albums.deleteAlbum);
-    const deleteMedia = useAction(api.media.deleteMedia);
 
     // Orientation Subscription
     useEffect(() => {
@@ -113,11 +104,6 @@ export function AlbumScreen() {
         return newConfig;
     }, [debouncedOrientation]);
 
-    const albumCover = useMemo(() =>
-        media?.find(m => m._id === album?.thumbnail) ?? null,
-        [media, album?.thumbnail]
-    );
-
     const handleMediaRetry = useCallback(async (mediaId: Id<'media'>) => {
         try {
             const item = media?.find(m => m._id === mediaId);
@@ -142,58 +128,9 @@ export function AlbumScreen() {
     }, [selectedItems, albumId, deleteMedia]);
 
     const handleSettingsPress = useCallback(() => {
-        settingsModalRef.current?.present();
+        // settingsModalRef.current?.present();
+        router.push(`album/${albumId}/settings`);
     }, []);
-
-    const handleInviteMembers = useCallback(async () => {
-        if (!album || isCreatingInvite) return;
-
-        setIsCreatingInvite(true);
-        try {
-            if (!inviteCode) throw new Error("Invite wasn't created for this album");
-
-            await Share.share({
-                title: `You're invited to "${album.title}" on ShutterSpace!`,
-                message: `https://shutterspace.app/invite/${inviteCode}`,
-                url: `https://shutterspace.app/invite/${inviteCode}`,
-
-            });
-        } catch (e) {
-            console.error("Failed to get the invite code", e);
-            Alert.alert('Error', 'Failed to create invite link. Please try again.');
-        } finally {
-            setIsCreatingInvite(false);
-        }
-    }, [album, inviteCode, isCreatingInvite]);
-
-    const handleLeaveAlbum = useCallback(async () => {
-        setIsLeavingAlbum(true);
-        try {
-            await leaveAlbum({ albumId });
-            settingsModalRef.current?.dismiss();
-            router.back();
-        } catch (e) {
-            console.error("Failed to leave album: ", e);
-        } finally {
-            setIsLeavingAlbum(false);
-        }
-    }, [albumId]);
-
-    const handleDeleteAlbum = useCallback(async () => {
-        if (!album || album.isDeleted) return;
-
-        try {
-            setIsDeletingAlbum(true);
-            settingsModalRef.current?.dismiss();
-            await deleteAlbum({ albumId });
-            router.back();
-        } catch (e) {
-            console.error("Failed to delete album: ", e);
-            Alert.alert("Error", "Failed to delete album. Please try again.");
-        } finally {
-            setIsDeletingAlbum(false);
-        }
-    }, [albumId, deleteAlbum, settingsModalRef]);
 
     const handleMediaUpload = useCallback(async (camera: boolean = false) => {
         try {
@@ -304,19 +241,23 @@ export function AlbumScreen() {
         )
     }, [gridConfig.itemSize, gridConfig.numColumns, selectionMode, selectedItems, handleTilePress, handleMediaRetry, removePendingMedia, handleLongPress, placeholderMap]);
 
-    if (!album || album.isDeleted) return <NotFoundScreen />
+    const headerLeft = useCallback(() => {
+        if (!selectionMode) return null;
 
-    const headerLeft = useMemo(() => selectionMode ? () => (
-        <TouchableOpacity onPress={handleCancelSelection}>
-            <Text style={{ fontSize: 17, color: colors.text }}>Cancel</Text>
-        </TouchableOpacity>
-    ) : undefined, [selectionMode, handleCancelSelection, colors.text]);
+        return (
+            <TouchableOpacity onPress={handleCancelSelection}>
+                <Text style={{ fontSize: 17, color: colors.text }}>Cancel</Text>
+            </TouchableOpacity>
+        )
+    }, [selectionMode, handleCancelSelection, colors.text]);
 
-    const headerRight = useMemo(() => () => (
-        selectionMode ? (
+    const headerRight = useCallback(() => {
+
+        return selectionMode ? (
             <TouchableOpacity onPress={handleSelectAll}>
                 <Text style={{ fontSize: 17, color: colors.text }}>Select All</Text>
             </TouchableOpacity>
+
         ) : (
             <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity
@@ -326,6 +267,7 @@ export function AlbumScreen() {
                     <Text style={[styles.headerRightButtonText, { color: colors.text }]}>{memberships?.length}</Text>
                     <Ionicons name="people-outline" size={18} color={colors.text} />
                 </TouchableOpacity>
+
                 <TouchableOpacity
                     style={[styles.headerRightButton, { borderColor: colors.border }]}
                     onPress={handleSettingsPress}
@@ -333,8 +275,49 @@ export function AlbumScreen() {
                     <Ionicons name="ellipsis-horizontal" size={18} color={colors.text} />
                 </TouchableOpacity>
             </View>
+        );
+    }, [selectionMode, handleSelectAll, handleSettingsPress, colors, albumId, memberships?.length]);
+
+    if (album === undefined || media === undefined) {
+        return (
+            <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={colors.text} />
+            </View>
         )
-    ), [selectionMode, handleSelectAll, handleSettingsPress, colors, albumId, memberships?.length]);
+    }
+
+    if (!album) return <NotFoundScreen />;
+
+    if (album.isDeleted) {
+        return (
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
+                <Stack.Screen options={{
+                    headerTitle: album.title,
+                    headerLeft: () => (
+                        <TouchableOpacity onPress={() => router.back()}>
+                            <Ionicons name="chevron-back" size={28} color={colors.text} />
+                        </TouchableOpacity>
+                    ),
+                    headerRight: () => null,
+                }} />
+                <View style={[styles.deletedContainer, { backgroundColor: colors.background }]}>
+                    <View style={[styles.deletedCard, { borderColor: colors.border }]}>
+                        <Ionicons name="trash-outline" size={64} color={colors.text} style={{ opacity: 0.3 }} />
+                        <Text style={[styles.deletedTitle, { color: colors.text }]}>Album Deleted</Text>
+                        <Text style={[styles.deletedMessage, { color: colors.text }]}>
+                            This album has been deleted and is no longer available.
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.deletedButton, { backgroundColor: colors.primary }]}
+                            onPress={() => router.back()}
+                        >
+                            <Text style={styles.deletedButtonText}>Go Back</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        )
+    }
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -346,11 +329,7 @@ export function AlbumScreen() {
                 headerRight,
             }} />
 
-            {media === undefined && (
-                <ActivityIndicator size="small" color="grey" />
-            )}
-
-            {media && <FlashList
+            <FlashList
                 key={`grid-${gridConfig.numColumns}`}
                 data={mediaIds}
                 keyExtractor={(item: Id<'media'>) => item}
@@ -359,16 +338,7 @@ export function AlbumScreen() {
                 numColumns={gridConfig.numColumns}
                 contentContainerStyle={{ paddingTop: GAP }}
                 renderItem={({ item: mediaId }) => renderItem({ mediaId, index: mediaIds.indexOf(mediaId) })}
-            />}
-
-            {media === null || media?.length === 0 && (
-                <View style={styles.emptyContainer}>
-                    <Ionicons name="image-outline" size={48} color="#ccc" style={{ margin: 16 }} />
-
-                    <Text style={styles.emptyTitle}>Ready to share memories?</Text>
-                    <Text style={styles.emptySubtitle}>Tap the + button to add your first photo or video to this album</Text>
-                </View>
-            )}
+            />
 
             {/* Floating Action Button */}
             {!selectionMode && (
@@ -442,7 +412,7 @@ export function AlbumScreen() {
                 </View>
             )}
 
-            <AlbumSettingsSheet
+            {/* <AlbumSettingsSheet
                 ref={settingsModalRef}
                 album={album}
                 mediaCount={media?.length ?? 0 + pendingMedia.length}
@@ -453,7 +423,7 @@ export function AlbumScreen() {
                 isCreatingInvite={isCreatingInvite}
                 isLeavingAlbum={isLeavingAlbum}
                 isDeletingAlbum={isDeletingAlbum}
-            />
+            /> */}
         </View>
     );
 }
@@ -551,5 +521,44 @@ const styles = StyleSheet.create({
     selectionButtonText: {
         fontSize: 12,
         fontWeight: '500',
+    },
+
+    // Deleted Album Styles
+    deletedContainer: {
+        flex: 1,
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        padding: 24,
+    },
+    deletedCard: {
+        borderRadius: 16,
+        borderWidth: 1,
+        padding: 32,
+        alignItems: 'center',
+        gap: 16,
+        maxWidth: 400,
+        width: '100%',
+    },
+    deletedTitle: {
+        fontSize: 24,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+    deletedMessage: {
+        fontSize: 16,
+        textAlign: 'center',
+        opacity: 0.7,
+        lineHeight: 22,
+    },
+    deletedButton: {
+        marginTop: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 32,
+        borderRadius: 12,
+    },
+    deletedButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });

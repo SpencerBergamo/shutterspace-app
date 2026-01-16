@@ -1,12 +1,13 @@
+import { api } from "@/convex/_generated/api";
 import { MAX_WIDTH } from "@/src/constants/styles";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { useProfile } from "@/src/context/ProfileContext";
 import useSignedUrls from "@/src/hooks/useSignedUrls";
 import { Album } from "@/src/types/Album";
 import { Media } from "@/src/types/Media";
 import { formatAlbumDate } from "@/src/utils/formatters";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
@@ -38,7 +39,9 @@ export default function AlbumSettingsSheet({
     isDeletingAlbum,
 }: AlbumSettingsSheetProps) {
     const { colors } = useAppTheme();
-    const { profileId } = useProfile();
+    const profile = useQuery(api.profile.getUserProfile);
+    if (!profile) return null;
+
     const { width } = useWindowDimensions();
 
     const { requesting, thumbnail: albumCover } = useSignedUrls({ media: lastMedia ?? undefined });
@@ -253,7 +256,7 @@ export default function AlbumSettingsSheet({
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>Danger Zone</Text>
 
-                    {album.hostId !== profileId ? (
+                    {album.hostId !== profile._id ? (
                         <TouchableOpacity
                             style={[styles.settingsOption, styles.dangerOption]}
                             onPress={() => {

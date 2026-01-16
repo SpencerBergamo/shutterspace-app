@@ -28,10 +28,10 @@ function AppLayout() {
     const { isLoading, isAuthenticated } = useConvexAuth();
 
     useEffect(() => {
-        if (!isLoading && isAuthenticated) {
+        if (!isLoading) {
             SplashScreen.hideAsync();
         }
-    }, [isLoading, isAuthenticated]);
+    }, [isLoading]);
 
     if (isLoading) return null;
 

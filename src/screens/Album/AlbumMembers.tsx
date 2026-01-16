@@ -200,7 +200,8 @@ export function AlbumMembersScreen() {
 
         try {
             await Share.share({
-                message: `https://shutterspace.app/invite/${inviteCode}`,
+                message: `Join our album on ShutterSpace!`,
+                title: `https://shutterspace.app/invite/${inviteCode}`,
                 url: `https://shutterspace.app/invite/${inviteCode}`,
             });
         } catch (e) {

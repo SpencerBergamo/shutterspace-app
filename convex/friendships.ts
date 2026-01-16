@@ -1,13 +1,17 @@
 import { Friend, Friendship } from "@/src/types/Friend";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
-export const getFriendships = query({
-    args: {}, handler: async (ctx): Promise<Friendship[]> => {
+// --------------------
+// New: Jan 14, 2026
+// --------------------
+export const getUserFriendships = query({
+    args: {},
+    handler: async (ctx): Promise<Friendship[]> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
-        if (!profile) return [];
+        if (!profile) throw new ConvexError('User not found');
 
         const sent = await ctx.db.query('friendships')
             .withIndex('by_senderId', q => q.eq('senderId', profile._id))
@@ -17,7 +21,70 @@ export const getFriendships = query({
             .withIndex('by_recipientId', q => q.eq('recipientId', profile._id))
             .collect();
 
-        return [...sent, ...received];
+        // Combine sent and received friendships into a single array and add direction to each friendship
+        const combined = [
+            ...sent.map(f => ({ ...f, direction: 'sent' as const })),
+            ...received.map(f => ({ ...f, direction: 'received' as const })),
+        ];
+
+        // Sort the combined array by priority and updatedAt
+        return combined.sort((a, b) => {
+            const priorityMap = {
+                // High priority (top)
+                pending: 2,
+                rejectedBy: 2,
+
+                // Low priority (bottom)
+                rejected: 0,
+                blocked: 0,
+
+                // Medium priority (middle)
+                accepted: 1,
+            };
+
+            // Determine status priority for each friendship based on direction and status
+            const statusA = a.direction === 'received' && a.status === 'rejected'
+                ? 'rejectedBy'
+                : a.direction === 'sent' && a.status === 'rejected'
+                    ? 'rejected'
+                    : a.status;
+
+            const statusB = b.direction === 'received' && b.status === 'rejected'
+                ? 'rejectedBy'
+                : a.direction === 'sent' && a.status === 'rejected'
+                    ? 'rejected'
+                    : a.status;
+
+            const priorityDiff = priorityMap[statusA] - priorityMap[statusB];
+
+            if (priorityDiff !== 0) return priorityDiff;
+
+            return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
+        })
+
+    }
+})
+
+
+// --------------------
+// OLD
+// --------------------
+
+export const getFriendships = query({
+    args: {}, handler: async (ctx): Promise<Friendship[]> => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) throw new ConvexError('User not found');
+
+        const sent = await ctx.db.query('friendships')
+            .withIndex('by_senderId', q => q.eq('senderId', profile._id))
+            .collect();
+
+        const received = await ctx.db.query('friendships')
+            .withIndex('by_recipientId', q => q.eq('recipientId', profile._id))
+            .collect();
+
+        const chronologicallySorted = [...sent, ...received].sort((a, b) => b.createdAt! - a.createdAt!);
+        return chronologicallySorted as Friendship[];
     }
 })
 

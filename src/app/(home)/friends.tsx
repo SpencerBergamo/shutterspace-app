@@ -1,3 +1,3 @@
-import { FriendsListScreen } from "@/src/screens/Friends";
+import { FriendsListScreen } from "@/src/screens/Home";
 
 export default FriendsListScreen;
