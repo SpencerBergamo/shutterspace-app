@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from 'expo-haptics';
 import { useCallback } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { SharedValue, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../context/AppThemeContext";
@@ -10,6 +10,8 @@ interface FloatingActionButtonProps {
     selectIcon: SelectIcon;
     items?: FloatingActionButtonItemProps[];
     onPress?: () => void;
+    disabled?: boolean;
+    isLoading?: boolean;
 }
 
 export type FloatingActionButtonItemProps = {
@@ -20,6 +22,7 @@ export type FloatingActionButtonItemProps = {
 
 export type SelectIcon =
     | 'add'
+    | 'checkmark'
     | 'share-outline'
     | 'qr-code-outline'
     | 'image-outline'
@@ -68,7 +71,7 @@ const FloatingActionButtonItem = ({ selectIcon, label, onPress, index, isExpande
     )
 }
 
-export default function FloatingActionButton({ selectIcon, items, onPress }: FloatingActionButtonProps) {
+export default function FloatingActionButton({ selectIcon, items, onPress, disabled = false, isLoading = false }: FloatingActionButtonProps) {
     const { colors } = useAppTheme();
     const insets = useSafeAreaInsets();
 
@@ -85,13 +88,14 @@ export default function FloatingActionButton({ selectIcon, items, onPress }: Flo
     });
 
     const handleMainPress = useCallback(() => {
+        if (disabled || isLoading) return;
         Haptics.selectionAsync();
         if (!onPress) {
             isExpanded.value = isExpanded.value ? 0 : 1;
         } else {
             onPress();
         }
-    }, [onPress, isExpanded]);
+    }, [onPress, isExpanded, disabled, isLoading]);
 
     const handleItemPress = useCallback(async (item: FloatingActionButtonItemProps) => {
         Haptics.selectionAsync();
@@ -111,8 +115,19 @@ export default function FloatingActionButton({ selectIcon, items, onPress }: Flo
                     onItemPress={() => handleItemPress(item)}
                     {...item} />
             ))}
-            <AnimatedPressable style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleMainPress}>
-                <AnimatedIcon name={selectIcon ?? "add"} size={24} color="white" style={iconStyle} />
+            <AnimatedPressable 
+                style={[styles.button, { 
+                    backgroundColor: disabled ? '#ccc' : colors.primary,
+                    opacity: disabled ? 0.6 : 1,
+                }]} 
+                onPress={handleMainPress}
+                disabled={disabled || isLoading}
+            >
+                {isLoading ? (
+                    <ActivityIndicator size="small" color="white" />
+                ) : (
+                    <AnimatedIcon name={selectIcon ?? "add"} size={24} color="white" style={iconStyle} />
+                )}
             </AnimatedPressable>
         </View>
     )

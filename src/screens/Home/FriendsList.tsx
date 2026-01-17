@@ -12,7 +12,7 @@ import FriendListCard from "./components/FriendListCard";
 export function FriendsListScreen() {
     const { colors } = useAppTheme();
     const profile = useQuery(api.profile.getUserProfile);
-    const friendshipList = useQuery(api.friendships.getUserFriendships);
+    const friendshipList = useQuery(api.friendships.getAllFriendships);
 
     // Convex
     const acceptFriendRequest = useMutation(api.friendships.acceptFriendRequest);

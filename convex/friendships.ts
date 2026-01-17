@@ -7,7 +7,41 @@ import { mutation, query } from "./_generated/server";
 // --------------------
 // New: Jan 14, 2026
 // --------------------
-export const getUserFriendships = query({
+export const getListOfFriends = query({
+    args: {},
+    handler: async (ctx): Promise<Friend[]> => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) throw new ConvexError('User not found');
+
+        const sent = await ctx.db.query('friendships')
+            .withIndex('by_senderId', q => q.eq('senderId', profile._id))
+            .collect();
+
+        const received = await ctx.db.query('friendships')
+            .withIndex('by_recipientId', q => q.eq('recipientId', profile._id))
+            .collect();
+
+        const combined = [...sent, ...received];
+        const filtered = combined.filter(friendship => friendship.status === 'accepted');
+        const listOfFriends: Friend[] = (await Promise.all(filtered.map(async (friendship) => {
+            const friend = await ctx.db.get(friendship.senderId === profile._id ? friendship.recipientId : friendship.senderId);
+            if (!friend) return null;
+
+            return {
+                _id: friend._id,
+                nickname: friend.nickname,
+                ssoAvatarUrl: friend.ssoAvatarUrl,
+                avatarKey: friend.avatarKey,
+            }
+        }))).filter((friend) => friend !== null);
+
+        const sortedByNickname = listOfFriends.sort((a, b) => a.nickname.localeCompare(b.nickname));
+
+        return sortedByNickname;
+    }
+})
+
+export const getAllFriendships = query({
     args: {},
     handler: async (ctx): Promise<Friendship[]> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
