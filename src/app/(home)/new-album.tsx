@@ -1,3 +1,3 @@
-import { NewAlbumScreen } from "@/src/screens/Album/NewAlbum";
+import { NewAlbumScreen } from "@/src/screens/Album/NewAlbumScreen";
 
 export default NewAlbumScreen;

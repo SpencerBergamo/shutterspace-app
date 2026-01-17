@@ -1,3 +1,3 @@
-import { EditAlbumScreen } from "@/src/screens/Album/EditAlbumForm";
+import { EditAlbumScreen } from "@/src/screens/Album/EditAlbumScreen";
 
 export default EditAlbumScreen;

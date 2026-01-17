@@ -4,7 +4,6 @@ import FloatingActionButton from "@/src/components/FloatingActionButton";
 import QRCodeModal from "@/src/components/QRCodeModal";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { Album } from "@/src/types/Album";
-import { formatAlbumDate } from "@/src/utils/formatters";
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
 import { usePaginatedQuery, useQuery } from "convex/react";
@@ -13,7 +12,7 @@ import * as Orientation from 'expo-screen-orientation';
 import { Plus } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
-import AlbumCoverImage from "../Album/components/AlbumCoverImage";
+import AlbumDetailCard from "../Album/components/AlbumDetailCard";
 
 export function HomeScreen() {
     // Layout
@@ -85,25 +84,8 @@ export function HomeScreen() {
     }, [status]);
 
     const renderItem = useCallback(({ item }: { item: Album }) => (
-        <Pressable
-            onPress={() => router.push(`/album/${item._id}`)}
-            style={[styles.albumCover, {
-                width: gridConfig.itemSize,
-                marginHorizontal: gridConfig.gap / 2,
-            }]}
-        >
-            <View style={[styles.albumCoverImage, {
-                width: gridConfig.itemSize,
-                height: gridConfig.itemSize,
-                aspectRatio: 1,
-            }]}>
-                <AlbumCoverImage album={item} />
-            </View>
-
-            <Text style={[styles.albumTitle, { color: colors.text }]}>{item.title}</Text>
-            <Text style={[styles.albumDate, { color: colors.text + '80' }]}>
-                {formatAlbumDate(item._creationTime)}
-            </Text>
+        <Pressable onPress={() => router.push(`/album/${item._id}`)} >
+            <AlbumDetailCard album={item} height={gridConfig.itemSize} width={gridConfig.itemSize} />
         </Pressable>
     ), [gridConfig.itemSize, gridConfig.gap, colors.text]);
 

@@ -176,7 +176,7 @@ export function NewAlbumScreen() {
                                     textAlign="left"
                                     keyboardType="default"
                                     returnKeyType="done"
-                                    selectionColor={theme.colors.primary}
+                                    selectionColor={colors.primary}
                                     onChangeText={onChange}
                                     placeholderTextColor={colors.caption}
                                     onBlur={onBlur}

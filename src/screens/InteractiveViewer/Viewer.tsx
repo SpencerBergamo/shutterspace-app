@@ -1,31 +1,27 @@
-import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useMedia } from "@/src/hooks/useMedia";
 import ViewerItem from "@/src/screens/InteractiveViewer/components/ViewerItem";
-import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
-import { useAction, useQuery } from "convex/react";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Alert, Dimensions, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export function InteractiveViewerScreen() {
-    const insets = useSafeAreaInsets();
+    // const insets = useSafeAreaInsets();
     const { albumId, index } = useLocalSearchParams<{ albumId: Id<'albums'>, index: string }>();
     const { media } = useMedia(albumId);
-    const profile = useQuery(api.profile.getUserProfile);
-    const membership = useQuery(api.albumMembers.getMembership, { albumId });
-    const deleteMedia = useAction(api.media.deleteMedia);
+    // const profile = useQuery(api.profile.getUserProfile);
+    // const membership = useQuery(api.albumMembers.getMembership, { albumId });
+    // const deleteMedia = useAction(api.media.deleteMedia);
 
     // Scroll View State
     const initialIndex = parseInt(index);
     const [currentIndex, setCurrentIndex] = useState<number>(initialIndex);
     const [isZoomed, setIsZoomed] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
+    // const [isDeleting, setIsDeleting] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
 
     const mediaIds = useMemo(() => media?.map(m => m._id) || [], [media]);
@@ -49,39 +45,39 @@ export function InteractiveViewerScreen() {
         }
     }, [initialIndex]);
 
-    const currentMedia = media?.[currentIndex];
-    const canDelete = membership === 'host' || membership === 'moderator' || currentMedia?.createdBy === profile?._id;
+    // const currentMedia = media?.[currentIndex];
+    // const canDelete = membership === 'host' || membership === 'moderator' || currentMedia?.createdBy === profile?._id;
 
-    const handleDelete = useCallback(async () => {
-        if (!currentMedia || !canDelete) return;
-        try {
-            if (!media) return;
+    // const handleDelete = useCallback(async () => {
+    //     if (!currentMedia || !canDelete) return;
+    //     try {
+    //         if (!media) return;
 
-            if (media?.length === 1) {
-                await deleteMedia({ albumId, mediaId: currentMedia._id });
-                router.back();
-                return;
-            }
+    //         if (media?.length === 1) {
+    //             await deleteMedia({ albumId, mediaId: currentMedia._id });
+    //             router.back();
+    //             return;
+    //         }
 
-            const nextIndex = currentIndex >= media.length - 1 ? currentIndex - 1 : currentIndex;
+    //         const nextIndex = currentIndex >= media.length - 1 ? currentIndex - 1 : currentIndex;
 
-            await deleteMedia({ albumId, mediaId: currentMedia._id });
+    //         await deleteMedia({ albumId, mediaId: currentMedia._id });
 
-            setTimeout(() => {
-                scrollViewRef.current?.scrollTo({
-                    x: nextIndex * SCREEN_WIDTH,
-                    animated: false,
-                });
-                setCurrentIndex(nextIndex);
-            }, 100);
-        } catch (error) {
-            console.error('Failed to delete media:', error);
-            Alert.alert("Error", "Failed to delete media. Please try again.");
-        } finally {
-            setIsDeleting(false);
-        }
+    //         setTimeout(() => {
+    //             scrollViewRef.current?.scrollTo({
+    //                 x: nextIndex * SCREEN_WIDTH,
+    //                 animated: false,
+    //             });
+    //             setCurrentIndex(nextIndex);
+    //         }, 100);
+    //     } catch (error) {
+    //         console.error('Failed to delete media:', error);
+    //         Alert.alert("Error", "Failed to delete media. Please try again.");
+    //     } finally {
+    //         setIsDeleting(false);
+    //     }
 
-    }, [currentMedia, canDelete, media?.length, currentIndex, deleteMedia, albumId]);
+    // }, [currentMedia, canDelete, media?.length, currentIndex, deleteMedia, albumId]);
 
     if (!media) return null;
 
@@ -150,7 +146,7 @@ export function InteractiveViewerScreen() {
                 ))}
             </ScrollView> */}
 
-            <View style={[styles.bottomBar, { bottom: insets.bottom }]}>
+            {/* <View style={[styles.bottomBar, { bottom: insets.bottom }]}>
                 <Ionicons name="download-outline" size={24} color="white" />
                 <Pressable
                     disabled={!canDelete || isDeleting}
@@ -170,7 +166,7 @@ export function InteractiveViewerScreen() {
                         color={canDelete && !isDeleting ? "#FF3B30" : "#666666"}
                     />
                 </Pressable>
-            </View>
+            </View> */}
         </GestureHandlerRootView>
     );
 }

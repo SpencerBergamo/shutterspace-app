@@ -14,7 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import * as Orientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { NotFoundScreen } from "../Home";
 
 const GAP = 2;
@@ -30,7 +30,6 @@ export function AlbumScreen() {
     // Data
     const album = useQuery(api.albums.queryAlbum, { albumId });
     const { media, pendingMedia, uploadMedia, removePendingMedia } = useMedia(albumId);
-    const memberships = useQuery(api.albumMembers.getMemberships, albumId ? { albumId } : "skip");
     const deleteMedia = useAction(api.media.deleteMedia);
 
     // Refs
@@ -260,23 +259,15 @@ export function AlbumScreen() {
 
         ) : (
             <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TouchableOpacity
-                    style={[styles.headerRightButton, { borderColor: colors.border }]}
-                    onPress={() => router.push(`album/${albumId}/members`)}
-                >
-                    <Text style={[styles.headerRightButtonText, { color: colors.text }]}>{memberships?.length}</Text>
-                    <Ionicons name="people-outline" size={18} color={colors.text} />
-                </TouchableOpacity>
-
-                <TouchableOpacity
+                <Pressable
                     style={[styles.headerRightButton, { borderColor: colors.border }]}
                     onPress={handleSettingsPress}
                 >
                     <Ionicons name="ellipsis-horizontal" size={18} color={colors.text} />
-                </TouchableOpacity>
+                </Pressable>
             </View>
         );
-    }, [selectionMode, handleSelectAll, handleSettingsPress, colors, albumId, memberships?.length]);
+    }, [selectionMode, handleSelectAll, handleSettingsPress, colors, albumId]);
 
     if (album === undefined || media === undefined) {
         return (

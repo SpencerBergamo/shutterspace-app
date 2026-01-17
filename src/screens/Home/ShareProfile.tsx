@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAction, useQuery } from "convex/react";
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { router, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import { useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
@@ -73,15 +73,6 @@ export function ShareProfileScreen() {
             {/* Header */}
             <Stack.Screen options={{
                 headerTitle: 'Share Profile',
-                headerRight: () => (
-                    <Pressable onPress={() => router.back()}>
-                        <Text style={{
-                            fontWeight: '600',
-                            fontSize: 16,
-                            color: colors.primary,
-                        }}>Done</Text>
-                    </Pressable>
-                )
             }} />
 
             {profile?.shareCode ? (
@@ -104,12 +95,6 @@ export function ShareProfileScreen() {
                             Scan to add me on ShutterSpace
                         </Text>
                     </View>
-
-                    {/* Share Code Display */}
-                    {/* <View style={[styles.codeContainer, { backgroundColor: colors.grey3, borderColor: colors.border }]}>
-                        <Text style={[styles.codeLabel, { color: colors.caption }]}>Share Code</Text>
-                        <Text style={[styles.code, { color: colors.text }]}>{profile.shareCode}</Text>
-                    </View> */}
 
                     {/* Action Buttons */}
                     <View style={styles.actions}>

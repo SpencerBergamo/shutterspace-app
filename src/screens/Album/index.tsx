@@ -1,7 +1,7 @@
-export { AlbumScreen } from "./AlbumDetail";
-export { AlbumInvitationScreen } from "./AlbumInvitation";
-export { AlbumMembersScreen } from "./AlbumMembers";
-export { AlbumSettingsScreen } from "./AlbumSettings";
-export { EditAlbumScreen } from "./EditAlbumForm";
-export { NewAlbumScreen } from "./NewAlbum";
+export { AlbumInvitationScreen } from "./AlbumInvitationScreen";
+export { AlbumQRCodeScreen } from "./AlbumQRCodeScreen";
+export { AlbumScreen } from "./AlbumScreen";
+export { AlbumSettingsScreen } from "./AlbumSettingsScreen";
+export { EditAlbumScreen } from "./EditAlbumScreen";
+export { NewAlbumScreen } from "./NewAlbumScreen";
 

@@ -45,7 +45,10 @@ export default function HomeLayout() {
                 animation: 'fade',
             }} />
 
-            {/* Album */}
+            {/* 
+                Album Screens
+            */}
+
             <Stack.Screen name="new-album" options={{
                 presentation: 'modal',
             }} />
@@ -57,20 +60,22 @@ export default function HomeLayout() {
                 headerShown: true,
                 headerTitle: 'Album Settings',
             }} />
+            <Stack.Screen name="album/[albumId]/qr-code" options={{
+                headerShown: true,
+                headerTitle: '',
+                presentation: 'modal',
+            }} />
             <Stack.Screen name="viewer/[index]/index" options={{
                 headerShown: true,
                 animation: 'fade',
                 animationDuration: 200,
-            }} />
-            <Stack.Screen name="album/[albumId]/members" options={{
-                headerTitle: 'Album Members',
             }} />
 
 
             {/* Friends */}
             <Stack.Screen name="friends" />
             <Stack.Screen name="share-profile" options={{
-                presentation: 'formSheet',
+                presentation: 'modal',
             }} />
 
             <Stack.Screen name="contact-us" options={{
