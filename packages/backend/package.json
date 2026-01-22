@@ -1,0 +1,14 @@
+{
+    "name": "@shutterspace/backend",
+    "version": "0.0.1",
+    "private": true,
+    "main": "./convex/_generated/api.js",
+    "types": "./convex/_generated/api.d.ts",
+    "dependencies": {
+        "convex": "^1.25.2"
+    },
+    "scripts": {
+        "dev": "convex dev",
+        "deploy": "convex deploy"
+    }
+}

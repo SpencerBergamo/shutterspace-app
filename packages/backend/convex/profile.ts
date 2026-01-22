@@ -1,0 +1,172 @@
+import { Profile, PublicProfile } from "@/apps/expo/src/types/Profile";
+import { ConvexError, v } from "convex/values";
+import { api } from "./_generated/api";
+import { internalQuery, mutation, query } from "./_generated/server";
+
+
+// --------------------------------
+// Dec 23: NEW
+// --------------------------------
+export const createNewProfile = mutation({
+    args: {
+        nickname: v.optional(v.string()),
+        ssoAvatar: v.optional(v.string()),
+        authProvider: v.union(
+            v.literal('email'),
+            v.literal('google'),
+            v.literal('apple'),
+        )
+    }, handler: async (ctx, { ssoAvatar, nickname, authProvider }) => {
+        const session = await ctx.auth.getUserIdentity();
+        if (!session) throw new ConvexError('Not Authenticated');
+
+        const fuid = session.user_id as string;
+        const email = session.email as string;
+
+        const profileExists = await ctx.db.query('profiles')
+            .withIndex('by_firebase_uid', q => q.eq('firebaseUID', fuid))
+            .unique();
+
+        if (profileExists) return;
+
+        return await ctx.db.insert('profiles', {
+            firebaseUID: fuid,
+            joined: Date.now(),
+            authProvider: authProvider,
+            email: email,
+            nickname: nickname ?? email.split('@')[0],
+            ssoAvatarUrl: ssoAvatar ?? session.pictureUrl,
+        })
+    }
+})
+
+export const getUserProfile = query({
+    args: {}, handler: async (ctx) => {
+        const session = await ctx.auth.getUserIdentity();
+        if (!session) throw new ConvexError('Not Authenticated');
+
+        const fuid = session.user_id as string;
+
+        return await ctx.db.query('profiles')
+            .withIndex('by_firebase_uid', q => q.eq('firebaseUID', fuid))
+            .first();
+    }
+})
+
+// --------------------------------
+// OLD
+// --------------------------------
+export const createProfile = mutation({
+    args: {
+        nickname: v.optional(v.string()),
+        authProvider: v.union(
+            v.literal('email'),
+            v.literal('google'),
+            v.literal('apple'),
+        ),
+    }, handler: async (ctx, args) => {
+        const session = await ctx.auth.getUserIdentity();
+        if (!session) throw new Error('Unauthorized');
+
+        const fuid = session.user_id as string;
+        const email = session.email as string;
+
+        return await ctx.db.insert('profiles', {
+            firebaseUID: fuid,
+            joined: Date.now(),
+            authProvider: args.authProvider,
+            email: email,
+            nickname: args.nickname ?? email.split('@')[0],
+            ssoAvatarUrl: session.pictureUrl,
+        })
+    }
+})
+
+export const getProfile = query({
+    args: {}, handler: async (ctx): Promise<Profile | null> => {
+        const session = await ctx.auth.getUserIdentity();
+        if (!session) throw new Error('Unauthorized');
+
+        const fuid = session.user_id as string;
+
+        const profile = await ctx.db.query('profiles')
+            .withIndex('by_firebase_uid', q => q.eq('firebaseUID', fuid))
+            .first();
+
+        // if (!profile) throw new Error('Profile not found');
+
+        return profile;
+    }
+});
+
+export const updateProfile = mutation({
+    args: {
+        avatarKey: v.optional(v.string()),
+        nickname: v.optional(v.string())
+    }, handler: async (ctx, { avatarKey, nickname }) => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) return;
+
+        await ctx.db.patch(profile._id, {
+            avatarKey: avatarKey,
+            nickname: nickname,
+        });
+    },
+});
+
+export const getPublicProfileById = query({
+    args: { profileId: v.id('profiles') },
+    handler: async (ctx, { profileId }): Promise<PublicProfile> => {
+        const session = await ctx.auth.getUserIdentity();
+        if (!session) throw new ConvexError('Unauthorized');
+
+        const profile = await ctx.db.get(profileId);
+        if (!profile) throw new ConvexError('Profile not found');
+
+        return {
+            _id: profile._id,
+            nickname: profile.nickname,
+            avatarKey: profile.avatarKey,
+            ssoAvatarUrl: profile.ssoAvatarUrl,
+        };
+    }
+})
+
+export const getUserByShareCode = query({
+    args: { code: v.string() },
+    handler: async (ctx, { code }) => {
+        const profile = await ctx.db.query('profiles')
+            .withIndex('by_shareCode', q => q.eq('shareCode', code))
+            .first();
+
+        if (!profile) return null;
+
+        return {
+            _id: profile._id,
+            nickname: profile.nickname,
+            avatarKey: profile.avatarKey,
+            ssoAvatarUrl: profile.ssoAvatarUrl,
+        };
+    }
+})
+
+export const deleteProfile = mutation({
+    args: {}, handler: async (ctx) => {
+        const profile = await ctx.runQuery(api.profile.getProfile);
+        if (!profile) throw new Error('Profile not found');
+
+        await ctx.db.delete(profile._id);
+    }
+})
+
+// --- Internal ---
+
+export const getPublicProfile = internalQuery({
+    args: { profileId: v.id('profiles') },
+    handler: async (ctx, { profileId }) => {
+        const profile = await ctx.db.get(profileId);
+        if (!profile) throw new Error('Profile not found');
+
+        return profile;
+    },
+})
