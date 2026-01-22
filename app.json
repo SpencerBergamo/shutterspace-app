@@ -81,6 +81,7 @@
       ],
       "expo-router",
       "@react-native-firebase/app",
+      "@react-native-firebase/auth",
       "expo-apple-authentication",
       [
         "expo-contacts",
@@ -92,7 +93,10 @@
         "expo-build-properties",
         {
           "ios": {
-            "useFrameworks": "static"
+            "useFrameworks": "static",
+            "forceStaticLinking": [
+              "RNFBApp" // had to add because iOS had issues with ReactNative Firebase. Solution is probably being patched
+            ]
           }
         }
       ],
@@ -153,7 +157,8 @@
         {
           "initialOrientation": "DEFAULT"
         }
-      ]
+      ],
+      "@react-native-firebase/auth"
     ],
     "extra": {
       "eas": {
