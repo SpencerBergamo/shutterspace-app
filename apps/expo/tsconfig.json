@@ -1,0 +1,29 @@
+{
+  "extends": "../../node_modules/expo/tsconfig.base.json",
+  "compilerOptions": {
+    "strict": true,
+    "module": "esnext",
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
+    "paths": {
+      "@firebase/auth": [
+        "./node_modules/@firebase/auth/dist/index.rn.d.ts"
+      ],
+      "@shutterspace/backend/*": [
+        "../../packages/backend/*"
+      ],
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "migrate-to-clerk.js"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
