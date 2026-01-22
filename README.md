@@ -1,74 +1,80 @@
-# Shutterspace - React Native 📌
+# Shutterspace 📸
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A photo-sharing mobile app built with React Native that lets you capture, organize, and share your memories with friends and family.
 
-## Get started
+## 🛠️ Tech Stack
 
-1. Install dependencies
+Shutterspace is built using modern tools that make development fast and scalable:
+
+- **[React Native](https://reactnative.dev/)** - Cross-platform mobile framework
+- **[Expo](https://expo.dev)** - Development platform with file-based routing
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
+- **[Convex](https://www.convex.dev/)** - Real-time backend database
+- **[Firebase](https://firebase.google.com/)** - Authentication and cloud storage
+- **[Cloudflare R2](https://www.cloudflare.com/products/r2/)** - Media storage and delivery
+- **[Turborepo](https://turbo.build/)** - Monorepo build system
+- **[Zustand](https://github.com/pmndrs/zustand)** - Lightweight state management
+
+### Project Structure
+
+This is a monorepo organized with workspaces:
+
+```
+shutterspace-app/
+├── apps/
+│   └── expo/          # React Native mobile app
+└── packages/
+    └── backend/       # Convex backend functions
+```
+
+## 🚀 Getting Started
+
+1. **Install dependencies**
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. **Start the app**
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+3. **Run on a device**
+   - Press `a` for Android emulator
+   - Press `i` for iOS simulator
+   - Scan the QR code with Expo Go on your phone
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🤝 Contributing
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Want to help make Shutterspace better? Here's how:
 
-## Get a fresh project
+1. **Fork the repository** and clone it locally
+2. **Create a branch** for your feature (`git checkout -b feature/amazing-feature`)
+3. **Make your changes** and test them thoroughly
+4. **Commit your changes** (`git commit -m 'Add amazing feature'`)
+5. **Push to your branch** (`git push origin feature/amazing-feature`)
+6. **Open a Pull Request** and describe what you've built
 
-When you're ready, run:
+### Development Tips
 
+- The mobile app lives in `apps/expo/`
+- Backend functions are in `packages/backend/convex/`
+- Use Turborepo commands to run tasks across workspaces
+- Follow existing code patterns and component structure
+
+## 📱 Building for Production
+
+**Android Simulator Build**
 ```bash
-npm run reset-project
+eas build --platform android --profile development
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-
-
-## EAS Build
-**Development Build**
-- npx expo install expo-dev-client -> package.json
-- npm install -g eas-cli
-- eas -v -> check version
-- eas login -> follow login instructions
-- eas whoami
-- eas init -> select owner for project -> splitease (yes)
-- eas build:configure -> select all platforms
-
-**Build for Android Simulator** https://youtu.be/D612BUtvvl8?si=xraApImzTfYF3HK2
-- simulator is .apk, Google Play format is .avi
-- eas build --platform android --profile development
-- you might need to create the package name, org.bbtechnologies.shutterspace
-
-**Build for iOS Simulator** https://youtu.be/SgL97PFZctg?si=8WHlm2_PYQdVuX0C
-- simulator is .app and physical device is .ipa
-- eas build --platform ios --profile ios-simulator -> sign in on the simulator device
-- npx expo start
+**iOS Simulator Build**
+```bash
+eas build --platform ios --profile ios-simulator
+```
 
 
 ## Syntax Notes
