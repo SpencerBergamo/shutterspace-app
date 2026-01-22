@@ -76,11 +76,7 @@
       "output": "static"
     },
     "plugins": [
-      [
-        "@react-native-google-signin/google-signin"
-      ],
       "expo-router",
-      "@react-native-firebase/app",
       "expo-apple-authentication",
       [
         "expo-contacts",
