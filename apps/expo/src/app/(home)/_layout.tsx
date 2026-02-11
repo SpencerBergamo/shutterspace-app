@@ -1,5 +1,5 @@
-import { api } from "@shutterspace/backend/convex/_generated/api";
 import { useAppTheme } from "@/src/context/AppThemeContext";
+import { api } from "@shutterspace/backend/convex/_generated/api";
 import { useQuery } from "convex/react";
 // import { useTheme } from "@react-navigation/native";
 import { router, Stack } from "expo-router";
@@ -24,10 +24,7 @@ export default function HomeLayout() {
         <Stack screenOptions={{
             headerBackButtonDisplayMode: 'minimal',
             headerShadowVisible: false,
-            headerStyle: {
-                backgroundColor: colors.background,
-            },
-            headerTintColor: 'black',
+            headerTransparent: true,
         }}>
             <Stack.Screen name="index" />
 

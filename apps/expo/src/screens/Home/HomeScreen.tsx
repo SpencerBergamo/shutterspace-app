@@ -1,18 +1,19 @@
-import { api } from "@shutterspace/backend/convex/_generated/api";
 import Avatar from "@/src/components/Avatar";
 import FloatingActionButton from "@/src/components/FloatingActionButton";
+import PlatformIcon from "@/src/components/PlatformIcon";
 import QRCodeModal from "@/src/components/QRCodeModal";
 import { useAppTheme } from "@/src/context/AppThemeContext";
+import AlbumDetailCard from "@/src/screens/Album/components/AlbumDetailCard";
 import { Album } from "@/src/types/Album";
-import { Ionicons } from "@expo/vector-icons";
+import { HeaderButton } from "@react-navigation/elements";
+import { FlashList } from "@shopify/flash-list";
+import { api } from "@shutterspace/backend/convex/_generated/api";
 import { usePaginatedQuery, useQuery } from "convex/react";
 import { router, Stack } from "expo-router";
 import * as Orientation from 'expo-screen-orientation';
 import { Plus } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
-import AlbumDetailCard from "@/src/screens/Album/components/AlbumDetailCard";
-import { FlashList } from "@shopify/flash-list";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 export function HomeScreen() {
     // Layout
@@ -111,27 +112,28 @@ export function HomeScreen() {
     }, [status, colors.text]);
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.container]}>
             <Stack.Screen options={{
-                headerLeft: renderHeaderLeft,
-                headerTitle: '',
+                title: 'Shutterspace',
+                headerLargeTitleEnabled: true,
                 headerRight: () => (
-                    <TouchableOpacity
-                        onPress={() => router.push('/friends')}
-                        style={[styles.headerRight, { borderColor: colors.border }]}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="people" size={18} color={colors.grey1} />
-                    </TouchableOpacity>
-                ),
+                    <>
+                        <HeaderButton onPress={() => router.push('/friends')}>
+                            <PlatformIcon name="add" size={28} />
+                        </HeaderButton>
+                        <HeaderButton onPress={() => router.push('/profile')}>
+                            <PlatformIcon name="profile" size={28} />
+                        </HeaderButton>
+                    </>
+                )
             }} />
 
             <FlashList
                 key={gridConfig.numColumns}
+                contentInsetAdjustmentBehavior="automatic"
                 data={albums}
                 keyExtractor={(item) => item._id}
                 numColumns={gridConfig.numColumns}
-                // estimatedItemSize={gridConfig.itemSize + gridConfig.gap}
                 contentContainerStyle={{
                     paddingVertical: 16,
                     paddingHorizontal: gridConfig.gap / 2,
