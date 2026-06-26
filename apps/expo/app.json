@@ -90,7 +90,7 @@
           "ios": {
             "useFrameworks": "static",
             "forceStaticLinking": [
-              "RNFBApp" // had to add because iOS had issues with ReactNative Firebase. Solution is probably being patched
+              "RNFBApp"
             ]
           }
         }
@@ -153,7 +153,8 @@
           "initialOrientation": "DEFAULT"
         }
       ],
-      "@react-native-firebase/auth"
+      "@react-native-firebase/auth",
+      "expo-sqlite"
     ],
     "extra": {
       "eas": {

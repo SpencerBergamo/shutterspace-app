@@ -1,5 +1,5 @@
-import { Friend, Friendship } from "@/apps/expo/src/types/Friend";
 import { ConvexError, v } from "convex/values";
+import { Friend, Friendship } from "../types/Friend";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";

@@ -1,5 +1,5 @@
-import { Profile, PublicProfile } from "@/apps/expo/src/types/Profile";
 import { ConvexError, v } from "convex/values";
+import { Profile, PublicProfile } from "../types/Profile";
 import { api } from "./_generated/api";
 import { internalQuery, mutation, query } from "./_generated/server";
 

@@ -1,6 +1,6 @@
-import { api } from "@shutterspace/backend/convex/_generated/api";
-import { Media } from "@/src/types/Media";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from "@shutterspace/backend/convex/_generated/api";
+import { Media } from "@shutterspace/backend/types/Media";
 import { useAction } from "convex/react";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useState } from "react";

@@ -4,7 +4,7 @@ import FloatingActionButton from "@/src/components/FloatingActionButton";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { useMedia } from "@/src/hooks/useMedia";
 import GalleryTile from "@/src/screens/Album/components/GalleryTile";
-import { Media } from "@/src/types/Media";
+import { Media } from "@shutterspace/backend/types/Media";
 import { validateAssets } from "@/src/utils/mediaHelper";
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";

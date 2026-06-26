@@ -1,7 +1,7 @@
 import { api } from "@shutterspace/backend/convex/_generated/api";
 import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { MemberRole } from "@/src/types/Album";
+import { MemberRole } from "@shutterspace/backend/types/Album";
 import { useQuery } from "convex/react";
 import { StyleSheet, Text, View } from "react-native";
 

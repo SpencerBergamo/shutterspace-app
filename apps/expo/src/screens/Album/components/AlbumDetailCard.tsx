@@ -1,6 +1,6 @@
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import useAlbumCover from "@/src/hooks/useAlbumCover";
-import { Album } from "@/src/types/Album";
+import { Album } from "@shutterspace/backend/types/Album";
 import { formatAlbumDate } from "@/src/utils/formatters";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";

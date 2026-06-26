@@ -1,7 +1,7 @@
 import { api } from "@shutterspace/backend/convex/_generated/api";
 import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
 import useSignedUrls from "@/src/hooks/useSignedUrls";
-import { Media } from "@/src/types/Media";
+import { Media } from "@shutterspace/backend/types/Media";
 import { formatVideoDuration } from "@/src/utils/formatters";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from "convex/react";

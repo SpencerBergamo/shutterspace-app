@@ -1,5 +1,5 @@
 import useSignedUrls from "@/src/hooks/useSignedUrls";
-import { Media } from "@/src/types/Media";
+import { Media } from "@shutterspace/backend/types/Media";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useState } from "react";

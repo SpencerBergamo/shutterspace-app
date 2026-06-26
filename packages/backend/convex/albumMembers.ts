@@ -1,5 +1,5 @@
-import { MemberRole, Membership } from "@/apps/expo/src/types/Album";
 import { ConvexError, v } from "convex/values";
+import { MemberRole, Membership } from "../types/Album";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";

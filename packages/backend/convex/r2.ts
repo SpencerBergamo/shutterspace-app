@@ -40,6 +40,25 @@ export const prepareImageUpload = action({
     }
 })
 
+// --------------------
+// March 2 2026
+// --------------------
+export const getImageURLInternally = internalAction({
+    args: {
+        albumId: v.id('albums'),
+        imageId: v.string(),
+    },
+    returns: v.string(),
+    handler: async (_, { albumId, imageId }) => {
+        const url = await getSignedUrl(s3, new GetObjectCommand({
+            Bucket: "uploads",
+            Key: `album/${albumId}/${imageId}`,
+        }), { expiresIn: 3600 });
+
+        return url;
+    }
+})
+
 export const getImageURL = action({
     args: {
         albumId: v.id('albums'),

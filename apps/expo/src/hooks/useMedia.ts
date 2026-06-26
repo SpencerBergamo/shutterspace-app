@@ -1,6 +1,6 @@
 import { api } from "@shutterspace/backend/convex/_generated/api";
 import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
-import { Media, MediaIdentifier } from "@/src/types/Media";
+import { Media, MediaIdentifier } from "@shutterspace/backend/types/Media";
 import { ValidatedAsset } from "@/src/utils/mediaHelper";
 import axios from "axios";
 import { useAction, useMutation, useQuery } from "convex/react";

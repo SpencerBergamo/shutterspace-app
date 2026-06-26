@@ -1,7 +1,7 @@
 import { api } from "@shutterspace/backend/convex/_generated/api";
 import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { FriendshipStatus } from "@/src/types/Friend";
+import { FriendshipStatus } from "@shutterspace/backend/types/Friend";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
 import { Pressable, StyleSheet, Text, View } from "react-native";

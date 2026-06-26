@@ -1,6 +1,6 @@
-import { Invitation } from "@/apps/expo/src/types/Invites";
-import { MediaIdentifier } from "@/apps/expo/src/types/Media";
 import { v } from "convex/values";
+import { Invitation } from "../types/Invites";
+import { MediaIdentifier } from "../types/Media";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";

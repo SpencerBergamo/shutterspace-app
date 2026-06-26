@@ -1,6 +1,6 @@
 import { api } from "@shutterspace/backend/convex/_generated/api";
 import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
-import { MediaIdentifier } from "@/src/types/Media";
+import { MediaIdentifier } from "@shutterspace/backend/types/Media";
 import { useAction } from "convex/react";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";

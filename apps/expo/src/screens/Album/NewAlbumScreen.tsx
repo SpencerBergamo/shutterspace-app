@@ -4,7 +4,7 @@ import Avatar from "@/src/components/Avatar";
 import FloatingActionButton from "@/src/components/FloatingActionButton";
 import { TextInputStyles } from "@/src/constants/styles";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { Friend } from "@/src/types/Friend";
+import { Friend } from "@shutterspace/backend/types/Friend";
 import { validateAlbumTitle } from "@/src/utils/validators";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@react-navigation/native";

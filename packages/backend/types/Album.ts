@@ -1,4 +1,4 @@
-import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
+import { Id } from "../convex/_generated/dataModel";
 import * as ImagePicker from "expo-image-picker";
 import { Profile } from "./Profile";
 

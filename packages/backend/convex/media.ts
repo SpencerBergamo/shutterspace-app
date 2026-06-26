@@ -1,7 +1,41 @@
-import { Media } from "@/apps/expo/src/types/Media";
-import { v } from "convex/values";
+import { paginationOptsValidator, PaginationResult } from "convex/server";
+import { ConvexError, v } from "convex/values";
+import { Media } from "../types/Media";
 import { api, internal } from "./_generated/api";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+
+
+// --------------------
+// March 2 2026
+// --------------------
+
+export const paginateMedia = query({
+    args: {
+        albumId: v.id('albums'),
+        paginationOpts: paginationOptsValidator,
+    },
+    handler: async (ctx, { albumId, paginationOpts }): Promise<PaginationResult<Media>> => {
+        const membership = await ctx.runQuery(api.albumMembers.queryMembership, { albumId });
+        if (!membership || membership === 'not-a-member') throw new ConvexError('You are not a member of this album');
+
+        const media = await ctx.db.query('media')
+            .withIndex('by_albumId', q => q.eq('albumId', albumId))
+            .order('desc')
+            .paginate(paginationOpts);
+
+        const filteredMedia = media.page.filter(m => !m.isDeleted);
+
+        return {
+            ...media,
+            page: filteredMedia,
+        }
+
+    }
+})
+
+// --------------------
+// OLD
+// --------------------
 
 export const getMediaForAlbum = query({
     args: {

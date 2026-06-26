@@ -1,13 +1,13 @@
-import { Album } from "@/apps/expo/src/types/Album";
 import { paginationOptsValidator, PaginationResult } from "convex/server";
 import { ConvexError, v } from "convex/values";
+import { Album } from "../types/Album";
 import { api, internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 
 
 // --------------------
-// Dec 23 2025
+// Dec 23 2025 - March 2 2026
 // --------------------
 export const queryAlbum = query({
     args: { albumId: v.id('albums') },
