@@ -74,6 +74,7 @@ export const useInfiniteMediaList = ({
             filename: asset.filename,
             contentType: asset.mimeType,
             extension: asset.extension,
+            incomingSize: asset.fileSize,
          });
 
          uploadUrl = imageUploadUrl;
@@ -92,7 +93,7 @@ export const useInfiniteMediaList = ({
             throw new Error('Failed to upload image');
          });
       } else if (asset.type === 'video') {
-         const { uploadURL, uid } = await prepareVideoUpload({ albumId, filename: asset.filename });
+         const { uploadURL, uid } = await prepareVideoUpload({ albumId, filename: asset.filename, incomingSize: asset.fileSize });
 
          uploadUrl = uploadURL;
          identifier = {

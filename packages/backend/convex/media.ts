@@ -3,6 +3,9 @@ import { ConvexError, v } from "convex/values";
 import { Media } from "../types/Media";
 import { api, internal } from "./_generated/api";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { parseExifToEpoch } from "./lib/dates";
+import { albumAllowsUploads, albumIsVisible } from "./lib/albumLifecycle";
+import { adjustStorageUsed, wouldExceedQuota } from "./lib/storage";
 
 
 // --------------------
@@ -18,18 +21,17 @@ export const paginateMedia = query({
         const membership = await ctx.runQuery(api.albumMembers.queryMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new ConvexError('You are not a member of this album');
 
+        const album = await ctx.db.get(albumId);
+        if (!album || !albumIsVisible(album)) throw new ConvexError('Album not found');
+
         const media = await ctx.db.query('media')
             .withIndex('by_albumId', q => q.eq('albumId', albumId))
             .order('desc')
             .paginate(paginationOpts);
 
-        const filteredMedia = media.page.filter(m => !m.isDeleted);
-
-        return {
-            ...media,
-            page: filteredMedia,
-        }
-
+        // ADR-0002: media deletion is an immediate hard delete — there is no
+        // per-media soft-delete flag to filter on.
+        return media;
     }
 })
 
@@ -89,6 +91,8 @@ export const createMedia = mutation({
         ),
 
         size: v.optional(v.number()),
+        // Accepts the EXIF DateTimeOriginal string from the client; normalized to
+        // epoch ms before storage (ADR-0002).
         dateTaken: v.optional(v.string()),
         location: v.optional(v.object({
             lat: v.number(),
@@ -101,6 +105,12 @@ export const createMedia = mutation({
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId: args.albumId });
         if (!membership || membership === 'not-a-member') throw new Error('You are not a member of this album');
 
+        const album = await ctx.db.get(args.albumId);
+        if (!album || !albumIsVisible(album)) throw new Error('Album not found');
+        if (!albumAllowsUploads(album)) {
+            throw new Error('Album is archived and no longer accepts uploads');
+        }
+
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new Error("User Profile Not Found");
 
@@ -111,15 +121,13 @@ export const createMedia = mutation({
             filename: args.filename,
             identifier: args.identifier,
             size: args.size,
-            dateTaken: args.dateTaken,
+            dateTaken: parseExifToEpoch(args.dateTaken),
             location: args.location,
             status: args.status,
-            isDeleted: false,
         });
 
-        await ctx.db.patch(profile._id, {
-            storageQuota: (profile.storageQuota ?? 0) + (args.size ?? 0),
-        })
+        // ADR-0004: increment global storage usage on commit.
+        await adjustStorageUsed(ctx, profile._id, args.size ?? 0);
 
         if (args.setThumbnail) {
             await ctx.db.patch(args.albumId, {
@@ -166,10 +174,57 @@ export const getMedia = internalQuery({
     }
 })
 
+export const listMediaForAlbum = internalQuery({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        return await ctx.db.query('media')
+            .withIndex('by_albumId', q => q.eq('albumId', albumId))
+            .collect();
+    },
+})
+
+/**
+ * ADR-0004: quota gate for upload-URL mint time. Throws if the authenticated
+ * caller's projected usage would exceed their storage limit.
+ */
+export const assertStorageWithinQuota = internalQuery({
+    args: { incomingSize: v.optional(v.number()) },
+    handler: async (ctx, { incomingSize }) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error('Not authenticated');
+
+        const profile = await ctx.db.query('profiles')
+            .withIndex('by_firebase_uid', q => q.eq('firebaseUID', identity.user_id as string))
+            .first();
+        if (!profile) throw new Error('User Profile Not Found');
+
+        if (wouldExceedQuota(profile, incomingSize ?? 0)) {
+            throw new Error('Storage limit reached. Free up space or upgrade your plan.');
+        }
+    },
+})
+
 export const deleteMediaDoc = internalMutation({
     args: {
         mediaId: v.id("media"),
     }, handler: async (ctx, { mediaId }) => {
+        const media = await ctx.db.get(mediaId);
+        if (!media) return;
+
+        // ADR-0004: decrement global storage usage on hard delete.
+        await adjustStorageUsed(ctx, media.createdBy, -(media.size ?? 0));
+
+        // Clear any comments/likes referencing this media.
+        const comments = await ctx.db.query('comments')
+            .withIndex('by_mediaId', q => q.eq('mediaId', mediaId))
+            .collect();
+        for (const c of comments) await ctx.db.delete(c._id);
+
+        const likes = await ctx.db.query('likes')
+            .withIndex('by_mediaId', q => q.eq('mediaId', mediaId))
+            .collect();
+        for (const l of likes) await ctx.db.delete(l._id);
+
         await ctx.db.delete(mediaId);
     }
 });

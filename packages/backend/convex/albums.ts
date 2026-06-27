@@ -3,7 +3,30 @@ import { ConvexError, v } from "convex/values";
 import { Album } from "../types/Album";
 import { api, internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
-import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { action, internalAction, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import {
+    albumAllowsEdits,
+    albumAllowsUploads,
+    albumIsVisible,
+    defaultExpiresAt,
+    PURGE_DELAY_MS,
+    rescheduleArchiveJob,
+    statusAfterRestore,
+} from "./lib/albumLifecycle";
+import { adjustStorageUsed } from "./lib/storage";
+
+const dateRangeArgs = v.object({
+    start: v.number(),
+    end: v.optional(v.number()),
+    timezone: v.string(),
+});
+
+const locationArgs = v.object({
+    lat: v.number(),
+    lng: v.number(),
+    name: v.optional(v.string()),
+    address: v.optional(v.string()),
+});
 
 
 // --------------------
@@ -15,7 +38,11 @@ export const queryAlbum = query({
         const membership = await ctx.runQuery(api.albumMembers.queryMembership, { albumId });
         if (!membership || membership === 'not-a-member') return null;
 
-        return await ctx.db.get(albumId);
+        const album = await ctx.db.get(albumId);
+        // ADR-0002: trashed albums are hidden from everyone.
+        if (!album || !albumIsVisible(album)) return null;
+
+        return album;
     }
 });
 
@@ -26,22 +53,40 @@ export const queryUserAlbums = query({
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new ConvexError('No User Found');
 
+        // Active memberships, paginated. The Host has no membership row (ADR-0001),
+        // so host-owned albums are unioned in separately below.
         const memberships = await ctx.db.query('albumMembers')
             .withIndex('by_profileId', q => q.eq('profileId', profile._id))
             .order('desc')
             .paginate(paginationOpts);
 
-        const albumIds = memberships.page.map(m => m.albumId);
-        const albums = await Promise.all(albumIds.map(async (id) => {
-            return await ctx.db.get(id);
-        }));
+        const memberAlbums = (await Promise.all(memberships.page
+            .filter(m => m.status === 'active')
+            .map(m => ctx.db.get(m.albumId))))
+            .filter((album): album is Album => album !== null && album.status !== 'trashed');
 
-        // filter out deleted albums
-        const filteredAlbums = albums.filter((album): album is Album => album !== null && !album.isDeleted);
+        // Host albums are a small bounded set; inject them on the first page only.
+        let hostAlbums: Album[] = [];
+        if (paginationOpts.cursor === null) {
+            const hosted = await ctx.db.query('albums')
+                .withIndex('by_hostId', q => q.eq('hostId', profile._id))
+                .order('desc')
+                .collect();
+            hostAlbums = hosted.filter((album): album is Album => album.status !== 'trashed');
+        }
+
+        // Merge unique (host albums first), preserving the membership cursor.
+        const seen = new Set<string>();
+        const page: Album[] = [];
+        for (const album of [...hostAlbums, ...memberAlbums]) {
+            if (seen.has(album._id)) continue;
+            seen.add(album._id);
+            page.push(album);
+        }
 
         return {
             ...memberships,
-            page: filteredAlbums,
+            page,
         }
     }
 })
@@ -62,29 +107,23 @@ export const createNewAlbum = mutation({
             isDynamicThumbnail: true,
             openInvites: true,
             updatedAt: Date.now(),
-            isDeleted: false,
+            status: 'active',
         });
 
-        // create host member entry
-        await ctx.db.insert('albumMembers', {
-            albumId,
-            profileId: profile._id,
-            role: 'host',
-            joinedAt: Date.now(),
-            updatedAt: Date.now(),
-        })
-
-        // create member entries
+        // ADR-0001: the Host has NO albumMembers row — ownership lives solely in
+        // albums.hostId. Only non-host members get rows.
         if (members && members.length > 0) {
-            await Promise.all(members.map((m) => {
-                ctx.db.insert('albumMembers', {
+            const now = Date.now();
+            await Promise.all(members
+                .filter((m) => m !== profile._id)
+                .map((m) => ctx.db.insert('albumMembers', {
                     albumId,
                     profileId: m,
                     role: 'member',
-                    joinedAt: Date.now(),
-                    updatedAt: Date.now(),
-                })
-            }))
+                    status: 'active',
+                    joinedAt: now,
+                    updatedAt: now,
+                })));
         }
 
         return albumId;
@@ -112,21 +151,30 @@ export const getUserAlbums = query({
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new ConvexError('User not found');
 
-        // get memberships the user has
+        // get active memberships the user has
         const memberships = await ctx.db
             .query('albumMembers')
             .withIndex('by_profileId', q => q.eq('profileId', profile._id))
             .collect();
-        if (memberships.length === 0) return [];
 
-        // get album docs for each membership
         const docs = await Promise.all(
-            memberships.map((m) => ctx.db.get(m.albumId))
+            memberships
+                .filter(m => m.status === 'active')
+                .map((m) => ctx.db.get(m.albumId))
         );
 
-        const albums = docs.filter((album): album is Doc<'albums'> => album !== null);
+        // ADR-0001: include host-owned albums (the Host has no membership row).
+        const hosted = await ctx.db
+            .query('albums')
+            .withIndex('by_hostId', q => q.eq('hostId', profile._id))
+            .collect();
 
-        return albums.sort((a, b) => b.updatedAt - a.updatedAt);
+        const byId = new Map<string, Doc<'albums'>>();
+        for (const album of [...hosted, ...docs]) {
+            if (album && album.status !== 'trashed') byId.set(album._id, album);
+        }
+
+        return [...byId.values()].sort((a, b) => b.updatedAt - a.updatedAt);
     },
 });
 
@@ -147,12 +195,7 @@ export const createAlbum = action({
         const code: string = await ctx.runAction(internal.crypto.generateRandomCode, { length: 10 });
         await ctx.runMutation(internal.inviteCodes.addCode, { albumId, code, createdBy: profile._id, role: 'member', openInvites });
 
-        // create album member entry: host
-        await ctx.runMutation(internal.albumMembers.addMember, {
-            albumId,
-            profileId: profile._id,
-            role: 'host',
-        });
+        // ADR-0001: the Host has NO albumMembers row — ownership is albums.hostId.
 
         return albumId;
     }
@@ -173,13 +216,20 @@ export const joinViaInviteCode = mutation({
 
         const role = invite.role;
         const album = await ctx.db.get(invite.albumId);
-        if (!album || album.isDeleted) throw new Error('Album not found');
+        if (!album || !albumIsVisible(album)) throw new Error('Album not found');
+        if (!albumAllowsEdits(album)) throw new Error('Album is no longer accepting new members');
 
+        // ADR-0001: the Host is never a member row.
+        if (album.hostId === profileId) return;
+
+        const now = Date.now();
         await ctx.db.insert('albumMembers', {
             albumId: album._id,
             profileId,
             role,
-            joinedAt: Date.now(),
+            status: 'active',
+            joinedAt: now,
+            updatedAt: now,
         });
     },
 });
@@ -191,75 +241,119 @@ export const updateAlbum = mutation({
         description: v.optional(v.string()),
         isDynamicThumbnail: v.optional(v.boolean()),
         openInvites: v.optional(v.boolean()),
-        dateRange: v.optional(v.object({
-            start: v.string(),
-            end: v.optional(v.string()),
-        })),
-        location: v.optional(v.object({
-            lat: v.number(),
-            lng: v.number(),
-            name: v.optional(v.string()),
-            address: v.optional(v.string()),
-        })),
+        dateRange: v.optional(dateRangeArgs),
+        location: v.optional(locationArgs),
         expiresAt: v.optional(v.number()),
-    }, handler: async (ctx, { albumId, title, description }) => {
+    },
+    handler: async (ctx, args) => {
         const profile = await ctx.runQuery(api.profile.getUserProfile);
         if (!profile) throw new ConvexError('No User Found');
 
-        const albumMemberships = await ctx.runQuery(api.albumMembers.queryAllMemberships, { albumId });
-        const memberRole = albumMemberships.find(m => m.profileId === profile._id)?.role ?? 'not-a-member';
-        if (!memberRole || (memberRole !== 'host' && memberRole !== 'moderator')) throw new ConvexError('Not Authorized');
+        const role = await ctx.runQuery(api.albumMembers.queryMembership, { albumId: args.albumId });
+        if (role !== 'host' && role !== 'moderator') throw new ConvexError('Not Authorized');
 
-        const album = await ctx.db.get(albumId);
+        const album = await ctx.db.get(args.albumId);
         if (!album) throw new ConvexError('Album not found');
-
-        const updates = {
-            title: title ?? album.title,
-            description: description ?? album.description,
-            updatedAt: Date.now(),
+        if (!albumAllowsEdits(album)) {
+            throw new ConvexError('Album is read-only');
         }
 
-        await Promise.all(albumMemberships.map(async (m) => {
-            await ctx.db.patch(m._id, {
-                updatedAt: updates.updatedAt,
-            })
-        }));
+        const now = Date.now();
+        const patch: Partial<Doc<'albums'>> = { updatedAt: now };
 
-        return await ctx.db.patch(albumId, updates);
+        if (args.title !== undefined) patch.title = args.title;
+        if (args.description !== undefined) patch.description = args.description;
+        if (args.isDynamicThumbnail !== undefined) patch.isDynamicThumbnail = args.isDynamicThumbnail;
+        if (args.openInvites !== undefined) patch.openInvites = args.openInvites;
+        if (args.location !== undefined) patch.location = args.location;
+
+        let expiresAt = args.expiresAt ?? album.expiresAt;
+        if (args.dateRange !== undefined) {
+            patch.dateRange = args.dateRange;
+            patch.startsAt = args.dateRange.start;
+            if (args.expiresAt === undefined) {
+                expiresAt = defaultExpiresAt(args.dateRange);
+            }
+        }
+        if (args.expiresAt !== undefined || args.dateRange !== undefined) {
+            patch.expiresAt = expiresAt;
+        }
+
+        await ctx.db.patch(args.albumId, patch);
+
+        const updated = await ctx.db.get(args.albumId);
+        if (updated) {
+            await rescheduleArchiveJob(ctx, args.albumId, updated, expiresAt);
+        }
     },
 });
 
-// Public API for deleting an album and all its media
-export const deleteAlbum = action({
+/** Host-only: move album to trash and schedule a hard purge (ADR-0002). */
+export const deleteAlbum = mutation({
     args: { albumId: v.id('albums') },
     handler: async (ctx, { albumId }) => {
-        const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-        if (!membership || membership !== 'host') throw new Error('Not the host of this album');
+        const role = await ctx.runQuery(api.albumMembers.queryMembership, { albumId });
+        if (role !== 'host') throw new ConvexError('Only the host can delete this album');
 
-        const profile = await ctx.runQuery(api.profile.getProfile);
-        if (!profile) throw new Error('Profile not found');
+        const album = await ctx.db.get(albumId);
+        if (!album) throw new ConvexError('Album not found');
+        if (album.status === 'trashed') return;
 
-        const media = await ctx.runQuery(api.media.getMediaForAlbum, { albumId });
-
-        for (const m of media) {
-            const canDelete = membership === 'host' || membership === 'moderator' || m.createdBy === profile._id;
-            if (!canDelete) throw new Error('You don\'t have permission to delete this media');
-
-            // Delete the Media object
-            await ctx.runMutation(internal.media.deleteMediaDoc, { mediaId: m._id });
-
-            // Delete the file from R2 or Cloudflare Stream
-            if (m.identifier.type === 'image') {
-                await ctx.runAction(internal.r2.deleteObject, { objectKey: `album/${albumId}/${m.identifier.imageId}` });
-            } else if (m.identifier.type === 'video') {
-                await ctx.runAction(internal.cloudflare.deleteVideo, { videoUID: m.identifier.videoUid })
-            }
+        if (album.scheduledArchiveId) {
+            await ctx.scheduler.cancel(album.scheduledArchiveId);
+        }
+        if (album.scheduledDeletionId) {
+            await ctx.scheduler.cancel(album.scheduledDeletionId);
         }
 
-        await ctx.runMutation(internal.albums.deleteAlbumDoc, { albumId });
+        const now = Date.now();
+        const deletionScheduledAt = now + PURGE_DELAY_MS;
+        const scheduledDeletionId = await ctx.scheduler.runAt(
+            deletionScheduledAt,
+            internal.albums.purgeAlbum,
+            { albumId },
+        );
 
-    }
-})
+        await ctx.db.patch(albumId, {
+            status: 'trashed',
+            deletionScheduledAt,
+            scheduledDeletionId,
+            scheduledArchiveId: undefined,
+            updatedAt: now,
+        });
+    },
+});
+
+/** Host-only: cancel scheduled purge and restore a trashed album (ADR-0002). */
+export const restoreAlbum = mutation({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        const role = await ctx.runQuery(api.albumMembers.queryMembership, { albumId });
+        if (role !== 'host') throw new ConvexError('Only the host can restore this album');
+
+        const album = await ctx.db.get(albumId);
+        if (!album) throw new ConvexError('Album not found');
+        if (album.status !== 'trashed') throw new ConvexError('Album is not in trash');
+
+        if (album.scheduledDeletionId) {
+            await ctx.scheduler.cancel(album.scheduledDeletionId);
+        }
+
+        const restoredStatus = statusAfterRestore(album);
+        const now = Date.now();
+        await ctx.db.patch(albumId, {
+            status: restoredStatus,
+            deletionScheduledAt: undefined,
+            scheduledDeletionId: undefined,
+            updatedAt: now,
+        });
+
+        const updated = await ctx.db.get(albumId);
+        if (updated && restoredStatus === 'active') {
+            await rescheduleArchiveJob(ctx, albumId, updated, updated.expiresAt);
+        }
+    },
+});
 
 export const getAlbumCover = action({
     args: {
@@ -315,7 +409,7 @@ export const createAlbumDoc = internalMutation({
             openInvites: args.openInvites,
             updatedAt: Date.now(),
             isDynamicThumbnail: true,
-            isDeleted: false,
+            status: 'active',
         });
     },
 })
@@ -327,11 +421,114 @@ export const deleteAlbumDoc = internalMutation({
     }
 })
 
+/** ADR-0002: flip `active → archived` when `expiresAt` is reached. */
+export const archiveAlbumAtExpiry = internalMutation({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        const album = await ctx.db.get(albumId);
+        if (!album || album.status !== 'active') return;
+        if (album.expiresAt !== undefined && Date.now() < album.expiresAt) return;
+
+        await ctx.db.patch(albumId, {
+            status: 'archived',
+            scheduledArchiveId: undefined,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+/** Hard-delete all Convex docs for a trashed album (called after R2/Stream purge). */
+export const purgeAlbumDocs = internalMutation({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        const album = await ctx.db.get(albumId);
+        if (!album || album.status !== 'trashed') return;
+
+        const media = await ctx.db.query('media')
+            .withIndex('by_albumId', q => q.eq('albumId', albumId))
+            .collect();
+
+        for (const m of media) {
+            const comments = await ctx.db.query('comments')
+                .withIndex('by_mediaId', q => q.eq('mediaId', m._id))
+                .collect();
+            for (const c of comments) await ctx.db.delete(c._id);
+
+            const likes = await ctx.db.query('likes')
+                .withIndex('by_mediaId', q => q.eq('mediaId', m._id))
+                .collect();
+            for (const l of likes) await ctx.db.delete(l._id);
+
+            // ADR-0004: purge frees the owner's storage too.
+            await adjustStorageUsed(ctx, m.createdBy, -(m.size ?? 0));
+            await ctx.db.delete(m._id);
+        }
+
+        const members = await ctx.db.query('albumMembers')
+            .withIndex('by_albumId', q => q.eq('albumId', albumId))
+            .collect();
+        for (const m of members) await ctx.db.delete(m._id);
+
+        const invites = await ctx.db.query('inviteCodes')
+            .withIndex('by_albumId', q => q.eq('albumId', albumId))
+            .collect();
+        for (const i of invites) await ctx.db.delete(i._id);
+
+        await ctx.db.delete(albumId);
+    },
+});
+
+/** ADR-0002: purge backing assets then delete all Convex docs. */
+export const purgeAlbum = internalAction({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        const album = await ctx.runQuery(internal.albums.getTrashedAlbum, { albumId });
+        if (!album) return;
+
+        const media = await ctx.runQuery(internal.media.listMediaForAlbum, { albumId });
+        for (const m of media) {
+            if (m.identifier.type === 'image') {
+                await ctx.runAction(internal.r2.deleteObject, {
+                    objectKey: `album/${albumId}/${m.identifier.imageId}`,
+                });
+            } else if (m.identifier.type === 'video') {
+                await ctx.runAction(internal.cloudflare.deleteVideo, {
+                    videoUID: m.identifier.videoUid,
+                });
+            }
+        }
+
+        await ctx.runMutation(internal.albums.purgeAlbumDocs, { albumId });
+    },
+});
+
+export const getTrashedAlbum = internalQuery({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        const album = await ctx.db.get(albumId);
+        if (!album || album.status !== 'trashed') return null;
+        return album;
+    },
+});
+
+/** Used by upload actions to enforce archived read-only (ADR-0002). */
+export const assertAlbumAcceptsUploads = internalQuery({
+    args: { albumId: v.id('albums') },
+    handler: async (ctx, { albumId }) => {
+        const album = await ctx.db.get(albumId);
+        if (!album || !albumIsVisible(album)) throw new Error('Album not found');
+        if (!albumAllowsUploads(album)) {
+            throw new Error('Album is archived and no longer accepts uploads');
+        }
+        return album;
+    },
+});
+
 export const getAlbumById = internalQuery({
     args: { albumId: v.id('albums') },
     handler: async (ctx, { albumId }) => {
         const album = await ctx.db.get(albumId);
-        if (!album || album.isDeleted) throw new Error('Album not found');
+        if (!album || album.status === 'trashed') throw new Error('Album not found');
 
         return album;
     },

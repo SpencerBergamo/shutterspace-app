@@ -2,7 +2,53 @@ import { ConvexError, v } from "convex/values";
 import { MemberRole, Membership } from "../types/Album";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, MutationCtx, mutation, query, QueryCtx } from "./_generated/server";
+import { albumAllowsEdits } from "./lib/albumLifecycle";
+
+
+// --------------------
+// ADR-0001 helpers
+// --------------------
+
+/**
+ * Load the authenticated caller's profile directly from the DB. Avoids
+ * `ctx.runQuery(api.profile...)` so helper modules don't create a circular
+ * dependency on the generated `api` types.
+ */
+export async function getCurrentProfile(ctx: QueryCtx | MutationCtx) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    return await ctx.db.query('profiles')
+        .withIndex('by_firebase_uid', q => q.eq('firebaseUID', identity.user_id as string))
+        .first();
+}
+
+/**
+ * Derive a profile's effective role in an album (ADR-0001).
+ *
+ * The Host is the single owner, stored only as `albums.hostId` (no `albumMembers`
+ * row), so Host status is derived here. `pending` memberships do not grant access
+ * and resolve to `not-a-member`. Returns the persisted role (`member`/`moderator`)
+ * for active members.
+ */
+export async function deriveEffectiveRole(
+    ctx: QueryCtx | MutationCtx,
+    albumId: Id<'albums'>,
+    profileId: Id<'profiles'>,
+): Promise<MemberRole> {
+    const album = await ctx.db.get(albumId);
+    if (!album) return 'not-a-member';
+    if (album.hostId === profileId) return 'host';
+
+    const membership = await ctx.db.query('albumMembers')
+        .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
+            .eq('profileId', profileId))
+        .first();
+
+    if (!membership || membership.status !== 'active') return 'not-a-member';
+    return membership.role;
+}
 
 
 // --------------------
@@ -14,12 +60,7 @@ export const queryMembership = query({
         const profile = await ctx.runQuery(api.profile.getUserProfile);
         if (!profile) throw new ConvexError("User Not Found");
 
-        const membership = await ctx.db.query('albumMembers')
-            .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
-                .eq('profileId', profile._id))
-            .first();
-
-        return membership?.role ?? 'not-a-member';
+        return await deriveEffectiveRole(ctx, albumId, profile._id);
     }
 });
 
@@ -56,35 +97,39 @@ export const addMembers = mutation({
     }, handler: async (ctx, { albumId, newMembers }) => {
         const album = await ctx.db.get(albumId);
         if (!album) throw new ConvexError('Album not found');
+        if (!albumAllowsEdits(album)) throw new ConvexError('Album is read-only');
 
         const profile = await ctx.runQuery(api.profile.getUserProfile);
         if (!profile) throw new ConvexError('No User Found');
 
-        // check if the user is a member of the album or if the album is open invites
-        const existingMemberships = await ctx.runQuery(api.albumMembers.queryAllMemberships, { albumId });
-        const memberRole = existingMemberships.find(m => m.profileId === profile._id)?.role ?? 'not-a-member';
-        if (!album.openInvites && memberRole !== 'host') throw new ConvexError('Not Authorized');
+        // ADR-0001: Host is derived from hostId. Host/Moderator may always add;
+        // ordinary members only when the album allows open invites.
+        const role = await deriveEffectiveRole(ctx, albumId, profile._id);
+        if (role === 'not-a-member') throw new ConvexError('Not Authorized');
+        if (!album.openInvites && role !== 'host' && role !== 'moderator') throw new ConvexError('Not Authorized');
 
-        const updatedAt = Date.now();
+        const now = Date.now();
+        await ctx.db.patch(albumId, { updatedAt: now });
 
-        // update album updatedAt
-        await ctx.db.patch(albumId, { updatedAt });
-
-        // Update existing memberships
-        await Promise.all(existingMemberships.map(async (m) => {
-            await ctx.db.patch(m._id, { updatedAt });
-        }));
-
-        // Add new members
+        // Add new members (skip the Host and anyone already in the album).
         return await Promise.all(newMembers.map(async (memberId) => {
-            await ctx.db.insert('albumMembers', {
+            if (memberId === album.hostId) return null;
+
+            const existing = await ctx.db.query('albumMembers')
+                .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
+                    .eq('profileId', memberId))
+                .first();
+            if (existing) return existing._id;
+
+            return await ctx.db.insert('albumMembers', {
                 albumId,
                 profileId: memberId,
                 role: 'member',
-                joinedAt: updatedAt,
-                updatedAt,
+                status: 'active',
+                joinedAt: now,
+                updatedAt: now,
             });
-        }))
+        }));
     }
 })
 
@@ -98,12 +143,7 @@ export const getMembership = query({
         const profile = await ctx.runQuery(api.profile.getUserProfile);
         if (!profile) throw new ConvexError("User Not Found");
 
-        const membership = await ctx.db.query('albumMembers')
-            .withIndex('by_album_profileId', q => q.eq('albumId', albumId)
-                .eq('profileId', profile._id))
-            .first();
-
-        return membership?.role ?? 'not-a-member';
+        return await deriveEffectiveRole(ctx, albumId, profile._id);
     }
 })
 
@@ -124,16 +164,22 @@ export const addMember = internalMutation({
         albumId: v.id("albums"),
         profileId: v.id("profiles"),
         role: v.union(
-            v.literal('host'),
             v.literal('member'),
             v.literal('moderator'),
         ),
-    }, handler: async (ctx, { albumId, profileId, role }) => {
+        status: v.optional(v.union(
+            v.literal('pending'),
+            v.literal('active'),
+        )),
+    }, handler: async (ctx, { albumId, profileId, role, status }) => {
+        const now = Date.now();
         return await ctx.db.insert('albumMembers', {
             albumId,
             profileId,
             role,
-            joinedAt: Date.now(),
+            status: status ?? 'active',
+            joinedAt: now,
+            updatedAt: now,
         });
     }
 })

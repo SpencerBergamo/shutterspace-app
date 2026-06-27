@@ -279,7 +279,7 @@ export function AlbumScreen() {
 
     if (!album) return <NotFoundScreen />;
 
-    if (album.isDeleted) {
+    if (album.status === 'trashed') {
         return (
             <View style={{ flex: 1, backgroundColor: colors.background }}>
                 <Stack.Screen options={{

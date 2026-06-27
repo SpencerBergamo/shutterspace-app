@@ -3,7 +3,7 @@
 import axios from "axios";
 import { v } from "convex/values";
 import crypto from 'crypto';
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { action, internalAction } from "./_generated/server";
 
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
@@ -14,10 +14,15 @@ export const prepareVideoUpload = action({
     args: {
         albumId: v.id('albums'),
         filename: v.string(),
+        incomingSize: v.optional(v.number()),
     },
-    handler: async (ctx, { albumId, filename }): Promise<{ uploadURL: string, uid: string }> => {
+    handler: async (ctx, { albumId, filename, incomingSize }): Promise<{ uploadURL: string, uid: string }> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new Error("Not a member of this album");
+
+        await ctx.runQuery(internal.albums.assertAlbumAcceptsUploads, { albumId });
+        // ADR-0004: reject over-quota users before minting a signed URL.
+        await ctx.runQuery(internal.media.assertStorageWithinQuota, { incomingSize });
 
         const url = `${UPLOAD_BASE_URL}/stream/direct_upload`;
         const response = await axios.post(url, {

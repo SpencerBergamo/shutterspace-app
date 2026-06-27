@@ -4,7 +4,7 @@ import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } fro
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v } from "convex/values";
 import { v4 as uuidv4 } from 'uuid';
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { action, internalAction } from "./_generated/server";
 
 const s3 = new S3Client({
@@ -22,13 +22,17 @@ export const prepareImageUpload = action({
         filename: v.string(),
         contentType: v.string(),
         extension: v.string(),
+        incomingSize: v.optional(v.number()),
     },
-    handler: async (ctx, { albumId, filename, contentType, extension }): Promise<{ uploadUrl: string, imageId: string }> => {
+    handler: async (ctx, { albumId, filename, contentType, extension, incomingSize }): Promise<{ uploadUrl: string, imageId: string }> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
         if (!membership || membership === 'not-a-member') throw new Error("Not a member of this album");
 
-        const imageId = `${uuidv4()}.${extension}`; // should be uuidv4 + file extension
-        console.log("imageId: ", imageId);
+        await ctx.runQuery(internal.albums.assertAlbumAcceptsUploads, { albumId });
+        // ADR-0004: reject over-quota users before minting a signed URL.
+        await ctx.runQuery(internal.media.assertStorageWithinQuota, { incomingSize });
+
+        const imageId = `${uuidv4()}.${extension}`;
 
         const uploadUrl = await getSignedUrl(s3, new PutObjectCommand({
             Bucket: "uploads",
