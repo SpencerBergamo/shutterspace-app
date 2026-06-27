@@ -49,7 +49,7 @@ export function SignInScreen() {
         try {
             await signInWithEmailAndPassword(getAuth(), data.email, data.password);
         } catch (e) {
-            console.warn('Firebase Password Sgnup (FAIL)', e);
+            console.warn('Firebase Password Signin (FAIL)', e);
             Alert.alert('Error', 'Failed to sign in with email and password');
         }
     }
