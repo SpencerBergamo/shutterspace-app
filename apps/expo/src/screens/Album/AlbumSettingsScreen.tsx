@@ -5,7 +5,7 @@ import { TextInputStyles } from "@/src/constants/styles";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { validateAlbumTitle } from "@/src/utils/validators";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -30,7 +30,7 @@ export function AlbumSettingsScreen() {
 
     const updateAlbum = useMutation(api.albums.updateAlbum);
     const leaveAlbum = useMutation(api.albumMembers.leaveAlbum);
-    const deleteAlbum = useAction(api.albums.deleteAlbum);
+    const deleteAlbum = useMutation(api.albums.deleteAlbum);
 
     const titleInputRef = useRef<TextInput>(null);
     const descriptionInputRef = useRef<TextInput>(null);
@@ -55,7 +55,7 @@ export function AlbumSettingsScreen() {
     })
 
     const handleLeaveAlbum = useCallback(async () => {
-        if (!album || album.isDeleted) return;
+        if (!album || album.status === 'trashed') return;
         setIsLeavingAlbum(true);
 
         try {
@@ -70,7 +70,7 @@ export function AlbumSettingsScreen() {
     }, []);
 
     const handleDeleteAlbum = useCallback(async () => {
-        if (!album || album.isDeleted) return;
+        if (!album || album.status === 'trashed') return;
         setIsDeletingAlbum(true);
 
         try {

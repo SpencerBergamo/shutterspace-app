@@ -10,7 +10,9 @@ export interface Profile {
     avatarKey?: string;
     ssoAvatarUrl?: string;
     shareCode?: string;
-    storageQuota?: number;
+    // ADR-0004: per-user global storage accounting.
+    storageUsedBytes?: number;
+    storageLimitBytes?: number;
 }
 
 export interface PublicProfile {

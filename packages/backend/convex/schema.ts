@@ -16,7 +16,11 @@ export default defineSchema({
         ssoAvatarUrl: v.optional(v.string()), // URL for SSO avatars
         shareCode: v.optional(v.string()),
         shareCodeUpdatedAt: v.optional(v.number()),
-        storageQuota: v.optional(v.number()),
+        // ADR-0004: per-user global storage accounting.
+        // storageUsedBytes — bytes currently stored across all albums.
+        // storageLimitBytes — subscription cap (default free tier 5 GB).
+        storageUsedBytes: v.optional(v.number()),
+        storageLimitBytes: v.optional(v.number()),
         isDeleted: v.optional(v.boolean()),
     }).index('by_firebase_uid', ['firebaseUID'])
         .index('by_shareCode', ['shareCode']),
@@ -36,6 +40,8 @@ export default defineSchema({
     }).index('by_senderId', ['senderId'])
         .index('by_recipientId', ['recipientId']),
 
+    // ADR-0002: explicit lifecycle status, epoch-ms event times + IANA timezone,
+    // and a scalar `startsAt` for date-range queries.
     albums: defineTable({
         hostId: v.id("profiles"),
         title: v.string(),
@@ -44,43 +50,59 @@ export default defineSchema({
         isDynamicThumbnail: v.boolean(),
         openInvites: v.boolean(),
         dateRange: v.optional(v.object({
-            start: v.string(),
-            end: v.optional(v.string()),
+            start: v.number(),
+            end: v.optional(v.number()),
+            timezone: v.string(),
         })),
+        startsAt: v.optional(v.number()),
         location: v.optional(v.object({
             lat: v.number(),
             lng: v.number(),
             name: v.optional(v.string()),
             address: v.optional(v.string()),
         })),
+        // active (uploads/edits) -> archived (read-only) -> trashed (hidden, restorable).
+        status: v.union(
+            v.literal('active'),
+            v.literal('archived'),
+            v.literal('trashed'),
+        ),
         updatedAt: v.number(),
+        // expiresAt auto-archives only (never purges). deletionScheduledAt /
+        // scheduledDeletionId drive the host-initiated, restorable purge.
         expiresAt: v.optional(v.number()),
-        isDeleted: v.boolean(),
+        scheduledArchiveId: v.optional(v.id('_scheduled_functions')),
         deletionScheduledAt: v.optional(v.number()),
         scheduledDeletionId: v.optional(v.id('_scheduled_functions')),
     }).index('by_hostId', ['hostId'])
         .index('by_updatedAt', ['updatedAt'])
-        .index('by_dateRange', ['dateRange'])
-        .index('by_location', ['location'])
-        .index('by_isDeleted', ['isDeleted'])
+        .index('by_startsAt', ['startsAt'])
+        .index('by_status', ['status'])
         .searchIndex('by_title', {
             searchField: "title"
         }),
 
+    // ADR-0001: roles are `member`/`moderator` only. The Host is NOT stored here —
+    // ownership lives solely in `albums.hostId`, and Host status is derived
+    // (`profile._id === album.hostId`). Membership lifecycle is a separate
+    // `status` field (`pending` | `active`), never a role.
     albumMembers: defineTable({
         albumId: v.id("albums"),
         profileId: v.id("profiles"),
         role: v.union(
             v.literal('member'),
             v.literal('moderator'),
-            v.literal('host'),
+        ),
+        status: v.union(
             v.literal('pending'),
+            v.literal('active'),
         ),
         joinedAt: v.number(),
         updatedAt: v.optional(v.number()),
     }).index("by_albumId", ["albumId"])
         .index("by_profileId", ["profileId"])
-        .index("by_album_profileId", ["albumId", "profileId"]),
+        .index("by_album_profileId", ["albumId", "profileId"])
+        .index("by_album_status", ["albumId", "status"]),
 
     inviteCodes: defineTable({
         code: v.string(), // 6-character alphanumeric code
@@ -115,7 +137,8 @@ export default defineSchema({
             }),
         ),
         size: v.optional(v.number()),
-        dateTaken: v.optional(v.string()),
+        // ADR-0002: epoch ms, set at upload from EXIF. No ISO strings in the DB.
+        dateTaken: v.optional(v.number()),
         location: v.optional(v.object({
             lat: v.number(),
             lng: v.number(),
@@ -127,11 +150,9 @@ export default defineSchema({
             v.literal('ready'),
             v.literal('error'),
         ),
-        isDeleted: v.boolean(),
     }).index("by_albumId", ["albumId"])
         .index("by_profileId", ["createdBy"])
-        .index("by_videoUid", ["identifier.videoUid"])
-        .index('by_isDeleted', ['isDeleted']),
+        .index("by_videoUid", ["identifier.videoUid"]),
 
     comments: defineTable({
         mediaId: v.id("media"),

@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { Profile, PublicProfile } from "../types/Profile";
 import { api } from "./_generated/api";
 import { internalQuery, mutation, query } from "./_generated/server";
+import { DEFAULT_STORAGE_LIMIT_BYTES } from "./lib/storage";
 
 
 // --------------------------------
@@ -36,6 +37,9 @@ export const createNewProfile = mutation({
             email: email,
             nickname: nickname ?? email.split('@')[0],
             ssoAvatarUrl: ssoAvatar ?? session.pictureUrl,
+            // ADR-0004: initialize storage accounting.
+            storageUsedBytes: 0,
+            storageLimitBytes: DEFAULT_STORAGE_LIMIT_BYTES,
         })
     }
 })

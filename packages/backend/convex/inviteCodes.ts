@@ -4,6 +4,7 @@ import { MediaIdentifier } from "../types/Media";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
+import { albumAllowsEdits, albumIsVisible } from "./lib/albumLifecycle";
 
 export const getInviteCode = query({
     args: { albumId: v.id('albums') },
@@ -28,7 +29,7 @@ export const openInvite = query({
         if (!invite) return null;
 
         const album = await ctx.db.get(invite.albumId);
-        if (!album || album.isDeleted) throw new Error('Album not found or deleted');
+        if (!album || !albumIsVisible(album)) throw new Error('Album not found or deleted');
 
         const sender = await ctx.db.get(invite.createdBy);
         if (!sender) throw new Error('Sender\'s profile not found');
@@ -66,6 +67,13 @@ export const acceptInvite = mutation({
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new Error('Profile not found');
 
+        const album = await ctx.db.get(invite.albumId);
+        if (!album || !albumIsVisible(album)) throw new Error('Album not found');
+        if (!albumAllowsEdits(album)) throw new Error('Album is no longer accepting new members');
+
+        // ADR-0001: the Host is never a member row.
+        if (album.hostId === profile._id) return;
+
         // Check if user is already a member
         const existingMembership = await ctx.db.query('albumMembers')
             .withIndex('by_album_profileId', q => q.eq('albumId', invite.albumId)
@@ -74,14 +82,16 @@ export const acceptInvite = mutation({
 
         if (existingMembership) return;
 
-        const openInvites = invite.openInvites ?? true;
-        const role = openInvites ? invite.role : 'pending';
+        const autoAccept = invite.openInvites ?? true;
+        const now = Date.now();
 
         await ctx.db.insert('albumMembers', {
             albumId: invite.albumId,
             profileId: profile._id,
-            role,
-            joinedAt: Date.now(),
+            role: invite.role,
+            status: autoAccept ? 'active' : 'pending',
+            joinedAt: now,
+            updatedAt: now,
         });
     }
 })

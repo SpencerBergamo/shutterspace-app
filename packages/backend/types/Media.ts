@@ -27,7 +27,8 @@ export type Media = {
     filename: string;
     identifier: MediaIdentifier;
     size?: number;
-    dateTaken?: string;
+    // ADR-0002: epoch ms (set at upload from EXIF). No ISO strings in the DB.
+    dateTaken?: number;
     location?: {
         lat: number;
         lng: number;
@@ -35,7 +36,6 @@ export type Media = {
         address?: string;
     },
     status: MediaStatus;
-    isDeleted: boolean;
 }
 
 export type MediaIdentifier = {
