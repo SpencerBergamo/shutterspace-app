@@ -47,7 +47,8 @@ R2 (images/avatars) + Stream (video).
 | Capability | Member | Moderator | Host |
 |---|---|---|---|
 | Upload media | ✓ | ✓ | ✓ |
-| Edit/delete **own** content (incl. metadata) | ✓ | ✓ | ✓ |
+| Delete **own** media | ✓ | ✓ | ✓ |
+| Comment / like on media | ✓ | ✓ | ✓ |
 | Delete/moderate **others'** content | ✗ | ✓ — any **non-Host** content (incl. other moderators') | ✓ |
 | Remove people | ✗ | members only | anyone |
 | Promote/demote moderators | ✗ | ✗ | ✓ |
@@ -104,6 +105,39 @@ Two deliberate asymmetries:
 - **Media deletion is immediate** — Deleting media (by its owner, or moderation by
   a Moderator/Host) is a **hard delete**: the doc and the R2/Stream asset are
   removed now. There is no per-media trash; album-level **trash** is the only undo.
+- **Media metadata is immutable** — `filename`, `dateTaken`, and `location` are set
+  at upload from the asset/EXIF and **cannot be edited** afterward. To change them,
+  delete and re-upload. (Albums can still be archived/read-only for *uploads*; this
+  does not block comments/likes.)
+
+## Storage & subscriptions
+
+- **`storageUsedBytes`** — Running total of bytes this Profile currently has stored
+  **globally** across all albums (images and videos counted as actual file bytes).
+  Incremented on upload; **decremented on hard delete**.
+
+- **`storageLimitBytes`** — Maximum bytes this Profile may store, determined by
+  their **subscription tier**. Default free tier: **5 GB** (`5_368_709_120` bytes).
+
+- **Enforcement** — Block at **upload-URL mint time** (`prepareImageUpload` /
+  `prepareVideoUpload`): refuse to issue a signed URL if
+  `storageUsedBytes + incomingSize > storageLimitBytes`. Prevents orphaned R2/Stream
+  objects from late rejection.
+
+## Comments & likes
+
+- **Comment** — Any **active** album member may comment on any media in the album,
+  including when the album is **archived** (comments are social, not uploads).
+
+- **Comment deletion** — Author may delete own comments; Moderator/Host may delete
+  **any** comment (content moderation, flat among non-Hosts — mirrors media).
+
+- **Threading** — **One level** of replies: a top-level comment plus direct replies
+  via `parentCommentId`. No deeper nesting.
+
+- **Like** — Any member may **toggle** one like per media (like/unlike). Likes are
+  **not moderatable** — lightweight signals, not content; only the liker can
+  unlike. Allowed on any album status including archived.
 
 ## Joining & invitations
 
@@ -138,6 +172,3 @@ There are exactly two doors into an album: **invite links** and **direct-add**.
   "add me as a friend" links. The *only* way to connect, since there is no
   username/name search.
 
----
-
-*Still under design: storage quotas, comment/like moderation, media metadata edits.*
