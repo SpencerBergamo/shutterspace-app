@@ -2,6 +2,7 @@ import { api } from '@shutterspace/backend/convex/_generated/api';
 import Avatar from '@/src/components/Avatar';
 import { ASSETS } from '@/src/constants/assets';
 import { useAppTheme } from '@/src/context/AppThemeContext';
+import { HomeView, useUserSharedPreferences } from '@/src/context/UserSharedPreferences';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '@react-native-firebase/auth';
@@ -17,6 +18,7 @@ import { Alert, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, 
 export function SettingsScreen() {
     const auth = getAuth();
     const { colors } = useAppTheme();
+    const { homeView, setHomeView } = useUserSharedPreferences();
     const profile = useQuery(api.profile.getUserProfile);
 
     const handleOpenUrl = async (url: string) => {
@@ -78,6 +80,11 @@ export function SettingsScreen() {
     const handleReviewApp = async () => {
         await StoreReview.requestReview();
     }
+
+    const handleHomeViewChange = async (view: HomeView) => {
+        await Haptics.selectionAsync();
+        setHomeView(view);
+    };
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -153,8 +160,42 @@ export function SettingsScreen() {
                     </TouchableOpacity>
                 </View>
 
+                {/* Preferences */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Preferences</Text>
 
+                    <TouchableOpacity
+                        style={styles.settingsOption}
+                        onPress={() => handleHomeViewChange('camera-view')}
+                    >
+                        <View style={[styles.optionIcon, { backgroundColor: '#E8F8F7' }]}>
+                            <Ionicons name="camera-outline" size={20} color={colors.primary} />
+                        </View>
+                        <View style={styles.optionContent}>
+                            <Text style={styles.optionTitle}>Camera Home</Text>
+                            <Text style={styles.optionSubtitle}>Open to the camera when you launch the app</Text>
+                        </View>
+                        {homeView === 'camera-view' && (
+                            <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                        )}
+                    </TouchableOpacity>
 
+                    <TouchableOpacity
+                        style={styles.settingsOption}
+                        onPress={() => handleHomeViewChange('albums-view')}
+                    >
+                        <View style={[styles.optionIcon, { backgroundColor: '#F5F5F5' }]}>
+                            <Ionicons name="images-outline" size={20} color="#8E8E93" />
+                        </View>
+                        <View style={styles.optionContent}>
+                            <Text style={styles.optionTitle}>Albums Home</Text>
+                            <Text style={styles.optionSubtitle}>Open to your albums when you launch the app</Text>
+                        </View>
+                        {homeView === 'albums-view' && (
+                            <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                        )}
+                    </TouchableOpacity>
+                </View>
 
                 {/* Support & Feedback Section */}
                 <View style={styles.section}>

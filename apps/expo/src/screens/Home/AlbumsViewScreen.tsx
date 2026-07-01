@@ -1,0 +1,205 @@
+import FloatingActionButton from "@/src/components/FloatingActionButton";
+import QRCodeModal from "@/src/components/QRCodeModal";
+import { useAppTheme } from "@/src/context/AppThemeContext";
+import HomeNavBar from "@/src/screens/Home/components/HomeNavBar";
+import AlbumDetailCard from "@/src/screens/Album/components/AlbumDetailCard";
+import { FlashList } from "@shopify/flash-list";
+import { api } from "@shutterspace/backend/convex/_generated/api";
+import { Album } from "@shutterspace/backend/types/Album";
+import { usePaginatedQuery, useQuery } from "convex/react";
+import { router, Stack } from "expo-router";
+import * as Orientation from "expo-screen-orientation";
+import { Plus } from "lucide-react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+
+export function AlbumsViewScreen() {
+    const { colors } = useAppTheme();
+    const { width } = useWindowDimensions();
+
+    const [orientation, setOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
+    const [qrModalVisible, setQrModalVisible] = useState(false);
+
+    const profile = useQuery(api.profile.getUserProfile);
+    const { results: albums, status, loadMore } = usePaginatedQuery(
+        api.albums.queryUserAlbums,
+        {},
+        { initialNumItems: 12 }
+    );
+
+    useEffect(() => {
+        const subscription = Orientation.addOrientationChangeListener((event) => {
+            setOrientation(event.orientationInfo.orientation);
+        });
+
+        Orientation.getOrientationAsync().then(setOrientation);
+
+        return () => {
+            Orientation.removeOrientationChangeListener(subscription);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (qrModalVisible) {
+            Orientation.lockAsync(Orientation.OrientationLock.PORTRAIT_UP);
+        } else {
+            Orientation.unlockAsync();
+        }
+    }, [qrModalVisible]);
+
+    const gridConfig = useMemo(() => {
+        const gap = 16;
+        const isTable = Platform.OS === "ios"
+            ? width >= 768
+            : width >= 600;
+
+        const isPortrait = orientation === Orientation.Orientation.PORTRAIT_UP ||
+            orientation === Orientation.Orientation.PORTRAIT_DOWN;
+
+        let numColumns: number;
+
+        if (isTable) {
+            numColumns = isPortrait ? 4 : 6;
+        } else {
+            numColumns = isPortrait ? 2 : 3;
+        }
+
+        const itemSize = (width - (gap * (numColumns + 1))) / numColumns;
+
+        return {
+            itemSize,
+            numColumns,
+            gap,
+        };
+    }, [width, orientation]);
+
+    const handleLoadMore = useCallback(() => {
+        if (status === "CanLoadMore") {
+            loadMore(12);
+        }
+    }, [status, loadMore]);
+
+    const renderItem = useCallback(({ item }: { item: Album }) => (
+        <Pressable onPress={() => router.push(`/album/${item._id}`)}>
+            <AlbumDetailCard album={item} height={gridConfig.itemSize} width={gridConfig.itemSize} />
+        </Pressable>
+    ), [gridConfig.itemSize]);
+
+    const renderFooter = useCallback(() => {
+        return (
+            <View style={{ paddingVertical: 16 }}>
+                {(status === "CanLoadMore" || status === "LoadingMore" || status === "LoadingFirstPage") && (
+                    <ActivityIndicator size="small" color={colors.text} />
+                )}
+            </View>
+        );
+    }, [status, colors.text]);
+
+    return (
+        <View style={styles.container}>
+            <Stack.Screen options={{ headerShown: false }} />
+
+            <HomeNavBar variant="albums-view" />
+
+            <FlashList
+                key={gridConfig.numColumns}
+                contentInsetAdjustmentBehavior="automatic"
+                data={albums}
+                keyExtractor={(item) => item._id}
+                numColumns={gridConfig.numColumns}
+                contentContainerStyle={{
+                    paddingVertical: 16,
+                    paddingHorizontal: gridConfig.gap / 2,
+                }}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <View style={[styles.emptyCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                                Welcome to Shutterspace!
+                            </Text>
+                            <Text style={[styles.emptySubtitle, { color: colors.text }]}>
+                                You do not have any albums yet.
+                            </Text>
+                            <Text style={[styles.emptyDescription, { color: colors.text }]}>
+                                Create your first album to start sharing photos with friends and family.
+                            </Text>
+                            <View style={[styles.ctaContainer, { backgroundColor: colors.background }]}>
+                                <Plus size={20} color={colors.primary} />
+                                <Text style={[styles.ctaText, { color: colors.primary }]}>
+                                    Tap the button below to get started
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+                }
+                onEndReachedThreshold={0.3}
+                onEndReached={handleLoadMore}
+                ListFooterComponent={renderFooter}
+                renderItem={renderItem}
+            />
+
+            <FloatingActionButton
+                selectIcon="add"
+                onPress={() => router.push("/new-album")}
+            />
+
+            <QRCodeModal
+                visible={qrModalVisible}
+                onClose={() => setQrModalVisible(false)}
+                value={`https://shutterspace.app/shareId/${profile?.shareCode}`}
+                displayValue={profile?.shareCode}
+                title="Share Profile"
+                description="Share this code with your friends!"
+                showCopyButton={true}
+            />
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    emptyContainer: {
+        flex: 1,
+        paddingTop: 16,
+    },
+    emptyCard: {
+        borderRadius: 16,
+        padding: 32,
+        borderWidth: 1,
+        alignItems: "center",
+        maxWidth: 400,
+        width: "100%",
+    },
+    emptyTitle: {
+        fontSize: 24,
+        fontWeight: "700",
+        textAlign: "center",
+        marginBottom: 12,
+    },
+    emptySubtitle: {
+        fontSize: 16,
+        fontWeight: "600",
+        textAlign: "center",
+        marginBottom: 8,
+    },
+    emptyDescription: {
+        fontSize: 15,
+        textAlign: "center",
+        lineHeight: 22,
+        marginBottom: 24,
+    },
+    ctaContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+    },
+    ctaText: {
+        fontSize: 14,
+        fontWeight: "600",
+    },
+});

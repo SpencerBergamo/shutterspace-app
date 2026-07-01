@@ -9,6 +9,7 @@
 
 import { ASSETS } from "@/src/constants/assets";
 import { AppThemeProvider, useAppTheme } from "@/src/context/AppThemeContext";
+import { UserSharedPreferencesProvider } from "@/src/context/UserSharedPreferences";
 import useFirebaseAuth from "@/src/hooks/useFirebaseToken";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -89,11 +90,13 @@ export default function RootLayout() {
                 <GestureHandlerRootView style={{ flex: 1 }}>
                     <KeyboardProvider>
                         <AppThemeProvider>
-                            <ActionSheetProvider>
-                                <BottomSheetModalProvider>
-                                    <AppLayout />
-                                </BottomSheetModalProvider>
-                            </ActionSheetProvider>
+                            <UserSharedPreferencesProvider>
+                                <ActionSheetProvider>
+                                    <BottomSheetModalProvider>
+                                        <AppLayout />
+                                    </BottomSheetModalProvider>
+                                </ActionSheetProvider>
+                            </UserSharedPreferencesProvider>
                         </AppThemeProvider>
                     </KeyboardProvider>
                 </GestureHandlerRootView>

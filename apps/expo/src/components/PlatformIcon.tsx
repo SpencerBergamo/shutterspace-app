@@ -24,6 +24,9 @@ const iconMap: Record<string, { ios: SFSymbol; android: keyof typeof MaterialIco
   delete: { ios: 'trash.circle', android: 'delete' },
   cancel: { ios: 'xmark.circle', android: 'cancel' },
   confirm: { ios: 'checkmark.circle', android: 'check' },
+  notifications: { ios: 'bell.circle', android: 'notifications' },
+  gallery: { ios: 'photo.on.rectangle.angled', android: 'photo-library' },
+  camera: { ios: 'camera.circle', android: 'photo-camera' },
 }
 
 export default function PlatformIcon({ name, size = 24, color = "black" }: PlatformIconProps) {
