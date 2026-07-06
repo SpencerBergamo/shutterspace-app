@@ -90,7 +90,8 @@
           "ios": {
             "useFrameworks": "static",
             "forceStaticLinking": [
-              "RNFBApp"
+              "RNFBApp",
+              "RNFBAuth"
             ]
           }
         }
@@ -153,6 +154,7 @@
           "initialOrientation": "DEFAULT"
         }
       ],
+      "@react-native-firebase/app",
       "@react-native-firebase/auth",
       "expo-sqlite"
     ],

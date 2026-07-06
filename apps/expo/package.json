@@ -1,5 +1,6 @@
 {
-  "name": "shutterspace",
+  "name": "@shutterspace/expo",
+  "private": true,
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -99,7 +100,6 @@
     "tsx": "^4.21.0",
     "typescript": "~5.9.2"
   },
-  "private": true,
   "overrides": {
     "js-yaml": "^4.1.1"
   }

@@ -1,10 +1,23 @@
 {
     "name": "Shutterspace",
+    "version": "1.0.0",
+    "private": true,
+    "keywords": [
+        "monorepo",
+        "expo",
+        "react-native",
+        "web",
+        "turborepo"
+    ],
+    "license": "UNLICENSED",
+    "author": "Spencer Bergamo",
     "workspaces": [
         "apps/*",
         "packages/*"
     ],
     "devDependencies": {
-        "turbo": "^2.4.5"
+        "turbo": "^2.4.5",
+        "prettier": "^3.2.5",
+        "eslint": "^9.39.4"
     }
 }

@@ -37,14 +37,31 @@ shutterspace-app/
 
 2. **Start the app**
 
+   From the monorepo root:
+
+   ```bash
+   npm run expo:start
+   ```
+
+   Or from `apps/expo`:
+
    ```bash
    npx expo start
    ```
 
-3. **Run on a device**
-   - Press `a` for Android emulator
-   - Press `i` for iOS simulator
-   - Scan the QR code with Expo Go on your phone
+3. **Run on a device/simulator (native build with Firebase)**
+
+   Firebase requires a development build — Expo Go is not supported. From `apps/expo`:
+
+   ```bash
+   npx expo run:ios
+   ```
+
+   Or from the monorepo root:
+
+   ```bash
+   npm run expo:ios
+   ```
 
 ## 🤝 Contributing
 
