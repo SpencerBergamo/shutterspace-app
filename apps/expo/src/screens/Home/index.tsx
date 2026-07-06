@@ -1,3 +1,5 @@
+export { AlbumsViewScreen } from "./AlbumsViewScreen";
+export { CameraViewScreen } from "./CameraViewScreen";
 export { ContactUsScreen } from "./ContactUs";
 export { FriendsListScreen } from "./FriendsList";
 export { HomeScreen } from "./HomeScreen";

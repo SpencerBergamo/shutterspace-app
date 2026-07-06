@@ -26,7 +26,9 @@ export default function HomeLayout() {
             headerShadowVisible: false,
             headerTransparent: true,
         }}>
-            <Stack.Screen name="index" />
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="camera-view/index" options={{ headerShown: false }} />
+            <Stack.Screen name="albums-view/index" options={{ headerShown: false }} />
 
             {/* Profile */}
             <Stack.Screen name="settings" options={{
