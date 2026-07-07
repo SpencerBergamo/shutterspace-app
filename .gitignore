@@ -41,6 +41,8 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+*.turbo
+
 app-example
 
 ./google-services.json
@@ -50,5 +52,3 @@ app-example
 secret-keys/
 
 audit-report.json
-
-planning/*

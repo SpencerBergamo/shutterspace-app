@@ -1,23 +1,38 @@
 {
-    "name": "Shutterspace",
-    "version": "1.0.0",
-    "private": true,
-    "keywords": [
-        "monorepo",
-        "expo",
-        "react-native",
-        "web",
-        "turborepo"
-    ],
-    "license": "UNLICENSED",
-    "author": "Spencer Bergamo",
-    "workspaces": [
-        "apps/*",
-        "packages/*"
-    ],
-    "devDependencies": {
-        "turbo": "^2.4.5",
-        "prettier": "^3.2.5",
-        "eslint": "^9.39.4"
+  "name": "Shutterspace",
+  "version": "1.0.0",
+  "private": true,
+  "keywords": [
+    "monorepo",
+    "expo",
+    "react-native",
+    "web",
+    "turborepo"
+  ],
+  "license": "UNLICENSED",
+  "author": "Spencer Bergamo",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "turbo": "^2.4.5",
+    "prettier": "^3.2.5",
+    "eslint": "^9.39.4"
+  },
+  "scripts": {
+    "android": "expo run:android",
+    "ios": "expo run:ios"
+  },
+  "dependencies": {
+    "expo": "~54.0.35",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": "11.4.2"
     }
+  }
 }

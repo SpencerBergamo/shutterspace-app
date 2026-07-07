@@ -1,16 +1,10 @@
 {
     "$schema": "https://turbo.build/schema.json",
+    "globalDependencies": [
+        ".env",
+        ".env.*"
+    ],
     "tasks": {
-        "build": {
-            "dependsOn": [
-                "^build"
-            ],
-            "outputs": [
-                ".expo/**",
-                "dist/**",
-                ".next/**"
-            ]
-        },
         "dev": {
             "cache": false,
             "persistent": true
@@ -26,10 +20,7 @@
         },
         "typecheck": {
             "dependsOn": [
-                "^build"
-            ],
-            "outputs": [
-                "*.tsbuildinfo"
+                "^typecheck"
             ]
         }
     }
