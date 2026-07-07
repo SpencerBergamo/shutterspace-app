@@ -2,8 +2,9 @@ import CameraButton from "@/src/components/CameraButton";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import Constants from "expo-constants";
+import { router, Stack } from "expo-router";
 import { useRef } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const isSimulator = !Constants.isDevice;
@@ -19,7 +20,7 @@ export default function CameraHomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} collapsable={false}>
 
       {isSimulator ? (
         <View style={[styles.cameraPlaceholder, { backgroundColor: "#1a1a1a" }]}>
@@ -44,6 +45,24 @@ export default function CameraHomeScreen() {
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 24 }]}>
         <CameraButton onPress={handleCapture} disabled={isSimulator} />
       </View>
+
+      {Platform.OS === "ios" && (
+        <>
+          <Stack.Toolbar placement="left">
+            <Stack.Toolbar.Button
+              icon="person.circle"
+              onPress={() => router.navigate("/(settings)/settings")}
+            />
+          </Stack.Toolbar>
+          <Stack.Toolbar placement="right">
+            <Stack.Toolbar.Button icon="bell" onPress={() => {}} />
+            <Stack.Toolbar.Button
+              icon="square.grid.2x2"
+              onPress={() => router.navigate("/(albums)/albums")}
+            />
+          </Stack.Toolbar>
+        </>
+      )}
     </View >
   );
 }
