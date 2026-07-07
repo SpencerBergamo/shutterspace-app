@@ -1,7 +1,7 @@
 import { TextInputStyles } from "@/src/constants/styles";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { validateEmail } from "@/src/utils/validators";
-import { useNavigation, usePreventRemove } from "@react-navigation/native";
+import { useNavigation, usePreventRemove } from "expo-router/react-navigation";
 import { useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Alert, Button, Keyboard, Linking, StyleSheet, Text, TextInput, View } from "react-native";

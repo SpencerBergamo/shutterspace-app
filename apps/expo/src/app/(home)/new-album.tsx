@@ -7,7 +7,7 @@ import { useAppTheme } from "@/src/context/AppThemeContext";
 import { Friend } from "@shutterspace/backend/types/Friend";
 import { validateAlbumTitle } from "@/src/utils/validators";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "@react-navigation/native";
+import { useTheme } from "expo-router/react-navigation";
 import { useMutation, useQuery } from "convex/react";
 import { router, Stack } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";

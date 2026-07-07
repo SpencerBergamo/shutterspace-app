@@ -5,7 +5,7 @@ import { passwordRules, validateEmail, validatePassword } from "@/src/utils/vali
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppleAuthProvider, getAuth, GoogleAuthProvider, signInWithCredential } from "@react-native-firebase/auth";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { useTheme } from "@react-navigation/native";
+import { useTheme } from "expo-router/react-navigation";
 import { useMutation } from "convex/react";
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';

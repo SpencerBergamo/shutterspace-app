@@ -3,7 +3,7 @@ import FloatingActionButton from "@/src/components/FloatingActionButton";
 import PlatformIcon from "@/src/components/PlatformIcon/platform-icon";
 import QRCodeModal from "@/src/components/QRCodeModal";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { HeaderButton } from "@react-navigation/elements";
+import { HeaderButton } from "expo-router/react-navigation";
 import { FlashList } from "@shopify/flash-list";
 import { api } from "@shutterspace/backend/convex/_generated/api";
 import { Album } from "@shutterspace/backend/types/Album";

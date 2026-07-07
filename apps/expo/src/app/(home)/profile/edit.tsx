@@ -5,7 +5,7 @@ import { useAppTheme } from '@/src/context/AppThemeContext';
 import { validateAssets, ValidatedAsset } from '@/src/utils/mediaHelper';
 import { validateNickname } from '@/src/utils/validators';
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { useNavigation, usePreventRemove } from '@react-navigation/native';
+import { useNavigation, usePreventRemove } from "expo-router/react-navigation";
 import axios from 'axios';
 import { useAction, useMutation, useQuery } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';

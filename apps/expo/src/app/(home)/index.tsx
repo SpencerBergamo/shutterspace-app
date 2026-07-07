@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     backgroundColor: "black",
   },
   cameraPlaceholder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 32,

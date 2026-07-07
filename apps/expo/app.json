@@ -7,6 +7,9 @@
     "icon": "./assets/brand/ios/ios-light.png",
     "scheme": "shutterspace",
     "userInterfaceStyle": "automatic",
+    "experiments": {
+      "reactCompiler": true
+    },
     "ios": {
       "usesAppleSignIn": true,
       "supportsTablet": true,
@@ -27,11 +30,6 @@
         "applinks:shutterspace.app"
       ]
     },
-    "splash": {
-      "backgroundColor": "#ffffff",
-      "resizeMode": "contain",
-      "image": "./assets/brand/splash/splash-light.png"
-    },
     "android": {
       "versionCode": 10,
       "package": "org.bbtechnologies.shutterspace",
@@ -41,7 +39,6 @@
         "monochromeImage": "./assets/brand/android/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",

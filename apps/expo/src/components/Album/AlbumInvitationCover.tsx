@@ -36,7 +36,7 @@ export default function AlbumInvitationCover({ albumId, cover }: AlbumInvitation
 
 
     return (
-        <View style={StyleSheet.absoluteFillObject}>
+        <View style={StyleSheet.absoluteFill}>
             {uri ? (
                 <Image
                     source={{ uri: uri }}
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     blurOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(9, 173, 169, 0.08)',
     },
     accentLight: {

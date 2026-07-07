@@ -3,7 +3,7 @@ import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
 import { MAX_WIDTH, TextInputStyles } from "@/src/constants/styles";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { validateAlbumTitle, validateDescription } from "@/src/utils/validators";
-import { usePreventRemove, useTheme } from "@react-navigation/native";
+import { usePreventRemove, useTheme } from "expo-router/react-navigation";
 import { useMutation, useQuery } from "convex/react";
 import { router, Stack, useLocalSearchParams, useNavigation } from "expo-router";
 import { useRef, useState } from "react";

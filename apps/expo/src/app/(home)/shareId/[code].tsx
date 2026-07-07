@@ -76,7 +76,7 @@ export default function() {
     };
 
     return (
-        <BlurView style={StyleSheet.absoluteFillObject} intensity={80} tint="dark">
+        <BlurView style={StyleSheet.absoluteFill} intensity={80} tint="dark">
             <Pressable style={styles.overlay} onPress={handleClose}>
                 <Animated.View
                     style={[
