@@ -66,7 +66,7 @@ function AppLayout() {
 
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL! as string, {
     unsavedChangesWarning: false,
-    verbose: true,
+    verbose: false,
 });
 
 export default function RootLayout() {

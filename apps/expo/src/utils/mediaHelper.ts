@@ -1,7 +1,6 @@
+import * as Crypto from 'expo-crypto';
 import { File } from 'expo-file-system';
 import { ImagePickerAsset } from 'expo-image-picker';
-import 'react-native-get-random-values';
-import { v4 as uuidv4 } from 'uuid';
 
 type MimeType =
     | 'video/mp4'
@@ -76,7 +75,7 @@ export async function validateAssets(assets: ImagePickerAsset[]): Promise<{ vali
             continue;
         }
 
-        const assetId = asset.assetId ?? uuidv4();
+        const assetId = asset.assetId ?? Crypto.randomUUID();
         const filename = fileInfo.uri?.split('/').pop()?.split('.').shift() ?? asset.fileName ?? assetId;
         const type = asset.type === 'video' ? 'video' : 'image';
         const extension = fileInfo.uri?.split('.').pop()?.toLowerCase() ?? asset.uri.split('.').pop()?.toLowerCase();

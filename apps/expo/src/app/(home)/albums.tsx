@@ -1,8 +1,8 @@
+import AlbumDetailCard from "@/src/components/Album/AlbumDetailCard";
 import FloatingActionButton from "@/src/components/FloatingActionButton";
-import PlatformIcon from "@/src/components/PlatformIcon";
+import PlatformIcon from "@/src/components/PlatformIcon/platform-icon";
 import QRCodeModal from "@/src/components/QRCodeModal";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import AlbumDetailCard from "@/src/screens/Album/components/AlbumDetailCard";
 import { HeaderButton } from "@react-navigation/elements";
 import { FlashList } from "@shopify/flash-list";
 import { api } from "@shutterspace/backend/convex/_generated/api";
@@ -14,7 +14,7 @@ import { Plus } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
-export function HomeScreen() {
+export default function AlbumListScreen() {
    // Layout
    const { colors } = useAppTheme();
    const { width } = useWindowDimensions();
@@ -101,17 +101,12 @@ export function HomeScreen() {
    return (
       <View style={[styles.container]}>
          <Stack.Screen options={{
-            title: 'Shutterspace',
+            title: 'Albums',
             headerLargeTitleEnabled: true,
             headerRight: () => (
-               <>
-                  <HeaderButton onPress={() => router.push('/friends')}>
-                     <PlatformIcon name="add" size={28} />
-                  </HeaderButton>
-                  <HeaderButton onPress={() => router.push('/profile')}>
-                     <PlatformIcon name="profile" size={28} />
-                  </HeaderButton>
-               </>
+               <HeaderButton onPress={() => router.push('/friends')}>
+                  <PlatformIcon name="add" size={28} />
+               </HeaderButton>
             )
          }} />
 

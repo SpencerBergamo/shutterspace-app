@@ -45,6 +45,12 @@
           <string>exp+shutterspace</string>
         </array>
       </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>app-1-772964121786-ios-b287617acdffdb5ba5d683</string>
+        </array>
+      </dict>
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>

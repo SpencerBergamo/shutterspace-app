@@ -77,23 +77,16 @@
     },
     "plugins": [
       "expo-router",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-web-browser",
       "expo-apple-authentication",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
       [
         "expo-contacts",
         {
           "contactsPermission": "Allow Shutterspace to access your contacts."
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "useFrameworks": "static",
-            "forceStaticLinking": [
-              "RNFBApp",
-              "RNFBAuth"
-            ]
-          }
         }
       ],
       [
@@ -146,17 +139,26 @@
           }
         }
       ],
-      "expo-secure-store",
-      "expo-web-browser",
       [
         "expo-screen-orientation",
         {
           "initialOrientation": "DEFAULT"
         }
       ],
-      "@react-native-firebase/app",
-      "@react-native-firebase/auth",
-      "expo-sqlite"
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "forceStaticLinking": [
+              "RNFBApp",
+              "RNFBAuth",
+              "RNFBFunctions",
+              "RNFBStorage"
+            ]
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {
