@@ -11,6 +11,7 @@ export interface AppThemeColors {
     border: string;
     shadow: string;
     danger: string;
+    surface: string;
 
     grey1: string;
     grey2: string;
@@ -30,6 +31,7 @@ export const Light: AppThemeColors = {
     border: '#D9DDE0',
     shadow: '#000000',
     danger: '#FF3B30',
+    surface: '#FFFFFF',
 
     grey1: '#6C757D',
     grey2: '#D9DDE0',

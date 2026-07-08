@@ -13,6 +13,7 @@
     "@aws-sdk/client-s3": "^3.943.0",
     "@aws-sdk/s3-request-presigner": "^3.943.0",
     "@expo/react-native-action-sheet": "^4.1.1",
+    "@expo/ui": "~56.0.21",
     "@expo/vector-icons": "^15.0.2",
     "@gorhom/bottom-sheet": "^5.2.6",
     "@invertase/react-native-apple-authentication": "^2.4.1",
