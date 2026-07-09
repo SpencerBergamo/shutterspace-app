@@ -9,32 +9,68 @@ interface UseAlbumCoverResult {
     mediaId: Id<'media'> | undefined | null;
 }
 
+const coverUrlCache = new Map<string, string | null>();
+
+function getCacheKey(albumId: Id<'albums'>, mediaId: Id<'media'> | undefined) {
+    return mediaId ? `${albumId}:${mediaId}` : albumId;
+}
+
 export default function useAlbumCover(albumId: Id<'albums'>): UseAlbumCoverResult {
     const lastMedia = useQuery(api.media.getLastMedia, { albumId });
     const getAlbumCover = useAction(api.albums.getAlbumCover);
 
-    const [requesting, setRequesting] = useState(true);
-    const [coverUrl, setCoverUrl] = useState<string | undefined | null>(undefined);
+    const cacheKey = getCacheKey(albumId, lastMedia?._id);
+    const cachedUrl = coverUrlCache.get(cacheKey);
+
+    const [requesting, setRequesting] = useState(cachedUrl === undefined);
+    const [coverUrl, setCoverUrl] = useState<string | undefined | null>(cachedUrl);
 
     useEffect(() => {
+        if (cachedUrl !== undefined) {
+            setCoverUrl(cachedUrl);
+            setRequesting(false);
+            return;
+        }
+
+        let cancelled = false;
+
         (async () => {
+            setRequesting(true);
             try {
                 if (!lastMedia) {
-                    setCoverUrl(null);
-                    setRequesting(false);
+                    if (!cancelled) {
+                        coverUrlCache.set(cacheKey, null);
+                        setCoverUrl(null);
+                    }
                     return;
                 }
 
-                const url = await getAlbumCover({ albumId, identifier: lastMedia.identifier });
-                setCoverUrl(url);
+                const url = await getAlbumCover({
+                    albumId,
+                    identifier: lastMedia.identifier,
+                });
+
+                if (!cancelled) {
+                    coverUrlCache.set(cacheKey, url);
+                    setCoverUrl(url);
+                }
             } catch (e) {
                 console.error("Failed to get album cover: ", e);
-                setCoverUrl(null);
+                if (!cancelled) {
+                    coverUrlCache.set(cacheKey, null);
+                    setCoverUrl(null);
+                }
             } finally {
-                setRequesting(false);
+                if (!cancelled) {
+                    setRequesting(false);
+                }
             }
         })();
-    }, [albumId, lastMedia]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [albumId, lastMedia, cacheKey, cachedUrl, getAlbumCover]);
 
     return { requesting, coverUrl, mediaId: lastMedia?._id };
 }

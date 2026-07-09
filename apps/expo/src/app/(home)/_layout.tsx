@@ -47,6 +47,13 @@ export default function HomeLayout() {
                         headerBackButtonDisplayMode: "minimal",
                     }}
                 />
+                <Stack.Screen
+                    name="album/[id]"
+                    options={{
+                        headerLargeTitleEnabled: false,
+                        title: "Album",
+                    }}
+                />
 
                 <Stack.Screen
                     name="profile/edit"

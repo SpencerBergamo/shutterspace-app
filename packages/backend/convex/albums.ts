@@ -1,9 +1,9 @@
-import { paginationOptsValidator, PaginationResult } from "convex/server";
+import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
 import { Album } from "../types/Album";
 import { api, internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
-import { action, internalAction, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { action, internalAction, internalMutation, internalQuery, mutation, query, QueryCtx } from "./_generated/server";
 import {
     albumAllowsEdits,
     albumAllowsUploads,
@@ -28,6 +28,75 @@ const locationArgs = v.object({
     address: v.optional(v.string()),
 });
 
+const albumDocValidator = v.object({
+    _id: v.id('albums'),
+    _creationTime: v.number(),
+    hostId: v.id('profiles'),
+    title: v.string(),
+    description: v.optional(v.string()),
+    thumbnail: v.optional(v.id('media')),
+    isDynamicThumbnail: v.boolean(),
+    openInvites: v.boolean(),
+    dateRange: v.optional(v.object({
+        start: v.number(),
+        end: v.optional(v.number()),
+        timezone: v.string(),
+    })),
+    startsAt: v.optional(v.number()),
+    location: v.optional(v.object({
+        lat: v.number(),
+        lng: v.number(),
+        name: v.optional(v.string()),
+        address: v.optional(v.string()),
+    })),
+    status: v.union(
+        v.literal('active'),
+        v.literal('archived'),
+        v.literal('trashed'),
+    ),
+    updatedAt: v.number(),
+    expiresAt: v.optional(v.number()),
+    scheduledArchiveId: v.optional(v.id('_scheduled_functions')),
+    deletionScheduledAt: v.optional(v.number()),
+    scheduledDeletionId: v.optional(v.id('_scheduled_functions')),
+});
+
+const albumPaginationResultValidator = v.object({
+    page: v.array(albumDocValidator),
+    isDone: v.boolean(),
+    continueCursor: v.string(),
+});
+
+async function getAccessibleAlbumsForProfile(
+    ctx: QueryCtx,
+    profileId: Id<'profiles'>,
+): Promise<Doc<'albums'>[]> {
+    const memberships = await ctx.db
+        .query('albumMembers')
+        .withIndex('by_profileId', q => q.eq('profileId', profileId))
+        .collect();
+
+    const memberAlbums = await Promise.all(
+        memberships
+            .filter(m => m.status === 'active')
+            .map(m => ctx.db.get(m.albumId)),
+    );
+
+    const hosted = await ctx.db
+        .query('albums')
+        .withIndex('by_hostId', q => q.eq('hostId', profileId))
+        .collect();
+
+    const byId = new Map<string, Doc<'albums'>>();
+    for (const album of [...hosted, ...memberAlbums]) {
+        if (album && album.status !== 'trashed') {
+            byId.set(album._id, album);
+        }
+    }
+
+    return [...byId.values()].sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
 
 // --------------------
 // Dec 23 2025 - March 2 2026
@@ -49,46 +118,24 @@ export const queryAlbum = query({
 export const queryUserAlbums = query({
     args: {
         paginationOpts: paginationOptsValidator,
-    }, handler: async (ctx, { paginationOpts }): Promise<PaginationResult<Album>> => {
+    },
+    returns: albumPaginationResultValidator,
+    handler: async (ctx, { paginationOpts }) => {
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new ConvexError('No User Found');
 
-        // Active memberships, paginated. The Host has no membership row (ADR-0001),
-        // so host-owned albums are unioned in separately below.
-        const memberships = await ctx.db.query('albumMembers')
-            .withIndex('by_profileId', q => q.eq('profileId', profile._id))
-            .order('desc')
-            .paginate(paginationOpts);
-
-        const memberAlbums = (await Promise.all(memberships.page
-            .filter(m => m.status === 'active')
-            .map(m => ctx.db.get(m.albumId))))
-            .filter((album): album is Album => album !== null && album.status !== 'trashed');
-
-        // Host albums are a small bounded set; inject them on the first page only.
-        let hostAlbums: Album[] = [];
-        if (paginationOpts.cursor === null) {
-            const hosted = await ctx.db.query('albums')
-                .withIndex('by_hostId', q => q.eq('hostId', profile._id))
-                .order('desc')
-                .collect();
-            hostAlbums = hosted.filter((album): album is Album => album.status !== 'trashed');
-        }
-
-        // Merge unique (host albums first), preserving the membership cursor.
-        const seen = new Set<string>();
-        const page: Album[] = [];
-        for (const album of [...hostAlbums, ...memberAlbums]) {
-            if (seen.has(album._id)) continue;
-            seen.add(album._id);
-            page.push(album);
-        }
+        const allAlbums = await getAccessibleAlbumsForProfile(ctx, profile._id);
+        const offset = paginationOpts.cursor ? parseInt(paginationOpts.cursor, 10) : 0;
+        const page = allAlbums.slice(offset, offset + paginationOpts.numItems);
+        const nextOffset = offset + paginationOpts.numItems;
+        const isDone = nextOffset >= allAlbums.length;
 
         return {
-            ...memberships,
             page,
-        }
-    }
+            isDone,
+            continueCursor: isDone ? '' : String(nextOffset),
+        };
+    },
 })
 
 export const createNewAlbum = mutation({
@@ -147,34 +194,13 @@ export const createAlbumInviteCode = action({
 // OLD
 // --------------------
 export const getUserAlbums = query({
-    args: {}, handler: async (ctx): Promise<Album[]> => {
+    args: {},
+    returns: v.array(albumDocValidator),
+    handler: async (ctx): Promise<Album[]> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new ConvexError('User not found');
 
-        // get active memberships the user has
-        const memberships = await ctx.db
-            .query('albumMembers')
-            .withIndex('by_profileId', q => q.eq('profileId', profile._id))
-            .collect();
-
-        const docs = await Promise.all(
-            memberships
-                .filter(m => m.status === 'active')
-                .map((m) => ctx.db.get(m.albumId))
-        );
-
-        // ADR-0001: include host-owned albums (the Host has no membership row).
-        const hosted = await ctx.db
-            .query('albums')
-            .withIndex('by_hostId', q => q.eq('hostId', profile._id))
-            .collect();
-
-        const byId = new Map<string, Doc<'albums'>>();
-        for (const album of [...hosted, ...docs]) {
-            if (album && album.status !== 'trashed') byId.set(album._id, album);
-        }
-
-        return [...byId.values()].sort((a, b) => b.updatedAt - a.updatedAt);
+        return await getAccessibleAlbumsForProfile(ctx, profile._id);
     },
 });
 

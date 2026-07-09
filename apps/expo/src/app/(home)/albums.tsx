@@ -1,51 +1,127 @@
+import { AlbumsEmptyState, AlbumsList, AlbumsSearchEmptyState } from "@/src/components/albums";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useUserAlbums } from "@/src/hooks/use-user-albums";
+import { Album } from "@shutterspace/backend/types/Album";
+import { router, Stack } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
+
+type SortOption = "name" | "created" | "updated";
 
 export default function AlbumsScreen() {
-   const { colors } = useAppTheme();
+    const { colors } = useAppTheme();
+    const { albums, status, loadMore } = useUserAlbums();
+    const [sortBy, setSortBy] = useState<SortOption>("updated");
+    const [search, setSearch] = useState("");
 
-   return (
-      <>
-         <ScrollView
-            style={[styles.screen, { backgroundColor: colors.background }]}
-            contentInsetAdjustmentBehavior="automatic"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.content}
-         >
-            <View style={[styles.placeholderCard, { backgroundColor: "#FFFFFF", borderColor: colors.border }]}>
-               <Text style={[styles.placeholderTitle, { color: colors.text }]}>Your albums</Text>
-               <Text style={[styles.placeholderBody, { color: colors.caption }]}>
-                  Album grid will live here. Swipe right to return to the camera.
-               </Text>
-            </View>
-         </ScrollView>
+    const isLoading = status === "LoadingFirstPage";
 
-      </>
-   );
+    const displayAlbums = useMemo(() => {
+        if (!albums) return albums;
+
+        const query = search.trim().toLowerCase();
+        const filtered = query
+            ? albums.filter((album) => album.title.toLowerCase().includes(query))
+            : albums;
+
+        return [...filtered].sort((a, b) => {
+            switch (sortBy) {
+                case "name":
+                    return a.title.localeCompare(b.title);
+                case "created":
+                    return b._creationTime - a._creationTime;
+                case "updated":
+                    return b.updatedAt - a.updatedAt;
+            }
+        });
+    }, [albums, sortBy, search]);
+
+    const trimmedSearch = search.trim();
+
+    const renderEmptyComponent = useCallback(() => {
+        if (isLoading) {
+            return (
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    <ActivityIndicator size="large" color={colors.text} />
+                </View>
+            );
+        }
+        if (trimmedSearch) {
+            return <AlbumsSearchEmptyState query={trimmedSearch} />;
+        }
+        return <AlbumsEmptyState />;
+    }, [isLoading, trimmedSearch, colors.text]);
+
+    const handleSearchChange = useCallback((event: { nativeEvent: { text: string } }) => {
+        setSearch(event.nativeEvent.text);
+    }, []);
+
+    const handleSearchCancel = useCallback(() => {
+        setSearch("");
+    }, []);
+
+    const handleAlbumPress = useCallback((album: Album) => {
+        router.push({
+            pathname: "/(home)/album/[id]",
+            params: { id: album._id },
+        });
+    }, []);
+
+    const handleEndReached = useCallback(() => {
+        if (status === "CanLoadMore") {
+            loadMore();
+        }
+    }, [status, loadMore]);
+
+    return (
+        <>
+            <AlbumsList
+                albums={isLoading ? [] : displayAlbums}
+                onAlbumPress={handleAlbumPress}
+                onEndReached={handleEndReached}
+                ListEmptyComponent={renderEmptyComponent}
+                style={{ backgroundColor: colors.background }}
+            />
+            <Stack.Screen.Title large>Albums</Stack.Screen.Title>
+            <Stack.SearchBar
+                placeholder="Search albums"
+                placement="stacked"
+                onChangeText={handleSearchChange}
+                onCancelButtonPress={handleSearchCancel}
+            />
+            <Stack.Toolbar placement="right">
+                <Stack.Toolbar.Menu icon="line.3.horizontal.decrease">
+                    <Stack.Toolbar.Menu inline title="Sort By">
+                        <Stack.Toolbar.MenuAction
+                            icon="textformat"
+                            isOn={sortBy === "name"}
+                            onPress={() => setSortBy("name")}
+                        >
+                            Name
+                        </Stack.Toolbar.MenuAction>
+                        <Stack.Toolbar.MenuAction
+                            icon="calendar"
+                            isOn={sortBy === "created"}
+                            onPress={() => setSortBy("created")}
+                        >
+                            Date Created
+                        </Stack.Toolbar.MenuAction>
+                        <Stack.Toolbar.MenuAction
+                            icon="clock"
+                            isOn={sortBy === "updated"}
+                            onPress={() => setSortBy("updated")}
+                        >
+                            Last Updated
+                        </Stack.Toolbar.MenuAction>
+                    </Stack.Toolbar.Menu>
+                    <Stack.Toolbar.MenuAction
+                        icon="plus"
+                        onPress={() => router.push("/(home)/album/create")}
+                    >
+                        New Album
+                    </Stack.Toolbar.MenuAction>
+                </Stack.Toolbar.Menu>
+            </Stack.Toolbar>
+        </>
+    );
 }
-
-const styles = StyleSheet.create({
-   screen: {
-      flex: 1,
-   },
-   content: {
-      paddingHorizontal: 16,
-      paddingBottom: 32,
-   },
-   placeholderCard: {
-      marginTop: 8,
-      borderRadius: 16,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderCurve: "continuous",
-      padding: 24,
-      gap: 8,
-   },
-   placeholderTitle: {
-      fontSize: 20,
-      fontWeight: "700",
-   },
-   placeholderBody: {
-      fontSize: 15,
-      lineHeight: 22,
-   },
-});
