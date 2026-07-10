@@ -82,7 +82,7 @@ export const iosIconMap: Record<PlatformIconName, SFSymbol> = {
   logout: "rectangle.portrait.and.arrow.right",
   add: "plus",
   edit: "pencil.circle",
-  delete: "trash.circle",
+  delete: "trash",
   cancel: "xmark.circle",
   confirm: "checkmark.circle",
   gallery: "photo.on.rectangle",

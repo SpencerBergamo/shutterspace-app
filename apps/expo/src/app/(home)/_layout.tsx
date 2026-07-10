@@ -30,6 +30,7 @@ export default function HomeLayout() {
                 headerTransparent: true,
                 headerShadowVisible: false,
                 headerLargeTitleEnabled: true,
+                headerBackButtonDisplayMode: "minimal",
             }}>
                 <Stack.Screen name="index" options={{
                     headerTitle: "",
