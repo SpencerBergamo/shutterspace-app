@@ -41,7 +41,7 @@ jest.mock("@shopify/flash-list", () => {
             const columnWidth = listWidth / numColumns;
 
             return (
-                <View style={contentContainerStyle}>
+                <View testID="albums-list-content" style={contentContainerStyle}>
                     <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                         {data.map((item, index) => (
                             <View key={keyExtractor(item, index)} style={{ width: columnWidth }}>
@@ -99,7 +99,11 @@ function createAlbum(id: string, title: string): Album {
     };
 }
 
-function renderAlbumsList(albums: Album[], screenWidth: number) {
+function renderAlbumsList(
+    albums: Album[],
+    screenWidth: number,
+    layoutKey?: string,
+) {
     setScreenWidth(screenWidth);
 
     return render(
@@ -107,6 +111,7 @@ function renderAlbumsList(albums: Album[], screenWidth: number) {
             <AlbumsList
                 albums={albums}
                 onAlbumPress={jest.fn()}
+                layoutKey={layoutKey}
             />
         </AppThemeProvider>,
     );
@@ -134,29 +139,36 @@ describe("AlbumsList layout", () => {
         const contentWidth = getAlbumListContentWidth(screenWidth);
         const columnWidth = contentWidth / NUM_COLUMNS;
 
-        const { getAllByTestId } = await renderAlbumsList(albums, screenWidth);
+        const { getAllByTestId, getByTestId } = await renderAlbumsList(albums, screenWidth);
 
+        const content = getByTestId("albums-list-content");
         const covers = getAllByTestId("album-tile-cover");
         const gridItems = getAllByTestId("album-grid-item");
+
+        expect(content).toHaveStyle({
+            paddingHorizontal: HORIZONTAL_PADDING,
+        });
 
         expect(covers).toHaveLength(albums.length);
 
         for (const cover of covers) {
             expect(cover).toHaveStyle({
-                width: expectedTileWidth,
+                width: "100%",
                 aspectRatio: 1,
             });
         }
 
         for (const [index, gridItem] of gridItems.entries()) {
-            const { marginLeft, marginRight } = getAlbumGridItemSpacing(index);
+            const { paddingLeft, paddingRight } = getAlbumGridItemSpacing(index);
 
             expect(gridItem).toHaveStyle({
-                marginLeft,
-                marginRight,
+                flex: 1,
+                paddingLeft,
+                paddingRight,
             });
 
-            expect(expectedTileWidth + marginLeft + marginRight).toBe(columnWidth);
+            // Tile fills the column minus the half-gap padding on the inner edge.
+            expect(columnWidth - paddingLeft - paddingRight).toBe(expectedTileWidth);
         }
 
         const usedWidth =
@@ -169,24 +181,58 @@ describe("AlbumsList layout", () => {
 
     it("distributes the column gap evenly between left and right tiles", () => {
         expect(getAlbumGridItemSpacing(0)).toEqual({
-            marginLeft: 0,
-            marginRight: COLUMN_GAP / 2,
-            itemGap: COLUMN_GAP / 2,
+            paddingLeft: 0,
+            paddingRight: COLUMN_GAP / 2,
         });
 
         expect(getAlbumGridItemSpacing(1)).toEqual({
-            marginLeft: COLUMN_GAP / 2,
-            marginRight: 0,
-            itemGap: COLUMN_GAP / 2,
+            paddingLeft: COLUMN_GAP / 2,
+            paddingRight: 0,
         });
     });
 
-    it("keeps equal tile widths across all rendered albums", async () => {
+    it("keeps equal cover styles across all rendered albums", async () => {
         const { getAllByTestId } = await renderAlbumsList(albums, 390);
 
         const widths = getAllByTestId("album-tile-cover")
-            .map((cover) => getStyleProp<{ width: number }>(cover).width);
+            .map((cover) => getStyleProp<{ width: string | number }>(cover).width);
 
         expect(new Set(widths).size).toBe(1);
+        expect(widths[0]).toBe("100%");
+    });
+
+    it("preserves even spacing after the album order changes (sort)", async () => {
+        const sortedByName = [...albums].sort((a, b) => a.title.localeCompare(b.title));
+
+        const { getAllByTestId, getByTestId, rerender } = await renderAlbumsList(
+            albums,
+            390,
+            "updated",
+        );
+
+        await rerender(
+            <AppThemeProvider>
+                <AlbumsList
+                    albums={sortedByName}
+                    onAlbumPress={jest.fn()}
+                    layoutKey="name"
+                />
+            </AppThemeProvider>,
+        );
+
+        const content = getByTestId("albums-list-content");
+        const covers = getAllByTestId("album-tile-cover");
+        const gridItems = getAllByTestId("album-grid-item");
+
+        expect(content).toHaveStyle({ paddingHorizontal: HORIZONTAL_PADDING });
+        expect(covers).toHaveLength(albums.length);
+
+        for (const cover of covers) {
+            expect(cover).toHaveStyle({ width: "100%", aspectRatio: 1 });
+        }
+
+        for (const [index, gridItem] of gridItems.entries()) {
+            expect(gridItem).toHaveStyle(getAlbumGridItemSpacing(index));
+        }
     });
 });

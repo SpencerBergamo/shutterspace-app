@@ -1,7 +1,7 @@
 import { FlashList } from "@shopify/flash-list";
 import { Album } from "@shutterspace/backend/types/Album";
 import { useCallback, type ReactElement } from "react";
-import { useWindowDimensions, View, type StyleProp, type ViewStyle } from "react-native";
+import { View, type StyleProp, type ViewStyle } from "react-native";
 import AlbumListCard from "./album-list-card";
 
 export const HORIZONTAL_PADDING = 16;
@@ -16,12 +16,14 @@ export function getAlbumListContentWidth(screenWidth: number) {
     return screenWidth - HORIZONTAL_PADDING * 2;
 }
 
+/** Half the column gap applied as padding on each side of the inter-column gap. */
 export function getAlbumGridItemSpacing(index: number) {
-    const itemGap = (COLUMN_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
-    const marginLeft = ((index % NUM_COLUMNS) / (NUM_COLUMNS - 1)) * itemGap;
-    const marginRight = itemGap - marginLeft;
+    const isLeftColumn = index % NUM_COLUMNS === 0;
 
-    return { marginLeft, marginRight, itemGap };
+    return {
+        paddingLeft: isLeftColumn ? 0 : COLUMN_GAP / 2,
+        paddingRight: isLeftColumn ? COLUMN_GAP / 2 : 0,
+    };
 }
 
 interface AlbumsListProps {
@@ -30,6 +32,8 @@ interface AlbumsListProps {
     onEndReached?: () => void;
     ListEmptyComponent?: () => ReactElement;
     style?: StyleProp<ViewStyle>;
+    /** Remount the list when this changes (e.g. sort) so FlashList recalculates column layout. */
+    layoutKey?: string;
 }
 
 export function AlbumsList({
@@ -38,34 +42,32 @@ export function AlbumsList({
     onEndReached,
     ListEmptyComponent,
     style,
+    layoutKey,
 }: AlbumsListProps) {
-    const { width: screenWidth } = useWindowDimensions();
-    const tileWidth = getAlbumTileWidth(screenWidth);
-
     const renderItem = useCallback(({ item, index }: { item: Album; index: number }) => {
-        const { marginLeft, marginRight } = getAlbumGridItemSpacing(index);
+        const { paddingLeft, paddingRight } = getAlbumGridItemSpacing(index);
 
         return (
             <View
                 testID="album-grid-item"
                 style={{
-                    flexGrow: 1,
-                    marginLeft,
-                    marginRight,
+                    flex: 1,
+                    paddingLeft,
+                    paddingRight,
                     paddingBottom: COLUMN_GAP,
                 }}
             >
                 <AlbumListCard
                     album={item}
-                    width={tileWidth}
                     onPress={() => onAlbumPress(item)}
                 />
             </View>
         );
-    }, [tileWidth, onAlbumPress]);
+    }, [onAlbumPress]);
 
     return (
         <FlashList
+            key={layoutKey}
             style={{ flex: 1, ...(style as ViewStyle) }}
             data={albums}
             numColumns={NUM_COLUMNS}
@@ -80,6 +82,7 @@ export function AlbumsList({
             ListEmptyComponent={ListEmptyComponent}
             onEndReached={onEndReached}
             onEndReachedThreshold={0.5}
+            extraData={layoutKey}
         />
     );
 }

@@ -4,7 +4,7 @@ import { useUserAlbums } from "@/src/hooks/use-user-albums";
 import { Album } from "@shutterspace/backend/types/Album";
 import { router, Stack } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 
 type SortOption = "name" | "created" | "updated";
 
@@ -81,14 +81,9 @@ export default function AlbumsScreen() {
                 onEndReached={handleEndReached}
                 ListEmptyComponent={renderEmptyComponent}
                 style={{ backgroundColor: colors.background }}
+                layoutKey={sortBy}
             />
             <Stack.Screen.Title large>Albums</Stack.Screen.Title>
-            <Stack.SearchBar
-                placeholder="Search albums"
-                placement="stacked"
-                onChangeText={handleSearchChange}
-                onCancelButtonPress={handleSearchCancel}
-            />
             <Stack.Toolbar placement="right">
                 <Stack.Toolbar.Menu icon="line.3.horizontal.decrease">
                     <Stack.Toolbar.Menu inline title="Sort By">
@@ -122,6 +117,20 @@ export default function AlbumsScreen() {
                     </Stack.Toolbar.MenuAction>
                 </Stack.Toolbar.Menu>
             </Stack.Toolbar>
+
+            {/* Search Bar */}
+            <Stack.SearchBar
+                placeholder="Search albums"
+                onChangeText={handleSearchChange}
+                onCancelButtonPress={handleSearchCancel}
+            />
+            {Platform.OS === 'ios' && (
+                <Stack.Toolbar placement="bottom" >
+                    <Stack.Toolbar.SearchBarSlot />
+                    <Stack.Toolbar.Spacer />
+                    <Stack.Toolbar.Button icon="plus" onPress={() => { }} />
+                </Stack.Toolbar>
+            )}
         </>
     );
 }

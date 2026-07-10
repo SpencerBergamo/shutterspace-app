@@ -8,18 +8,17 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 interface AlbumListCardProps {
     album: Album;
-    width: number;
     onPress: () => void;
 }
 
-function AlbumListCard({ album, width, onPress }: AlbumListCardProps) {
+function AlbumListCard({ album, onPress }: AlbumListCardProps) {
     const { colors } = useAppTheme();
     const { requesting, coverUrl, mediaId } = useAlbumCover(album._id);
 
     return (
         <Pressable
             onPress={onPress}
-            style={{ width, gap: 8 }}
+            style={{ width: "100%", gap: 8 }}
         >
             <View
                 testID="album-tile-cover"
@@ -28,7 +27,7 @@ function AlbumListCard({ album, width, onPress }: AlbumListCardProps) {
                 borderCurve: "continuous",
                 backgroundColor: "#DEDEDE",
                 overflow: "hidden",
-                width,
+                width: "100%",
                 aspectRatio: 1,
                 justifyContent: "center",
                 alignItems: "center",
