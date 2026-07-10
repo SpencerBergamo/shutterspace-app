@@ -85,7 +85,7 @@ export default function AlbumsScreen() {
             />
             <Stack.Screen.Title large>Albums</Stack.Screen.Title>
             <Stack.Toolbar placement="right">
-                <Stack.Toolbar.Menu icon="line.3.horizontal.decrease">
+                <Stack.Toolbar.Menu icon="line.3.horizontal.decrease" >
                     <Stack.Toolbar.Menu inline title="Sort By">
                         <Stack.Toolbar.MenuAction
                             icon="textformat"
@@ -128,7 +128,7 @@ export default function AlbumsScreen() {
                 <Stack.Toolbar placement="bottom" >
                     <Stack.Toolbar.SearchBarSlot />
                     <Stack.Toolbar.Spacer />
-                    <Stack.Toolbar.Button icon="plus" onPress={() => { }} />
+                    <Stack.Toolbar.Button icon="plus" onPress={() => router.push("/(home)/new-album")} />
                 </Stack.Toolbar>
             )}
         </>

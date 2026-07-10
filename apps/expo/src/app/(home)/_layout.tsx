@@ -64,6 +64,12 @@ export default function HomeLayout() {
                     }}
                 />
 
+                <Stack.Screen name="new-album" options={{
+                    headerTitle: "New Album",
+                    headerLargeTitleEnabled: false,
+                    presentation: "modal",
+                }} />
+
                 <Stack.Screen
                     name="friends"
                     options={{

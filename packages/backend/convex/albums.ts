@@ -142,8 +142,9 @@ export const createNewAlbum = mutation({
     args: {
         title: v.string(),
         description: v.optional(v.string()),
+        openInvites: v.boolean(),
         members: v.optional(v.array(v.id('profiles'))),
-    }, handler: async (ctx, { title, description, members }): Promise<Id<'albums'>> => {
+    }, handler: async (ctx, { title, description, openInvites, members }): Promise<Id<'albums'>> => {
         const profile = await ctx.runQuery(api.profile.getProfile);
         if (!profile) throw new ConvexError('No User Found');
 
@@ -152,7 +153,7 @@ export const createNewAlbum = mutation({
             title,
             description,
             isDynamicThumbnail: true,
-            openInvites: true,
+            openInvites,
             updatedAt: Date.now(),
             status: 'active',
         });
