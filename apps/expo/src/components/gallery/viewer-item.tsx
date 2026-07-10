@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#000",
     },
     playButtonPosition: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         justifyContent: "center",
         alignItems: "center",
     },

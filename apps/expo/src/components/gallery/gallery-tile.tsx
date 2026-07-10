@@ -28,7 +28,7 @@ function GalleryTileComponent({ media, onPress }: GalleryTileProps) {
     const isPending = media.status === "pending";
     const isError = media.status === "error" || imageError;
     const isVideo = media.identifier.type === "video";
-    const duration = isVideo ? media.identifier.duration : null;
+    const duration = media.identifier.type === "video" ? media.identifier.duration : null;
 
     const { requesting, thumbnail: uri } = useSignedUrls({
         media: isReady && !isError ? media : undefined,
