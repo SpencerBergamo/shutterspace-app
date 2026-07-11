@@ -4,31 +4,19 @@ import { useAlbumMedia } from "@/src/hooks/useAlbumMedia";
 import { api } from "@shutterspace/backend/convex/_generated/api";
 import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
-import { useCallback, useLayoutEffect, useState } from "react";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+
 
 export default function AlbumDetailScreen() {
     const { colors } = useAppTheme();
-    const navigation = useNavigation();
     const { id } = useLocalSearchParams<{ id: string }>();
     const albumId = id as Id<"albums">;
-    const [viewerOpen, setViewerOpen] = useState(false);
 
     const album = useQuery(api.albums.queryAlbum, albumId ? { albumId } : "skip");
     const { media, status, loadMore, isLoading } = useAlbumMedia(
         album ? albumId : undefined,
     );
-
-    const handleViewerOpenChange = useCallback((open: boolean) => {
-        setViewerOpen(open);
-    }, []);
-
-    useLayoutEffect(() => {
-        navigation.setOptions({
-            headerShown: !viewerOpen,
-        });
-    }, [navigation, viewerOpen]);
 
     if (album === undefined) {
         return (
@@ -70,11 +58,19 @@ export default function AlbumDetailScreen() {
 
     return (
         <>
-            <Stack.Screen options={{
-                headerLargeTitleEnabled: false,
-                title: album.title,
-                headerShown: !viewerOpen,
-            }} />
+            <Stack.Screen options={{ title: album.title }} />
+            <Stack.Toolbar placement="right">
+                <Stack.Toolbar.Button icon="person.badge.plus" onPress={() => { }} />
+                <Stack.Toolbar.Menu icon="ellipsis">
+                    <Stack.Toolbar.MenuAction icon="info.circle" onPress={() => { }}>
+                        Album Info
+                    </Stack.Toolbar.MenuAction>
+                    <Stack.Toolbar.MenuAction icon="square.and.arrow.up" onPress={() => { }}>
+                        Share Album
+                    </Stack.Toolbar.MenuAction>
+                </Stack.Toolbar.Menu>
+            </Stack.Toolbar>
+
             {isLoading && media.length === 0 ? (
                 <View style={{
                     flex: 1,
@@ -86,10 +82,10 @@ export default function AlbumDetailScreen() {
                 </View>
             ) : (
                 <Gallery
+                    albumId={albumId}
                     media={media}
                     status={status}
                     onEndReached={loadMore}
-                    onViewerOpenChange={handleViewerOpenChange}
                 />
             )}
         </>

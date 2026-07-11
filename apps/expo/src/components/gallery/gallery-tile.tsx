@@ -3,25 +3,22 @@ import { formatVideoDuration } from "@/src/utils/formatters";
 import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
 import { Media } from "@shutterspace/backend/types/Media";
 import { Image } from "expo-image";
-import { memo, useCallback, useRef, useState } from "react";
+import { Link } from "expo-router";
+import { memo, useState } from "react";
 import {
     ActivityIndicator,
     Pressable,
     StyleSheet,
     Text,
     View,
-    type LayoutRectangle,
 } from "react-native";
-
-export type OriginLayout = LayoutRectangle & { pageX: number; pageY: number };
 
 interface GalleryTileProps {
     media: Media;
-    onPress: (mediaId: Id<"media">, origin: OriginLayout) => void;
+    albumId: Id<"albums">;
 }
 
-function GalleryTileComponent({ media, onPress }: GalleryTileProps) {
-    const containerRef = useRef<View>(null);
+function GalleryTileComponent({ media, albumId }: GalleryTileProps) {
     const [imageError, setImageError] = useState(false);
 
     const isReady = media.status === "ready";
@@ -34,20 +31,11 @@ function GalleryTileComponent({ media, onPress }: GalleryTileProps) {
         media: isReady && !isError ? media : undefined,
     });
 
-    const handlePress = useCallback(() => {
-        if (!isReady || isError) return;
-
-        containerRef.current?.measureInWindow((x, y, width, height) => {
-            onPress(media._id, { x, y, width, height, pageX: x, pageY: y });
-        });
-    }, [isReady, isError, media._id, onPress]);
+    const isLoading = requesting || isPending;
 
     if (isError) {
         return (
-            <View
-                testID="gallery-tile-error"
-                style={styles.container}
-            >
+            <View testID="gallery-tile-error" style={styles.container}>
                 <Image
                     source="sf:exclamationmark.circle"
                     style={styles.errorIcon}
@@ -57,65 +45,56 @@ function GalleryTileComponent({ media, onPress }: GalleryTileProps) {
         );
     }
 
-    return (
-        <View
-            ref={containerRef}
-            testID="gallery-tile"
-            style={styles.container}
-        >
-            <Pressable
-                disabled={isPending}
-                onPress={handlePress}
-                style={StyleSheet.absoluteFill}
-            >
-                {uri ? (
-                    <Image
-                        source={{ uri, cacheKey: media._id }}
-                        transition={100}
-                        style={styles.image}
-                        contentFit="cover"
-                        cachePolicy="memory-disk"
-                        recyclingKey={media._id}
-                        onError={() => setImageError(true)}
-                    />
-                ) : null}
+    const content = (
+        <View testID="gallery-tile" style={styles.container}>
+            {isLoading ? (
+                <ActivityIndicator size="small" color="#8E8E93" />
+            ) : (
+                <>
+                    {uri ? (
+                        <Image
+                            source={{ uri, cacheKey: media._id }}
+                            transition={100}
+                            style={styles.image}
+                            contentFit="cover"
+                            cachePolicy="memory-disk"
+                            recyclingKey={media._id}
+                            onError={() => setImageError(true)}
+                        />
+                    ) : null}
 
-                {isVideo && isReady ? (
-                    <View style={styles.videoBadge} pointerEvents="none">
-                        {duration != null ? (
-                            <Text style={styles.durationText}>{formatVideoDuration(duration)}</Text>
-                        ) : (
-                            <Image
-                                source="sf:play.fill"
-                                style={styles.playIcon}
-                                tintColor="white"
-                            />
-                        )}
-                    </View>
-                ) : null}
-
-                {(requesting || isPending) && (
-                    <ActivityIndicator
-                        style={StyleSheet.absoluteFill}
-                        size="small"
-                        color="#8E8E93"
-                    />
-                )}
-            </Pressable>
+                    {isVideo && isReady ? (
+                        <View style={styles.videoBadge} pointerEvents="none">
+                            {duration != null ? (
+                                <Text style={styles.durationText}>
+                                    {formatVideoDuration(duration)}
+                                </Text>
+                            ) : (
+                                <Image
+                                    source="sf:play.fill"
+                                    style={styles.playIcon}
+                                    tintColor="white"
+                                />
+                            )}
+                        </View>
+                    ) : null}
+                </>
+            )}
         </View>
     );
-}
 
-function areEqual(prev: GalleryTileProps, next: GalleryTileProps) {
+    if (isLoading || !isReady) {
+        return content;
+    }
+
     return (
-        prev.onPress === next.onPress &&
-        prev.media._id === next.media._id &&
-        prev.media.status === next.media.status &&
-        prev.media.identifier === next.media.identifier
+        <Link href={`/album/${albumId}/media/${media._id}`} asChild>
+            <Pressable>{content}</Pressable>
+        </Link>
     );
 }
 
-export const GalleryTile = memo(GalleryTileComponent, areEqual);
+export const GalleryTile = memo(GalleryTileComponent);
 
 const styles = StyleSheet.create({
     container: {

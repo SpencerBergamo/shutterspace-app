@@ -1,7 +1,6 @@
-import { AlbumsEmptyState, AlbumsList, AlbumsSearchEmptyState } from "@/src/components/albums";
+import { AlbumsEmptyState, AlbumsList } from "@/src/components/albums";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { useUserAlbums } from "@/src/hooks/use-user-albums";
-import { Album } from "@shutterspace/backend/types/Album";
 import { router, Stack } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
@@ -47,7 +46,7 @@ export default function AlbumsScreen() {
             );
         }
         if (trimmedSearch) {
-            return <AlbumsSearchEmptyState query={trimmedSearch} />;
+            return <AlbumsEmptyState variant="search" query={trimmedSearch} />;
         }
         return <AlbumsEmptyState />;
     }, [isLoading, trimmedSearch, colors.text]);
@@ -60,13 +59,6 @@ export default function AlbumsScreen() {
         setSearch("");
     }, []);
 
-    const handleAlbumPress = useCallback((album: Album) => {
-        router.push({
-            pathname: "/(home)/album/[id]",
-            params: { id: album._id },
-        });
-    }, []);
-
     const handleEndReached = useCallback(() => {
         if (status === "CanLoadMore") {
             loadMore();
@@ -77,7 +69,6 @@ export default function AlbumsScreen() {
         <>
             <AlbumsList
                 albums={isLoading ? [] : displayAlbums}
-                onAlbumPress={handleAlbumPress}
                 onEndReached={handleEndReached}
                 ListEmptyComponent={renderEmptyComponent}
                 style={{ backgroundColor: colors.background }}

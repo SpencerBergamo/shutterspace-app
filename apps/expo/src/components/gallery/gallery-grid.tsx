@@ -8,36 +8,26 @@ import {
     HORIZONTAL_PADDING,
     NUM_COLUMNS,
 } from "./gallery-layout";
-import { GalleryTile, type OriginLayout } from "./gallery-tile";
+import { GalleryTile } from "./gallery-tile";
 
 interface GalleryGridProps {
     media: Media[];
-    onTilePress: (mediaId: Id<"media">, origin: OriginLayout, index: number) => void;
+    albumId: Id<"albums">;
     onEndReached?: () => void;
+    ListHeaderComponent?: () => ReactElement | null;
     ListEmptyComponent?: () => ReactElement | null;
     style?: StyleProp<ViewStyle>;
-    /** When true, grid ignores touches (viewer open). */
-    pointerEventsDisabled?: boolean;
 }
 
 export function GalleryGrid({
     media,
-    onTilePress,
+    albumId,
     onEndReached,
+    ListHeaderComponent,
     ListEmptyComponent,
     style,
-    pointerEventsDisabled = false,
 }: GalleryGridProps) {
     const keyExtractor = useCallback((item: Media) => item._id, []);
-
-    const handleTilePress = useCallback(
-        (mediaId: Id<"media">, origin: OriginLayout) => {
-            const index = media.findIndex((m) => m._id === mediaId);
-            if (index < 0) return;
-            onTilePress(mediaId, origin, index);
-        },
-        [media, onTilePress],
-    );
 
     const renderItem = useCallback(
         ({ item, index }: { item: Media; index: number }) => {
@@ -52,33 +42,27 @@ export function GalleryGrid({
                         paddingRight,
                     }}
                 >
-                    <GalleryTile
-                        media={item}
-                        onPress={handleTilePress}
-                    />
+                    <GalleryTile media={item} albumId={albumId} />
                 </View>
             );
         },
-        [handleTilePress],
+        [albumId],
     );
 
     return (
-        <View
-            style={{ flex: 1 }}
-            pointerEvents={pointerEventsDisabled ? "none" : "auto"}
-        >
+        <View style={{ flex: 1 }}>
             <FlashList
                 style={{ flex: 1, ...(style as ViewStyle) }}
                 data={media}
                 numColumns={NUM_COLUMNS}
                 keyExtractor={keyExtractor}
-                contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={{
                     paddingHorizontal: HORIZONTAL_PADDING,
                     paddingBottom: 32,
                     flexGrow: 1,
                 }}
                 renderItem={renderItem}
+                ListHeaderComponent={ListHeaderComponent}
                 ListEmptyComponent={ListEmptyComponent}
                 onEndReached={onEndReached}
                 onEndReachedThreshold={0.5}

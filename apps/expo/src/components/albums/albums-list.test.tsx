@@ -7,11 +7,18 @@ import {
     AlbumsList,
     COLUMN_GAP,
     getAlbumGridItemSpacing,
-    getAlbumListContentWidth,
-    getAlbumTileWidth,
     HORIZONTAL_PADDING,
     NUM_COLUMNS,
 } from "./albums-list";
+
+jest.mock("expo-router", () => {
+    const { View } = require("react-native");
+    const Link = ({ children, ...props }: { children?: React.ReactNode }) => (
+        <View {...props}>{children}</View>
+    );
+    Link.AppleZoom = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
+    return { Link };
+});
 
 jest.mock("@shopify/flash-list", () => {
     const { Dimensions, View } = require("react-native");
@@ -108,11 +115,7 @@ function renderAlbumsList(
 
     return render(
         <AppThemeProvider>
-            <AlbumsList
-                albums={albums}
-                onAlbumPress={jest.fn()}
-                layoutKey={layoutKey}
-            />
+            <AlbumsList albums={albums} layoutKey={layoutKey} />
         </AppThemeProvider>,
     );
 }
@@ -135,9 +138,8 @@ describe("AlbumsList layout", () => {
         { screenWidth: 428, label: "iPhone 14 Pro Max width" },
         { screenWidth: 768, label: "tablet width" },
     ])("uses 1:1 tiles with even spacing at $label ($screenWidth px)", async ({ screenWidth }) => {
-        const expectedTileWidth = getAlbumTileWidth(screenWidth);
-        const contentWidth = getAlbumListContentWidth(screenWidth);
-        const columnWidth = contentWidth / NUM_COLUMNS;
+        const expectedTileWidth =
+            (screenWidth - HORIZONTAL_PADDING * 2 - COLUMN_GAP) / NUM_COLUMNS;
 
         const { getAllByTestId, getByTestId } = await renderAlbumsList(albums, screenWidth);
 
@@ -166,9 +168,6 @@ describe("AlbumsList layout", () => {
                 paddingLeft,
                 paddingRight,
             });
-
-            // Tile fills the column minus the half-gap padding on the inner edge.
-            expect(columnWidth - paddingLeft - paddingRight).toBe(expectedTileWidth);
         }
 
         const usedWidth =
@@ -212,11 +211,7 @@ describe("AlbumsList layout", () => {
 
         await rerender(
             <AppThemeProvider>
-                <AlbumsList
-                    albums={sortedByName}
-                    onAlbumPress={jest.fn()}
-                    layoutKey="name"
-                />
+                <AlbumsList albums={sortedByName} layoutKey="name" />
             </AppThemeProvider>,
         );
 

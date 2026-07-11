@@ -55,6 +55,17 @@ export default function HomeLayout() {
                         title: "Album",
                     }}
                 />
+                <Stack.Screen
+                    name="album/[id]/media/[mediaId]"
+                    options={{
+                        title: "",
+                        animation: "fade",
+                        headerTransparent: true,
+                        headerShadowVisible: false,
+                        headerStyle: { backgroundColor: "transparent" },
+                        headerBlurEffect: "none",
+                    }}
+                />
 
                 <Stack.Screen
                     name="profile/edit"

@@ -1,43 +1,33 @@
-import type { AlbumMediaStatus } from "@/src/hooks/useAlbumMedia";
 import { useAppTheme } from "@/src/context/AppThemeContext";
+import useAlbumCover from "@/src/hooks/useAlbumCover";
+import type { AlbumMediaStatus } from "@/src/hooks/useAlbumMedia";
 import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
 import { Media } from "@shutterspace/backend/types/Media";
-import { useCallback, useState } from "react";
+import { Image } from "expo-image";
+import { Link } from "expo-router";
+import { useCallback } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { GalleryGrid } from "./gallery-grid";
-import { GalleryViewer } from "./gallery-viewer";
-import type { OriginLayout } from "./gallery-tile";
 
 export interface GalleryProps {
+    albumId: Id<"albums">;
     media: Media[];
     status: AlbumMediaStatus;
     onEndReached: () => void;
-    onViewerOpenChange?: (open: boolean) => void;
 }
 
 export function Gallery({
+    albumId,
     media,
     status,
     onEndReached,
-    onViewerOpenChange,
 }: GalleryProps) {
     const { colors } = useAppTheme();
-    const [openedIndex, setOpenedIndex] = useState<number | null>(null);
-
-    const viewerOpen = openedIndex != null;
-
-    const handleTilePress = useCallback(
-        (_mediaId: Id<"media">, _origin: OriginLayout, index: number) => {
-            setOpenedIndex(index);
-            onViewerOpenChange?.(true);
-        },
-        [onViewerOpenChange],
-    );
-
-    const handleClose = useCallback(() => {
-        setOpenedIndex(null);
-        onViewerOpenChange?.(false);
-    }, [onViewerOpenChange]);
+    const {
+        requesting: requestingAlbumCover,
+        coverUrl: albumCoverUrl,
+        mediaId: albumCoverMediaId,
+    } = useAlbumCover(albumId);
 
     const Empty = useCallback(() => {
         if (status === "LoadingFirstPage") {
@@ -50,32 +40,49 @@ export function Gallery({
 
         return (
             <View style={styles.empty}>
-                <Text style={[styles.emptyText, { color: colors.caption }]}>
+                <Text selectable style={[styles.emptyText, { color: colors.caption }]}>
                     No photos or videos yet.
                 </Text>
             </View>
         );
     }, [status, colors.text, colors.caption]);
 
+    const ListHeaderComponent = useCallback(() => {
+        if (requestingAlbumCover) {
+            return (
+                <View style={styles.cover}>
+                    <ActivityIndicator size="small" color="grey" />
+                </View>
+            );
+        }
+
+        if (!albumCoverUrl || !albumCoverMediaId) {
+            return null;
+        }
+
+        return (
+            <Link.AppleZoomTarget>
+                <View style={styles.cover}>
+                    <Image
+                        source={{ uri: albumCoverUrl, cacheKey: albumCoverMediaId }}
+                        style={StyleSheet.absoluteFill}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                    />
+                </View>
+            </Link.AppleZoomTarget>
+        );
+    }, [requestingAlbumCover, albumCoverUrl, albumCoverMediaId]);
+
     return (
         <View style={[styles.root, { backgroundColor: colors.background }]}>
             <GalleryGrid
+                albumId={albumId}
                 media={media}
-                onTilePress={handleTilePress}
                 onEndReached={onEndReached}
+                ListHeaderComponent={ListHeaderComponent}
                 ListEmptyComponent={Empty}
-                pointerEventsDisabled={viewerOpen}
             />
-
-            {openedIndex != null ? (
-                <GalleryViewer
-                    media={media}
-                    initialIndex={openedIndex}
-                    visible
-                    onClose={handleClose}
-                    onNearEnd={onEndReached}
-                />
-            ) : null}
         </View>
     );
 }
@@ -83,6 +90,15 @@ export function Gallery({
 const styles = StyleSheet.create({
     root: {
         flex: 1,
+    },
+    cover: {
+        width: "100%",
+        aspectRatio: 1,
+        marginBottom: 2,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#DEDEDE",
+        overflow: "hidden",
     },
     empty: {
         flex: 1,

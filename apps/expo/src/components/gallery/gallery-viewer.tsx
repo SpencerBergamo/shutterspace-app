@@ -1,11 +1,7 @@
 import { Media } from "@shutterspace/backend/types/Media";
-import { Image } from "expo-image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
     FlatList,
-    Modal,
-    Pressable,
-    StatusBar,
     StyleSheet,
     useWindowDimensions,
     View,
@@ -14,45 +10,27 @@ import {
     type NativeSyntheticEvent,
     type ViewToken,
 } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ViewerItem } from "./viewer-item";
 
 export interface GalleryViewerProps {
     media: Media[];
     initialIndex: number;
-    visible: boolean;
-    onClose: () => void;
     onIndexChange?: (index: number) => void;
     onNearEnd?: () => void;
 }
 
+/** Interactive media pager for the album media route. */
 export function GalleryViewer({
     media,
     initialIndex,
-    visible,
-    onClose,
     onIndexChange,
     onNearEnd,
 }: GalleryViewerProps) {
-    const insets = useSafeAreaInsets();
     const { width: screenWidth, height: screenHeight } = useWindowDimensions();
     const listRef = useRef<FlatList<Media>>(null);
     const openIndexRef = useRef(initialIndex);
     const [activeIndex, setActiveIndex] = useState(initialIndex);
     const [isZoomed, setIsZoomed] = useState(false);
-
-    useEffect(() => {
-        if (!visible) return;
-
-        StatusBar.setHidden(true, "fade");
-        setActiveIndex(openIndexRef.current);
-        setIsZoomed(false);
-
-        return () => {
-            StatusBar.setHidden(false, "fade");
-        };
-    }, [visible]);
 
     const onNearEndRef = useRef(onNearEnd);
     const onIndexChangeRef = useRef(onIndexChange);
@@ -110,69 +88,40 @@ export function GalleryViewer({
         [activeIndex, media.length, onIndexChange, screenWidth],
     );
 
-    if (!visible) return null;
-
     return (
-        <Modal
-            visible
-            transparent={false}
-            animationType="none"
-            presentationStyle="fullScreen"
-            statusBarTranslucent
-            onRequestClose={onClose}
-        >
-            <GestureHandlerRootView style={styles.root}>
-                <FlatList
-                    ref={listRef}
-                    data={media}
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item._id}
-                    renderItem={renderItem}
-                    getItemLayout={getItemLayout}
-                    initialScrollIndex={Math.min(
-                        openIndexRef.current,
-                        Math.max(media.length - 1, 0),
-                    )}
-                    onMomentumScrollEnd={onScrollEnd}
-                    onViewableItemsChanged={onViewableItemsChanged}
-                    viewabilityConfig={viewabilityConfig}
-                    windowSize={5}
-                    maxToRenderPerBatch={3}
-                    initialNumToRender={Math.min(media.length, 3)}
-                    removeClippedSubviews={false}
-                    scrollEnabled={!isZoomed}
-                    style={styles.list}
-                    onScrollToIndexFailed={({ index }) => {
-                        setTimeout(() => {
-                            listRef.current?.scrollToOffset({
-                                offset: index * screenWidth,
-                                animated: false,
-                            });
-                        }, 16);
-                    }}
-                />
-
-                <View
-                    style={[styles.chrome, { paddingTop: insets.top + 8 }]}
-                    pointerEvents="box-none"
-                >
-                    <Pressable
-                        testID="gallery-viewer-close"
-                        onPress={onClose}
-                        hitSlop={12}
-                        style={styles.closeButton}
-                    >
-                        <Image
-                            source="sf:xmark"
-                            style={styles.closeIcon}
-                            tintColor="white"
-                        />
-                    </Pressable>
-                </View>
-            </GestureHandlerRootView>
-        </Modal>
+        <View style={styles.root}>
+            <FlatList
+                ref={listRef}
+                data={media}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item._id}
+                renderItem={renderItem}
+                getItemLayout={getItemLayout}
+                initialScrollIndex={Math.min(
+                    openIndexRef.current,
+                    Math.max(media.length - 1, 0),
+                )}
+                onMomentumScrollEnd={onScrollEnd}
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
+                windowSize={5}
+                maxToRenderPerBatch={3}
+                initialNumToRender={Math.min(media.length, 3)}
+                removeClippedSubviews={false}
+                scrollEnabled={!isZoomed}
+                style={styles.list}
+                onScrollToIndexFailed={({ index }) => {
+                    setTimeout(() => {
+                        listRef.current?.scrollToOffset({
+                            offset: index * screenWidth,
+                            animated: false,
+                        });
+                    }, 16);
+                }}
+            />
+        </View>
     );
 }
 
@@ -183,27 +132,5 @@ const styles = StyleSheet.create({
     },
     list: {
         flex: 1,
-    },
-    chrome: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        flexDirection: "row",
-        justifyContent: "flex-end",
-        paddingHorizontal: 16,
-        zIndex: 10,
-    },
-    closeButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: "rgba(0,0,0,0.45)",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    closeIcon: {
-        width: 18,
-        height: 18,
     },
 });

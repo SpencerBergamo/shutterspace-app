@@ -8,6 +8,15 @@ import {
     NUM_COLUMNS,
 } from "./gallery-layout";
 
+jest.mock("expo-router", () => {
+    const { View } = require("react-native");
+    return {
+        Link: ({ children, ...props }: { children?: React.ReactNode }) => (
+            <View {...props}>{children}</View>
+        ),
+    };
+});
+
 jest.mock("@shopify/flash-list", () => {
     const { Dimensions, Pressable, View } = require("react-native");
 
@@ -104,6 +113,8 @@ function createMedia(id: string, index: number): Media {
     };
 }
 
+const albumId = "album1" as Id<"albums">;
+
 describe("GalleryGrid", () => {
     beforeEach(() => {
         setScreenWidth(390);
@@ -111,10 +122,9 @@ describe("GalleryGrid", () => {
 
     it("renders a 3-column grid of tiles with stable keys", async () => {
         const media = [0, 1, 2, 3, 4].map((i) => createMedia(`m${i}`, i));
-        const onTilePress = jest.fn();
 
         const { getAllByTestId } = await render(
-            <GalleryGrid media={media} onTilePress={onTilePress} />,
+            <GalleryGrid media={media} albumId={albumId} />,
         );
 
         const items = getAllByTestId("gallery-grid-item");
@@ -142,7 +152,7 @@ describe("GalleryGrid", () => {
         const { getByTestId } = await render(
             <GalleryGrid
                 media={media}
-                onTilePress={jest.fn()}
+                albumId={albumId}
                 onEndReached={onEndReached}
             />,
         );

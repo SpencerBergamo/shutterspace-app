@@ -8,27 +8,20 @@ export const HORIZONTAL_PADDING = 16;
 export const COLUMN_GAP = 12;
 export const NUM_COLUMNS = 2;
 
-export function getAlbumTileWidth(screenWidth: number) {
-    return (screenWidth - HORIZONTAL_PADDING * 2 - COLUMN_GAP) / NUM_COLUMNS;
-}
-
-export function getAlbumListContentWidth(screenWidth: number) {
-    return screenWidth - HORIZONTAL_PADDING * 2;
-}
-
 /** Half the column gap applied as padding on each side of the inter-column gap. */
 export function getAlbumGridItemSpacing(index: number) {
-    const isLeftColumn = index % NUM_COLUMNS === 0;
+    const column = index % NUM_COLUMNS;
+    const isFirstColumn = column === 0;
+    const isLastColumn = column === NUM_COLUMNS - 1;
 
     return {
-        paddingLeft: isLeftColumn ? 0 : COLUMN_GAP / 2,
-        paddingRight: isLeftColumn ? COLUMN_GAP / 2 : 0,
+        paddingLeft: isFirstColumn ? 0 : COLUMN_GAP / 2,
+        paddingRight: isLastColumn ? 0 : COLUMN_GAP / 2,
     };
 }
 
 interface AlbumsListProps {
     albums: Album[] | undefined;
-    onAlbumPress: (album: Album) => void;
     onEndReached?: () => void;
     ListEmptyComponent?: () => ReactElement;
     style?: StyleProp<ViewStyle>;
@@ -38,7 +31,6 @@ interface AlbumsListProps {
 
 export function AlbumsList({
     albums,
-    onAlbumPress,
     onEndReached,
     ListEmptyComponent,
     style,
@@ -59,11 +51,11 @@ export function AlbumsList({
             >
                 <AlbumListCard
                     album={item}
-                    onPress={() => onAlbumPress(item)}
+                    href={`/(home)/album/${item._id}`}
                 />
             </View>
         );
-    }, [onAlbumPress]);
+    }, []);
 
     return (
         <FlashList
