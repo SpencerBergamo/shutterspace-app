@@ -10,11 +10,13 @@ import {
 
 jest.mock("expo-router", () => {
     const { View } = require("react-native");
-    return {
-        Link: ({ children, ...props }: { children?: React.ReactNode }) => (
-            <View {...props}>{children}</View>
-        ),
-    };
+    const Link = ({ children, ...props }: { children?: React.ReactNode }) => (
+        <View {...props}>{children}</View>
+    );
+    Link.AppleZoomTarget = ({ children, ...props }: { children?: React.ReactNode }) => (
+        <View {...props}>{children}</View>
+    );
+    return { Link };
 });
 
 jest.mock("@shopify/flash-list", () => {
@@ -73,6 +75,20 @@ jest.mock("@/src/hooks/useSignedUrls", () => ({
     }),
 }));
 
+jest.mock("@/src/hooks/useAlbumCover", () => ({
+    __esModule: true,
+    default: () => ({
+        requesting: false,
+        coverUrl: "https://example.com/cover.jpg",
+        mediaId: null,
+        cacheKey: "cover.jpg",
+    }),
+}));
+
+jest.mock("expo-router/react-navigation", () => ({
+    useHeaderHeight: () => 96,
+}));
+
 jest.mock("expo-image", () => {
     const { View } = require("react-native");
     return { Image: View };
@@ -124,7 +140,7 @@ describe("GalleryGrid", () => {
         const media = [0, 1, 2, 3, 4].map((i) => createMedia(`m${i}`, i));
 
         const { getAllByTestId } = await render(
-            <GalleryGrid media={media} albumId={albumId} />,
+            <GalleryGrid media={media} albumId={albumId} status="LoadingFirstPage" />,
         );
 
         const items = getAllByTestId("gallery-grid-item");
@@ -153,6 +169,7 @@ describe("GalleryGrid", () => {
             <GalleryGrid
                 media={media}
                 albumId={albumId}
+                status="CanLoadMore"
                 onEndReached={onEndReached}
             />,
         );

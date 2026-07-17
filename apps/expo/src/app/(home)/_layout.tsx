@@ -51,10 +51,18 @@ export default function HomeLayout() {
                 <Stack.Screen
                     name="album/[id]"
                     options={{
+                        headerShown: true,
+                        headerTransparent: false,
                         headerLargeTitleEnabled: false,
                         title: "Album",
                     }}
                 />
+                <Stack.Screen name="album/[id]/settings" options={{
+                    headerTitle: "Settings",
+                    presentation: "formSheet",
+                    headerLargeTitleEnabled: false,
+
+                }} />
                 <Stack.Screen
                     name="album/[id]/media/[mediaId]"
                     options={{

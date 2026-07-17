@@ -68,6 +68,7 @@ jest.mock("@/src/hooks/useAlbumCover", () => ({
         requesting: false,
         coverUrl: null,
         mediaId: null,
+        cacheKey: undefined,
     }),
 }));
 

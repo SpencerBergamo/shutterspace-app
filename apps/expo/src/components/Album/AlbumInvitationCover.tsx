@@ -1,6 +1,6 @@
 import { api } from "@shutterspace/backend/convex/_generated/api";
 import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
-import { MediaIdentifier } from "@shutterspace/backend/types/Media";
+import { AlbumCover } from "@shutterspace/backend/types/Album";
 import { useAction } from "convex/react";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -9,12 +9,11 @@ import { StyleSheet, View } from "react-native";
 
 interface AlbumInvitationCoverProps {
     albumId: Id<'albums'>;
-    cover?: MediaIdentifier;
+    cover?: AlbumCover;
 }
 
 export default function AlbumInvitationCover({ albumId, cover }: AlbumInvitationCoverProps) {
-
-    const getAlbumCover = useAction(api.albums.getAlbumCover);
+    const getAlbumCoverUrl = useAction(api.albums.getAlbumCoverUrl);
 
     const [uri, setUri] = useState<string | undefined | null>(undefined);
 
@@ -22,7 +21,7 @@ export default function AlbumInvitationCover({ albumId, cover }: AlbumInvitation
         (async () => {
             try {
                 if (cover) {
-                    const url = await getAlbumCover({ albumId, identifier: cover });
+                    const url = await getAlbumCoverUrl({ albumId });
                     setUri(url);
                 } else {
                     setUri(null);
@@ -32,7 +31,7 @@ export default function AlbumInvitationCover({ albumId, cover }: AlbumInvitation
                 setUri(null);
             }
         })();
-    }, [albumId, cover]);
+    }, [albumId, cover, getAlbumCoverUrl]);
 
 
     return (

@@ -14,7 +14,7 @@ interface AlbumListCardProps {
 
 function AlbumListCard({ album, href }: AlbumListCardProps) {
     const { colors } = useAppTheme();
-    const { requesting, coverUrl, mediaId } = useAlbumCover(album._id);
+    const { requesting, coverUrl, cacheKey } = useAlbumCover(album._id, { cover: album.cover });
 
     return (
         <Link href={href} asChild>
@@ -33,9 +33,9 @@ function AlbumListCard({ album, href }: AlbumListCardProps) {
                             alignItems: "center",
                         }}
                     >
-                        {coverUrl && mediaId ? (
+                        {coverUrl && cacheKey ? (
                             <Image
-                                source={{ uri: coverUrl, cacheKey: mediaId }}
+                                source={{ uri: coverUrl, cacheKey }}
                                 style={{
                                     width: "100%",
                                     height: "100%",
