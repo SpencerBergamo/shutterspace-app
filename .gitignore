@@ -44,7 +44,7 @@ yarn-error.*
 *.turbo
 
 .cursor/
-docs/*
+docs/
 
 ./google-services.json
 ./GoogleService-Info.plist

@@ -1,10 +1,10 @@
-import { CameraControls } from "@/src/components/Camera";
+import { CameraControls, CameraPlaceholder } from "@/src/components/Camera";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { CameraView, useCameraPermissions, type CameraType } from "expo-camera";
 import Constants from "expo-constants";
 import { router, Stack } from "expo-router";
 import { useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomePagerScreen() {
@@ -33,51 +33,19 @@ export default function HomePagerScreen() {
     <>
       <View style={styles.container} collapsable={false}>
         {isSimulator ? (
-          <View style={[styles.cameraPlaceholder, { backgroundColor: "#1a1a1a", justifyContent: 'center', alignItems: 'center' }]}>
-            <View style={{ width: '90%', height: '90%', borderStyle: "dashed", borderWidth: 2, borderColor: 'white', borderRadius: 18, justifyContent: 'center', alignItems: 'center' }}>
-              {/* Arrows - Top, Bottom, Left, Right */}
-              {/* Top Arrow */}
-              <View style={{ position: 'absolute', top: -30, left: '50%', marginLeft: -12, alignItems: 'center' }}>
-                <Text style={{ fontSize: 26, color: 'white' }}>↑</Text>
-              </View>
-              {/* Bottom Arrow */}
-              <View style={{ position: 'absolute', bottom: -30, left: '50%', marginLeft: -12, alignItems: 'center' }}>
-                <Text style={{ fontSize: 26, color: 'white' }}>↓</Text>
-              </View>
-              {/* Left Arrow */}
-              <View style={{ position: 'absolute', left: -30, top: '50%', marginTop: -12, alignItems: 'center' }}>
-                <Text style={{ fontSize: 26, color: 'white' }}>←</Text>
-              </View>
-              {/* Right Arrow */}
-              <View style={{ position: 'absolute', right: -30, top: '50%', marginTop: -12, alignItems: 'center' }}>
-                <Text style={{ fontSize: 26, color: 'white' }}>→</Text>
-              </View>
-
-              <Text style={styles.simulatorLabel}>
-                Camera preview unavailable on simulator
-              </Text>
-            </View>
-          </View>
-
+          <CameraPlaceholder variant="simulator" />
         ) : permission?.granted ? (
           <CameraView
             ref={cameraRef}
-            style={StyleSheet.absoluteFill}
+            style={styles.cameraFill}
             facing={facing}
             enableTorch={flashEnabled}
           />
         ) : (
-          <View style={[styles.cameraPlaceholder, { backgroundColor: colors.background }]}>
-            <Text style={[styles.permissionText, { color: colors.text }]}>
-              Camera access is required
-            </Text>
-            <Pressable
-              onPress={requestPermission}
-              style={[styles.permissionButton, { backgroundColor: colors.primary }]}
-            >
-              <Text style={styles.permissionButtonText}>Grant Permission</Text>
-            </Pressable>
-          </View>
+          <CameraPlaceholder
+            variant="permission"
+            onRequestPermission={requestPermission}
+          />
         )}
 
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 24 }]}>
@@ -96,46 +64,22 @@ export default function HomePagerScreen() {
       <Stack.Toolbar placement="left">
         <Stack.Toolbar.Button icon="person.circle" onPress={() => router.push("/(home)/settings")} />
       </Stack.Toolbar>
-      <Stack.Toolbar placement="right" >
+      <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button icon="plus" separateBackground style={{ backgroundColor: colors.primary }} onPress={() => router.push("/(home)/upload")} />
         <Stack.Toolbar.Button icon="tray" onPress={() => router.push("/(home)/notifications")} />
         <Stack.Toolbar.Button icon="square.grid.2x2" onPress={() => router.push("/(home)/albums")} />
       </Stack.Toolbar>
-
     </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "black",
   },
-  cameraPlaceholder: {
+  cameraFill: {
     ...StyleSheet.absoluteFill,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-  },
-  simulatorLabel: {
-    color: "#888",
-    fontSize: 15,
-    textAlign: "center",
-  },
-  permissionText: {
-    fontSize: 16,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  permissionButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  permissionButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
   },
   bottomBar: {
     position: "absolute",

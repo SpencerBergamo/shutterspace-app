@@ -33,6 +33,8 @@ export default function HomeLayout() {
                     headerTitle: "",
                     headerTransparent: true,
                     headerShadowVisible: false,
+                    headerLargeTitleEnabled: false,
+                    contentStyle: { flex: 1, backgroundColor: "#000" },
                 }} />
                 <Stack.Screen name="settings" options={{
                     headerTitle: "Settings",
