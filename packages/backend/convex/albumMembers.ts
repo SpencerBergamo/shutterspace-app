@@ -46,8 +46,18 @@ export async function deriveEffectiveRole(
             .eq('profileId', profileId))
         .first();
 
-    if (!membership || membership.status !== 'active') return 'not-a-member';
-    return membership.role;
+    if (!membership) return 'not-a-member';
+
+    // Dual-read: legacy role:'host' / role:'pending' still present until phase-2 drop.
+    const legacyRole = membership.role as string;
+    if (legacyRole === 'host') return 'host';
+    if (legacyRole === 'pending' || membership.status === 'pending') return 'not-a-member';
+    if (membership.status !== undefined && membership.status !== 'active') return 'not-a-member';
+
+    if (legacyRole === 'member' || legacyRole === 'moderator') {
+        return legacyRole;
+    }
+    return 'not-a-member';
 }
 
 

@@ -1,7 +1,7 @@
 import { api } from "@shutterspace/backend/convex/_generated/api";
 import { MAX_WIDTH } from "@/src/constants/styles";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import useSignedUrls from "@/src/hooks/useSignedUrls";
+import useMediaDelivery from "@/src/hooks/useMediaDelivery";
 import { Album } from "@shutterspace/backend/types/Album";
 import { Media } from "@shutterspace/backend/types/Media";
 import { formatAlbumDate } from "@/src/utils/formatters";
@@ -44,7 +44,7 @@ export default function AlbumSettingsSheet({
 
     const { width } = useWindowDimensions();
 
-    const { requesting, thumbnail: albumCover } = useSignedUrls({ media: lastMedia ?? undefined });
+    const { requesting, thumbnail: albumCover } = useMediaDelivery({ media: lastMedia ?? undefined });
 
     const handleActionPress = (func: () => void) => {
         ref.current?.dismiss();

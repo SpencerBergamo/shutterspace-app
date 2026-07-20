@@ -5,6 +5,16 @@ import { api, internal } from "./_generated/api";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { parseExifToEpoch } from "./lib/dates";
 import { albumAllowsUploads, albumIsVisible } from "./lib/albumLifecycle";
+import {
+    coverFromMedia,
+    isCustomCoverObject,
+    patchCoverFromLatestReady,
+} from "./lib/albumCover";
+import {
+    MEDIA_DELIVERY_BATCH_LIMIT,
+    resolvedMediaForDeliveryValidator,
+} from "./lib/mediaDelivery";
+import { selectMediaForDelivery } from "./lib/selectMediaForDelivery";
 import { adjustStorageUsed, wouldExceedQuota } from "./lib/storage";
 
 
@@ -29,11 +39,46 @@ export const paginateMedia = query({
             .order('desc')
             .paginate(paginationOpts);
 
-        // ADR-0002: media deletion is an immediate hard delete — there is no
-        // per-media soft-delete flag to filter on.
-        return media;
+        // Dual-read: hide legacy soft-deleted rows until dropLegacyAlbumLifecycleFields.
+        return {
+            ...media,
+            page: media.page.filter(m => !(m as { isDeleted?: boolean }).isDeleted),
+        };
     }
 })
+
+/**
+ * Resolve media docs for batch signing. Verifies every ID belongs to `albumId`
+ * (throws on cross-album IDs). Skips missing, soft-deleted, and non-ready rows.
+ */
+export const resolveMediaForDelivery = internalQuery({
+    args: {
+        albumId: v.id("albums"),
+        mediaIds: v.array(v.id("media")),
+    },
+    returns: v.array(resolvedMediaForDeliveryValidator),
+    handler: async (ctx, { albumId, mediaIds }) => {
+        if (mediaIds.length > MEDIA_DELIVERY_BATCH_LIMIT) {
+            throw new ConvexError(
+                `Too many media IDs (max ${MEDIA_DELIVERY_BATCH_LIMIT})`,
+            );
+        }
+
+        const album = await ctx.db.get(albumId);
+        if (!album || !albumIsVisible(album)) {
+            throw new ConvexError("Album not found");
+        }
+
+        try {
+            const rows = await Promise.all(mediaIds.map((mediaId) => ctx.db.get(mediaId)));
+            return selectMediaForDelivery(albumId, rows);
+        } catch (e) {
+            throw new ConvexError(
+                e instanceof Error ? e.message : "Failed to resolve media for delivery",
+            );
+        }
+    },
+});
 
 // --------------------
 // OLD
@@ -52,16 +97,6 @@ export const getMediaForAlbum = query({
             .collect();
     }
 });
-
-export const getLastMedia = query({
-    args: { albumId: v.id('albums') },
-    handler: async (ctx, { albumId }): Promise<Media | null> => {
-        return await ctx.db.query('media')
-            .withIndex('by_albumId', q => q.eq('albumId', albumId))
-            .order('desc')
-            .first();
-    }
-})
 
 export const createMedia = mutation({
     args: {
@@ -124,15 +159,34 @@ export const createMedia = mutation({
             dateTaken: parseExifToEpoch(args.dateTaken),
             location: args.location,
             status: args.status,
+            // Dual-write for older clients filtering `isDeleted`.
+            isDeleted: false,
         });
 
         // ADR-0004: increment global storage usage on commit.
         await adjustStorageUsed(ctx, profile._id, args.size ?? 0);
 
-        if (args.setThumbnail) {
-            await ctx.db.patch(args.albumId, {
-                thumbnail: mediaId,
-            })
+        const pin = !!args.setThumbnail;
+        if (pin || (album.isDynamicThumbnail && args.status === 'ready')) {
+            // Pending videos wait for the Stream webhook before becoming cover.
+            if (args.status === 'ready') {
+                const media = await ctx.db.get(mediaId);
+                if (media) {
+                    await ctx.db.patch(args.albumId, {
+                        cover: coverFromMedia(media),
+                        // Dual-write for older clients still reading `thumbnail`.
+                        thumbnail: mediaId,
+                        ...(pin ? { isDynamicThumbnail: false } : {}),
+                        updatedAt: Date.now(),
+                    });
+                }
+            } else if (pin) {
+                // Pin requested but not ready yet — flip mode; cover set when ready.
+                await ctx.db.patch(args.albumId, {
+                    isDynamicThumbnail: false,
+                    updatedAt: Date.now(),
+                });
+            }
         }
     },
 })
@@ -211,6 +265,8 @@ export const deleteMediaDoc = internalMutation({
         const media = await ctx.db.get(mediaId);
         if (!media) return;
 
+        const album = await ctx.db.get(media.albumId);
+
         // ADR-0004: decrement global storage usage on hard delete.
         await adjustStorageUsed(ctx, media.createdBy, -(media.size ?? 0));
 
@@ -226,9 +282,46 @@ export const deleteMediaDoc = internalMutation({
         for (const l of likes) await ctx.db.delete(l._id);
 
         await ctx.db.delete(mediaId);
+
+        if (!album?.cover) return;
+
+        const cover = album.cover;
+        const coverRefsMedia =
+            cover.mediaId === mediaId ||
+            (cover.type === 'image' && media.identifier.type === 'image' && cover.imageId === media.identifier.imageId) ||
+            (cover.type === 'video' && media.identifier.type === 'video' && cover.videoUid === media.identifier.videoUid);
+
+        if (!coverRefsMedia) return;
+
+        if (isCustomCoverObject(cover)) {
+            // Keep cover.jpg display; only drop the gallery link.
+            // Leave legacy `thumbnail` as-is for older clients.
+            await ctx.db.patch(album._id, {
+                cover: {
+                    type: 'image' as const,
+                    imageId: cover.imageId,
+                    width: cover.width,
+                    height: cover.height,
+                    size: cover.size,
+                },
+                updatedAt: Date.now(),
+            });
+            return;
+        }
+
+        if (album.isDynamicThumbnail) {
+            await patchCoverFromLatestReady(ctx, album._id, mediaId);
+            return;
+        }
+
+        // Pinned gallery media was deleted — clear broken pointer.
+        await ctx.db.patch(album._id, {
+            cover: undefined,
+            thumbnail: undefined,
+            updatedAt: Date.now(),
+        });
     }
 });
-
 export const updateMediaStatus = internalMutation({
     args: {
         mediaId: v.id('media'),
@@ -240,6 +333,19 @@ export const updateMediaStatus = internalMutation({
     },
     handler: async (ctx, { mediaId, status }) => {
         await ctx.db.patch(mediaId, { status });
+
+        if (status !== 'ready') return;
+        const media = await ctx.db.get(mediaId);
+        if (!media) return;
+        const album = await ctx.db.get(media.albumId);
+        if (!album) return;
+        if (album.isDynamicThumbnail || !album.cover) {
+            await ctx.db.patch(media.albumId, {
+                cover: coverFromMedia(media),
+                thumbnail: mediaId,
+                updatedAt: Date.now(),
+            });
+        }
     },
 })
 
@@ -256,5 +362,16 @@ export const updateMediaVideoStatus = internalMutation({
         if (!media) throw new Error("Media not found");
 
         await ctx.db.patch(media._id, { status });
+
+        if (status !== 'ready') return;
+        const album = await ctx.db.get(media.albumId);
+        if (!album) return;
+        if (album.isDynamicThumbnail || !album.cover) {
+            await ctx.db.patch(media.albumId, {
+                cover: coverFromMedia({ ...media, status: 'ready' }),
+                thumbnail: media._id,
+                updatedAt: Date.now(),
+            });
+        }
     },
 })

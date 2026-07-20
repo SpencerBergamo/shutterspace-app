@@ -1,5 +1,5 @@
-import { Id } from "../convex/_generated/dataModel";
 import * as ImagePicker from "expo-image-picker";
+import { Id } from "../convex/_generated/dataModel";
 import { Profile } from "./Profile";
 
 // ADR-0002: explicit album lifecycle.
@@ -8,17 +8,38 @@ import { Profile } from "./Profile";
 // - trashed  — host-deleted, hidden from everyone, restorable until purge.
 export type AlbumStatus = 'active' | 'archived' | 'trashed';
 
+/** Denormalized album cover for list / header / invite surfaces. */
+export type AlbumCover = {
+    type: 'image';
+    imageId: string;
+    width: number;
+    height: number;
+    size?: number;
+    mediaId?: Id<'media'>;
+} | {
+    type: 'video';
+    videoUid: string;
+    duration: number;
+    width?: number;
+    height?: number;
+    mediaId?: Id<'media'>;
+};
+
 export interface Album {
     _id: Id<'albums'>;
     _creationTime: number;
     hostId: Id<'profiles'>;
     title: string;
     description?: string;
+    /** @deprecated Legacy pin; dual-written alongside `cover` until dropAlbumThumbnails. */
     thumbnail?: Id<'media'>;
+    cover?: AlbumCover;
     isDynamicThumbnail: boolean;
     openInvites: boolean;
-    // ADR-0002: epoch ms + the event's IANA timezone (venue-local display).
-    dateRange?: { start: number, end?: number, timezone: string };
+    // ADR-0002: epoch ms + timezone (new) OR legacy ISO strings during dual-write.
+    dateRange?:
+        | { start: number; end?: number; timezone: string }
+        | { start: string; end?: string };
     // ADR-0002: scalar mirror of dateRange.start for efficient range queries.
     startsAt?: number;
     location?: {
@@ -27,7 +48,10 @@ export interface Album {
         name?: string;
         address?: string;
     };
-    status: AlbumStatus;
+    /** Optional until backfillAlbumLifecycleAndTimes; dual-read with `isDeleted`. */
+    status?: AlbumStatus;
+    /** @deprecated Dual-written until dropLegacyAlbumLifecycleFields. */
+    isDeleted?: boolean;
     updatedAt: number;
     expiresAt?: number;
     scheduledArchiveId?: Id<'_scheduled_functions'>;
@@ -50,8 +74,9 @@ export interface Membership {
     _id: Id<'albumMembers'>;
     albumId: Id<'albums'>;
     profileId: Id<'profiles'>;
-    role: StoredRole;
-    status: MembershipStatus;
+    role: StoredRole | 'host' | 'pending';
+    /** Optional until backfillAlbumMemberStatus. */
+    status?: MembershipStatus;
     joinedAt: number;
     updatedAt?: number;
 }
@@ -59,7 +84,7 @@ export interface Membership {
 export interface AlbumFormData {
     title: string;
     description?: string;
-    thumbnail?: Id<'media'>;
+    cover?: AlbumCover;
     file?: ImagePicker.ImagePickerAsset;
     isDynamicThumbnail?: boolean;
     dateRange?: { start: Date, end?: Date };

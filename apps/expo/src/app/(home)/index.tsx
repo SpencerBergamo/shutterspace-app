@@ -1,89 +1,91 @@
-import CameraButton from "@/src/components/CameraButton";
+import { CameraControls, CameraPlaceholder } from "@/src/components/Camera";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import { CameraView, useCameraPermissions, type CameraType } from "expo-camera";
 import Constants from "expo-constants";
-import { useRef } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { router, Stack } from "expo-router";
+import { useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const isSimulator = !Constants.isDevice;
-
-export default function CameraHomeScreen() {
+export default function HomePagerScreen() {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
+  const [facing, setFacing] = useState<CameraType>("back");
+  const [flashEnabled, setFlashEnabled] = useState(false);
+
+  const isSimulator = !Constants.isDevice;
 
   const handleCapture = () => {
     // Capture flow will be implemented later
   };
 
+  const handleToggleFlash = () => {
+    setFlashEnabled((current) => !current);
+  };
+
+  const handleFlipCamera = () => {
+    setFacing((current) => (current === "back" ? "front" : "back"));
+  };
+
   return (
-    <View style={styles.container}>
+    <>
+      <View style={styles.container} collapsable={false}>
+        {isSimulator ? (
+          <CameraPlaceholder variant="simulator" />
+        ) : permission?.granted ? (
+          <CameraView
+            ref={cameraRef}
+            style={styles.cameraFill}
+            facing={facing}
+            enableTorch={flashEnabled}
+          />
+        ) : (
+          <CameraPlaceholder
+            variant="permission"
+            onRequestPermission={requestPermission}
+          />
+        )}
 
-      {isSimulator ? (
-        <View style={[styles.cameraPlaceholder, { backgroundColor: "#1a1a1a" }]}>
-          <Text style={styles.simulatorLabel}>Camera preview unavailable on simulator</Text>
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 24 }]}>
+          <CameraControls
+            capturePhoto={handleCapture}
+            startRecording={() => { }}
+            endRecording={() => { }}
+            flashEnabled={flashEnabled}
+            toggleFlash={handleToggleFlash}
+            flipCamera={handleFlipCamera}
+            disabled={!permission?.granted || isSimulator}
+          />
         </View>
-      ) : permission?.granted ? (
-        <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
-      ) : (
-        <View style={[styles.cameraPlaceholder, { backgroundColor: colors.background }]}>
-          <Text style={[styles.permissionText, { color: colors.text }]}>
-            Camera access is required
-          </Text>
-          <Pressable
-            onPress={requestPermission}
-            style={[styles.permissionButton, { backgroundColor: colors.primary }]}
-          >
-            <Text style={styles.permissionButtonText}>Grant Permission</Text>
-          </Pressable>
-        </View>
-      )}
-
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 24 }]}>
-        <CameraButton onPress={handleCapture} disabled={isSimulator} />
       </View>
-    </View >
+
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="person.circle" onPress={() => router.push("/(home)/settings")} />
+      </Stack.Toolbar>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button icon="plus" separateBackground style={{ backgroundColor: colors.primary }} onPress={() => router.push("/(home)/upload")} />
+        <Stack.Toolbar.Button icon="tray" onPress={() => router.push("/(home)/notifications")} />
+        <Stack.Toolbar.Button icon="square.grid.2x2" onPress={() => router.push("/(home)/albums")} />
+      </Stack.Toolbar>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "black",
   },
-  cameraPlaceholder: {
+  cameraFill: {
     ...StyleSheet.absoluteFill,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-  },
-  simulatorLabel: {
-    color: "#888",
-    fontSize: 15,
-    textAlign: "center",
-  },
-  permissionText: {
-    fontSize: 16,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  permissionButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  permissionButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
   },
   bottomBar: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    alignItems: "center",
+    paddingHorizontal: 24,
   },
 });
