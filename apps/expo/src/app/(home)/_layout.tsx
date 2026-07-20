@@ -1,7 +1,7 @@
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { api } from "@shutterspace/backend/convex/_generated/api";
 import { useQuery } from "convex/react";
-import { router } from "expo-router";
+import { Redirect } from "expo-router";
 import { DarkTheme, ThemeProvider } from "expo-router/react-navigation";
 import { Stack } from "expo-router/stack";
 import { ActivityIndicator, View } from "react-native";
@@ -18,10 +18,7 @@ export default function HomeLayout() {
         );
     }
 
-    if (profile === null) {
-        router.replace("/welcome");
-        return null;
-    }
+    if (profile === null) return <Redirect href="/welcome" />;
 
     return (
         <ThemeProvider value={DarkTheme}>
@@ -39,8 +36,7 @@ export default function HomeLayout() {
                 }} />
                 <Stack.Screen name="settings" options={{
                     headerTitle: "Settings",
-                    animation: "ios_from_left",
-                    headerBackVisible: false,
+                    presentation: 'formSheet',
                 }} />
                 <Stack.Screen name="albums"
                     options={{
@@ -48,30 +44,11 @@ export default function HomeLayout() {
                         headerBackButtonDisplayMode: "minimal",
                     }}
                 />
+                {/* Nested album Stack owns its own headers; hide this parent chrome. */}
                 <Stack.Screen
                     name="album/[id]"
                     options={{
-                        headerShown: true,
-                        headerTransparent: false,
-                        headerLargeTitleEnabled: false,
-                        title: "Album",
-                    }}
-                />
-                <Stack.Screen name="album/[id]/settings" options={{
-                    headerTitle: "Settings",
-                    presentation: "formSheet",
-                    headerLargeTitleEnabled: false,
-
-                }} />
-                <Stack.Screen
-                    name="album/[id]/media/[mediaId]"
-                    options={{
-                        title: "",
-                        animation: "fade",
-                        headerTransparent: true,
-                        headerShadowVisible: false,
-                        headerStyle: { backgroundColor: "transparent" },
-                        headerBlurEffect: "none",
+                        headerShown: false,
                     }}
                 />
 

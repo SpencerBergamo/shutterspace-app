@@ -1,4 +1,4 @@
-import useSignedUrls from "@/src/hooks/useSignedUrls";
+import useMediaDelivery from "@/src/hooks/useMediaDelivery";
 import { formatVideoDuration } from "@/src/utils/formatters";
 import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
 import { Media } from "@shutterspace/backend/types/Media";
@@ -27,11 +27,9 @@ function GalleryTileComponent({ media, albumId }: GalleryTileProps) {
     const isVideo = media.identifier.type === "video";
     const duration = media.identifier.type === "video" ? media.identifier.duration : null;
 
-    const { requesting, thumbnail: uri } = useSignedUrls({
+    const { requesting, thumbnail: uri, handleImageError } = useMediaDelivery({
         media: isReady && !isError ? media : undefined,
     });
-
-    const isLoading = requesting || isPending;
 
     if (isError) {
         return (
@@ -45,45 +43,48 @@ function GalleryTileComponent({ media, albumId }: GalleryTileProps) {
         );
     }
 
+    const showSpinner = isPending || (requesting && !uri);
+    // Prefer stable disk-cache paint: no fade when we already have a URI.
+    const transition = uri ? 0 : 100;
+
     const content = (
         <View testID="gallery-tile" style={styles.container}>
-            {isLoading ? (
+            {uri ? (
+                <Image
+                    source={{ uri, cacheKey: media._id }}
+                    transition={transition}
+                    style={styles.image}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    recyclingKey={media._id}
+                    onError={() => {
+                        setImageError(true);
+                        void handleImageError();
+                    }}
+                />
+            ) : showSpinner ? (
                 <ActivityIndicator size="small" color="#8E8E93" />
-            ) : (
-                <>
-                    {uri ? (
-                        <Image
-                            source={{ uri, cacheKey: media._id }}
-                            transition={100}
-                            style={styles.image}
-                            contentFit="cover"
-                            cachePolicy="memory-disk"
-                            recyclingKey={media._id}
-                            onError={() => setImageError(true)}
-                        />
-                    ) : null}
+            ) : null}
 
-                    {isVideo && isReady ? (
-                        <View style={styles.videoBadge} pointerEvents="none">
-                            {duration != null ? (
-                                <Text style={styles.durationText}>
-                                    {formatVideoDuration(duration)}
-                                </Text>
-                            ) : (
-                                <Image
-                                    source="sf:play.fill"
-                                    style={styles.playIcon}
-                                    tintColor="white"
-                                />
-                            )}
-                        </View>
-                    ) : null}
-                </>
-            )}
+            {isVideo && isReady ? (
+                <View style={styles.videoBadge} pointerEvents="none">
+                    {duration != null ? (
+                        <Text style={styles.durationText}>
+                            {formatVideoDuration(duration)}
+                        </Text>
+                    ) : (
+                        <Image
+                            source="sf:play.fill"
+                            style={styles.playIcon}
+                            tintColor="white"
+                        />
+                    )}
+                </View>
+            ) : null}
         </View>
     );
 
-    if (isLoading || !isReady) {
+    if (!isReady || showSpinner) {
         return content;
     }
 

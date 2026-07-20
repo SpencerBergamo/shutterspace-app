@@ -1,9 +1,8 @@
 import { v } from "convex/values";
 import { Invitation } from "../types/Invites";
-import { MediaIdentifier } from "../types/Media";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { albumAllowsEdits, albumIsVisible } from "./lib/albumLifecycle";
 
 export const getInviteCode = query({
@@ -34,12 +33,6 @@ export const openInvite = query({
         const sender = await ctx.db.get(invite.createdBy);
         if (!sender) throw new Error('Sender\'s profile not found');
 
-        let albumCover: MediaIdentifier | undefined;
-        if (album.thumbnail) {
-            const media = await ctx.db.get(album.thumbnail);
-            albumCover = media?.identifier ?? undefined;
-        }
-
         return {
             albumId: album._id,
             sender: sender.nickname,
@@ -47,7 +40,7 @@ export const openInvite = query({
             avatarKey: sender.avatarKey,
             title: album.title,
             description: album.description,
-            cover: albumCover,
+            cover: album.cover,
             role: invite.role,
             created: album._creationTime,
         }
@@ -116,5 +109,14 @@ export const addCode = internalMutation({
             role,
             openInvites,
         });
+    },
+});
+
+export const getInviteByCode = internalQuery({
+    args: { code: v.string() },
+    handler: async (ctx, { code }) => {
+        return await ctx.db.query('inviteCodes')
+            .withIndex('by_code', q => q.eq('code', code))
+            .first();
     },
 });

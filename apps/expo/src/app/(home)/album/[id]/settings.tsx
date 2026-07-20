@@ -6,7 +6,7 @@ export default function AlbumSettingsModal() {
 
 
    return (
-      <View >
+      <View style={{ flex: 1, padding: 16 }} >
 
          <Stack.Toolbar placement="left">
             <Stack.Toolbar.Button icon="xmark" accessibilityLabel="Close" onPress={() => router.back()} />

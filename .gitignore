@@ -43,7 +43,8 @@ yarn-error.*
 
 *.turbo
 
-app-example
+.cursor/
+docs/*
 
 ./google-services.json
 ./GoogleService-Info.plist
@@ -52,3 +53,5 @@ app-example
 secret-keys/
 
 audit-report.json
+# Personal learning notes (local only)
+blog/

@@ -1,4 +1,4 @@
-import useSignedUrls from "@/src/hooks/useSignedUrls";
+import useMediaDelivery from "@/src/hooks/useMediaDelivery";
 import { Media } from "@shutterspace/backend/types/Media";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useState } from "react";
@@ -32,7 +32,8 @@ export function ViewerItem({
     height,
     onZoomChange,
 }: ViewerItemProps) {
-    const { thumbnail, requesting, requestingVideo, requestVideo } = useSignedUrls({ media });
+    const { thumbnail, requesting, requestingVideo, requestVideo, handleImageError } =
+        useMediaDelivery({ media });
 
     const type = media.identifier.type;
     const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined);
@@ -201,6 +202,10 @@ export function ViewerItem({
                             contentFit="contain"
                             cachePolicy="memory-disk"
                             recyclingKey={media._id}
+                            transition={0}
+                            onError={() => {
+                                void handleImageError();
+                            }}
                         />
                     ) : (
                         <ActivityIndicator size="large" color="white" />

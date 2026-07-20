@@ -21,8 +21,7 @@ import {
     Share,
     StyleSheet,
     Text,
-    TouchableOpacity,
-    View,
+    View
 } from "react-native";
 
 export default function SettingsScreen() {
@@ -113,14 +112,13 @@ export default function SettingsScreen() {
             <Stack.Screen
                 options={{
                     headerTitle: "Settings",
-                    headerBackVisible: false,
-                    headerRight: () => (
-                        <TouchableOpacity onPress={() => router.back()}>
-                            <PlatformIcon name="chevronRight" size={18} color={colors.text} />
-                        </TouchableOpacity>
-                    ),
                 }}
             />
+
+            <Stack.Toolbar placement="left">
+                <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
+            </Stack.Toolbar>
+
             <ScrollView
                 style={[styles.screen, { backgroundColor: colors.background }]}
                 contentInsetAdjustmentBehavior="automatic"

@@ -1,27 +1,33 @@
 import { GalleryGrid } from "@/src/components/gallery/gallery-grid";
+import { useAlbumGallery } from "@/src/context/AlbumGalleryContext";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { useAlbumMedia } from "@/src/hooks/useAlbumMedia";
-import { api } from "@shutterspace/backend/convex/_generated/api";
-import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
-import { useQuery } from "convex/react";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack } from "expo-router";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
+function AlbumBackButton() {
+    return (
+        <Stack.Toolbar placement="left">
+            <Stack.Toolbar.Button
+                icon="chevron.left"
+                accessibilityLabel="Back"
+                onPress={() => {
+                    if (router.canGoBack()) router.back();
+                    else router.replace("/(home)/albums");
+                }}
+            />
+        </Stack.Toolbar>
+    );
+}
 
 export default function AlbumDetailScreen() {
     const { colors } = useAppTheme();
-    const { id } = useLocalSearchParams<{ id: string }>();
-    const albumId = id as Id<"albums">;
-
-    const album = useQuery(api.albums.queryAlbum, albumId ? { albumId } : "skip");
-    const { media, status, loadMore, isLoading } = useAlbumMedia(
-        album ? albumId : undefined,
-    );
+    const { albumId, album, media, status, loadMore } = useAlbumGallery();
 
     if (album === undefined) {
         return (
             <>
                 <Stack.Screen options={{ headerLargeTitleEnabled: false, title: "Album" }} />
+                <AlbumBackButton />
                 <View style={{
                     flex: 1,
                     justifyContent: "center",
@@ -38,6 +44,7 @@ export default function AlbumDetailScreen() {
         return (
             <>
                 <Stack.Screen options={{ headerLargeTitleEnabled: false, title: "Album" }} />
+                <AlbumBackButton />
                 <ScrollView
                     contentInsetAdjustmentBehavior="automatic"
                     contentContainerStyle={{
@@ -66,8 +73,9 @@ export default function AlbumDetailScreen() {
                 }}
             />
 
+            <AlbumBackButton />
+
             <Stack.Toolbar placement="right">
-                {/* Sort */}
                 <Stack.Toolbar.Menu icon="line.3.horizontal.decrease">
                     <Stack.Toolbar.MenuAction icon="camera" onPress={() => { }}>
                         Captured
@@ -77,7 +85,6 @@ export default function AlbumDetailScreen() {
                     </Stack.Toolbar.MenuAction>
                 </Stack.Toolbar.Menu>
 
-                {/* Settings */}
                 <Stack.Toolbar.Menu icon="ellipsis">
                     <Stack.Toolbar.MenuAction
                         icon="square.and.pencil"
@@ -96,25 +103,6 @@ export default function AlbumDetailScreen() {
                 onEndReached={loadMore}
                 style={{}}
             />
-
-            {/* {isLoading && media.length === 0 ? (
-                <View style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    backgroundColor: colors.background,
-                }}>
-                    <ActivityIndicator size="large" color={colors.text} />
-                </View>
-            ) : (
-                <Gallery
-                    albumId={albumId}
-                    cover={album.cover}
-                    media={media}
-                    status={status}
-                    onEndReached={loadMore}
-                />
-            )} */}
         </>
     );
 }

@@ -27,14 +27,16 @@ export type Media = {
     filename: string;
     identifier: MediaIdentifier;
     size?: number;
-    // ADR-0002: epoch ms (set at upload from EXIF). No ISO strings in the DB.
-    dateTaken?: number;
+    // ADR-0002: epoch ms preferred; string allowed during dual-write window.
+    dateTaken?: number | string;
     location?: {
         lat: number;
         lng: number;
         name?: string;
         address?: string;
     },
+    /** @deprecated Soft-delete flag; filtered until dropLegacyAlbumLifecycleFields. */
+    isDeleted?: boolean;
     status: MediaStatus;
 }
 

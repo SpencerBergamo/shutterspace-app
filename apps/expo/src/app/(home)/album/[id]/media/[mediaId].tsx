@@ -1,29 +1,41 @@
 import { GalleryViewer } from "@/src/components/gallery";
-import { useAlbumMedia } from "@/src/hooks/useAlbumMedia";
+import { useAlbumGallery } from "@/src/context/AlbumGalleryContext";
 import { Id } from "@shutterspace/backend/convex/_generated/dataModel";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 export default function AlbumMediaViewerScreen() {
-    const { id, mediaId } = useLocalSearchParams<{ id: string; mediaId: string }>();
-    const albumId = id as Id<"albums">;
+    const { mediaId } = useLocalSearchParams<{ mediaId: string }>();
     const currentMediaId = mediaId as Id<"media">;
-
-    const { media, loadMore, isLoading, status } = useAlbumMedia(albumId);
+    const { albumId, media, loadMore, isLoading, status, prefetchDelivery } =
+        useAlbumGallery();
 
     const initialIndex = useMemo(() => {
         const index = media.findIndex((item) => item._id === currentMediaId);
         return index >= 0 ? index : 0;
     }, [media, currentMediaId]);
 
+    useEffect(() => {
+        if (media.length === 0) return;
+        const neighborIds = media
+            .slice(Math.max(0, initialIndex - 2), initialIndex + 3)
+            .map((m) => m._id);
+        void prefetchDelivery(neighborIds);
+    }, [media, initialIndex, prefetchDelivery]);
+
     const handleIndexChange = useCallback(
         (index: number) => {
             const next = media[index];
             if (!next || next._id === currentMediaId) return;
             router.setParams({ mediaId: next._id });
+
+            const neighborIds = media
+                .slice(Math.max(0, index - 2), index + 3)
+                .map((m) => m._id);
+            void prefetchDelivery(neighborIds);
         },
-        [media, currentMediaId],
+        [media, currentMediaId, prefetchDelivery],
     );
 
     const mediaReady =
@@ -62,7 +74,6 @@ export default function AlbumMediaViewerScreen() {
                     <Stack.Toolbar.MenuAction icon="flag" onPress={() => { }}>
                         Flag Inappropriate
                     </Stack.Toolbar.MenuAction>
-
                 </Stack.Toolbar.Menu>
             </Stack.Toolbar>
 

@@ -64,7 +64,7 @@ jest.mock("@shopify/flash-list", () => {
     };
 });
 
-jest.mock("@/src/hooks/useSignedUrls", () => ({
+jest.mock("@/src/hooks/useMediaDelivery", () => ({
     __esModule: true,
     default: () => ({
         requesting: false,
