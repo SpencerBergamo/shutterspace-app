@@ -1,4 +1,4 @@
-import CameraButton from "@/src/components/Camera/CameraButton";
+import { CameraButton } from "@/src/components/Camera";
 import PlatformIcon from "@/src/components/PlatformIcon/platform-icon";
 import { Pressable, StyleSheet, View } from "react-native";
 
