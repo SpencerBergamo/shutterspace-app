@@ -112,6 +112,9 @@ export default function SettingsScreen() {
             <Stack.Screen
                 options={{
                     headerTitle: "Settings",
+                    headerTitleStyle: {
+                        color: colors.text,
+                    }
                 }}
             />
 

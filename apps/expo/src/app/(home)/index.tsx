@@ -1,4 +1,4 @@
-import CameraControls from "@/src/components/Camera/CameraControls";
+import { CameraControls } from "@/src/components/Camera";
 import { useAppTheme } from "@/src/context/AppThemeContext";
 import { CameraView, useCameraPermissions, type CameraType } from "expo-camera";
 import Constants from "expo-constants";
@@ -7,11 +7,7 @@ import { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-
-
 export default function HomePagerScreen() {
-
-
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView>(null);
@@ -37,9 +33,32 @@ export default function HomePagerScreen() {
     <>
       <View style={styles.container} collapsable={false}>
         {isSimulator ? (
-          <View style={[styles.cameraPlaceholder, { backgroundColor: "#1a1a1a" }]}>
-            <Text style={styles.simulatorLabel}>Camera preview unavailable on simulator</Text>
+          <View style={[styles.cameraPlaceholder, { backgroundColor: "#1a1a1a", justifyContent: 'center', alignItems: 'center' }]}>
+            <View style={{ width: '90%', height: '90%', borderStyle: "dashed", borderWidth: 2, borderColor: 'white', borderRadius: 18, justifyContent: 'center', alignItems: 'center' }}>
+              {/* Arrows - Top, Bottom, Left, Right */}
+              {/* Top Arrow */}
+              <View style={{ position: 'absolute', top: -30, left: '50%', marginLeft: -12, alignItems: 'center' }}>
+                <Text style={{ fontSize: 26, color: 'white' }}>↑</Text>
+              </View>
+              {/* Bottom Arrow */}
+              <View style={{ position: 'absolute', bottom: -30, left: '50%', marginLeft: -12, alignItems: 'center' }}>
+                <Text style={{ fontSize: 26, color: 'white' }}>↓</Text>
+              </View>
+              {/* Left Arrow */}
+              <View style={{ position: 'absolute', left: -30, top: '50%', marginTop: -12, alignItems: 'center' }}>
+                <Text style={{ fontSize: 26, color: 'white' }}>←</Text>
+              </View>
+              {/* Right Arrow */}
+              <View style={{ position: 'absolute', right: -30, top: '50%', marginTop: -12, alignItems: 'center' }}>
+                <Text style={{ fontSize: 26, color: 'white' }}>→</Text>
+              </View>
+
+              <Text style={styles.simulatorLabel}>
+                Camera preview unavailable on simulator
+              </Text>
+            </View>
           </View>
+
         ) : permission?.granted ? (
           <CameraView
             ref={cameraRef}

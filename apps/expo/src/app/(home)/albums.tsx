@@ -67,14 +67,14 @@ export default function AlbumsScreen() {
 
     return (
         <>
-            <AlbumsList
-                albums={isLoading ? [] : displayAlbums}
-                onEndReached={handleEndReached}
-                ListEmptyComponent={renderEmptyComponent}
-                style={{ backgroundColor: colors.background }}
-                layoutKey={sortBy}
-            />
-            <Stack.Screen.Title large>Albums</Stack.Screen.Title>
+            <Stack.Screen options={{
+                headerTitle: "Albums",
+                headerLargeTitleEnabled: true,
+                headerTitleStyle: {
+                    color: colors.text,
+                },
+            }} />
+
             <Stack.Toolbar placement="right">
                 <Stack.Toolbar.Menu icon="line.3.horizontal.decrease" >
                     <Stack.Toolbar.Menu inline title="Sort By">
@@ -108,6 +108,14 @@ export default function AlbumsScreen() {
                     </Stack.Toolbar.MenuAction>
                 </Stack.Toolbar.Menu>
             </Stack.Toolbar>
+
+            <AlbumsList
+                albums={isLoading ? [] : displayAlbums}
+                onEndReached={handleEndReached}
+                ListEmptyComponent={renderEmptyComponent}
+                style={{ backgroundColor: colors.background }}
+                layoutKey={sortBy}
+            />
 
             {/* Search Bar */}
             <Stack.SearchBar

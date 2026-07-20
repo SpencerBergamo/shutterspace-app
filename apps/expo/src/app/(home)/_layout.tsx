@@ -68,15 +68,6 @@ export default function HomeLayout() {
                 }} />
 
                 <Stack.Screen
-                    name="friends"
-                    options={{
-                        headerShown: true,
-                        headerTitle: "Friends",
-                        headerBackButtonDisplayMode: "minimal",
-                        headerShadowVisible: false,
-                    }}
-                />
-                <Stack.Screen
                     name="contact-us"
                     options={{
                         headerShown: true,
