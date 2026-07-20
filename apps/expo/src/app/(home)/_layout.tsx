@@ -36,10 +36,13 @@ export default function HomeLayout() {
                     headerLargeTitleEnabled: false,
                     contentStyle: { flex: 1, backgroundColor: "#000" },
                 }} />
-                <Stack.Screen name="settings" options={{
-                    headerTitle: "Settings",
-                    presentation: 'formSheet',
-                }} />
+                <Stack.Screen
+                    name="settings"
+                    options={{
+                        presentation: "modal",
+                        headerShown: false,
+                    }}
+                />
                 <Stack.Screen name="albums"
                     options={{
                         animation: "ios_from_right",
@@ -54,30 +57,11 @@ export default function HomeLayout() {
                     }}
                 />
 
-                <Stack.Screen
-                    name="profile/edit"
-                    options={{
-                        animation: "slide_from_right",
-                        gestureDirection: "horizontal",
-
-                    }}
-                />
-
                 <Stack.Screen name="new-album" options={{
                     headerTitle: "New Album",
                     headerLargeTitleEnabled: false,
                     presentation: "modal",
                 }} />
-
-                <Stack.Screen
-                    name="contact-us"
-                    options={{
-                        headerShown: true,
-                        headerTitle: "Contact Us",
-                        headerBackButtonDisplayMode: "minimal",
-                        headerShadowVisible: false,
-                    }}
-                />
             </Stack>
         </ThemeProvider>
     );

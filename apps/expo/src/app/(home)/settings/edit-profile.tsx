@@ -1,24 +1,25 @@
-import { api } from '@shutterspace/backend/convex/_generated/api';
 import Avatar from '@/src/components/Avatar';
 import { TextInputStyles } from '@/src/constants/styles';
 import { useAppTheme } from '@/src/context/AppThemeContext';
 import { validateAssets, ValidatedAsset } from '@/src/utils/mediaHelper';
 import { validateNickname } from '@/src/utils/validators';
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { useNavigation, usePreventRemove } from "expo-router/react-navigation";
+import { api } from '@shutterspace/backend/convex/_generated/api';
 import axios from 'axios';
 import { useAction, useMutation, useQuery } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useRef, useState } from 'react';
+import { useNavigation, usePreventRemove } from "expo-router/react-navigation";
+import { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ActivityIndicator, Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 type ProfileFormData = {
     avatar?: ValidatedAsset;
     nickname: string;
 }
 
-export default function() {
+export default function () {
     const profile = useQuery(api.profile.getUserProfile);
 
     const { colors } = useAppTheme();
@@ -159,8 +160,14 @@ export default function() {
     }
 
     return (
-        <View style={{ flex: 1, flexDirection: 'column', gap: 8, padding: 16, backgroundColor: colors.background, alignItems: 'center' }}>
-            {/* Avatar */}
+        <KeyboardAwareScrollView
+            style={[styles.screen, { backgroundColor: colors.background }]}
+            contentContainerStyle={styles.content}
+            contentInsetAdjustmentBehavior="automatic"
+            keyboardShouldPersistTaps="handled"
+            bottomOffset={24}
+            showsVerticalScrollIndicator={false}
+        >
             <Controller
                 control={control}
                 name="avatar"
@@ -176,7 +183,6 @@ export default function() {
                 )}
             />
 
-            {/* Nickname */}
             <Controller
                 control={control}
                 name="nickname"
@@ -189,14 +195,14 @@ export default function() {
                         ref={nicknameInputRef}
                         value={value}
                         placeholder="Nickname"
-                        placeholderTextColor={colors.text}
+                        placeholderTextColor={colors.caption}
                         maxLength={30}
                         autoCapitalize="words"
                         autoCorrect={false}
                         spellCheck={false}
                         textAlign="left"
                         keyboardType="default"
-                        returnKeyType="next"
+                        returnKeyType="done"
                         selectionColor={colors.primary}
                         onChangeText={onChange}
                         onBlur={onBlur}
@@ -206,47 +212,50 @@ export default function() {
                             backgroundColor: colors.background,
                             borderColor: colors.border,
                             color: colors.text,
-                            marginBottom: 16
                         }]}
                     />
                 )}
             />
-            {errors.nickname && (
+            {errors.nickname ? (
                 <View style={styles.errorTextView}>
-                    <Text style={{ color: "#FF3B30" }}>{errors.nickname.message}</Text>
+                    <Text style={styles.errorText}>{errors.nickname.message}</Text>
                 </View>
-            )}
+            ) : null}
 
-            {isSaving ? <ActivityIndicator size="small" color={colors.primary} /> :
+            {isSaving ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
                 <TouchableOpacity
                     disabled={!isDirty}
                     onPress={handleSubmit(saveChanges)}
-                    style={[styles.button, { backgroundColor: !isDirty ? '#ccc' : colors.primary }]}>
+                    style={[styles.button, { backgroundColor: !isDirty ? '#ccc' : colors.primary }]}
+                >
                     <Text style={styles.buttonText}>Save Changes</Text>
                 </TouchableOpacity>
-            }
-        </View>
+            )}
+        </KeyboardAwareScrollView>
     );
 }
 
 const styles = StyleSheet.create({
-
-    avatarContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 100,
-        overflow: 'hidden',
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 12,
-    },
-
-    errorTextView: {
+    screen: {
         flex: 1,
-        height: 21,
+    },
+    content: {
+        flexGrow: 1,
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 16,
+        paddingBottom: 32,
+    },
+    errorTextView: {
+        alignSelf: 'stretch',
+        minHeight: 21,
         justifyContent: 'center',
         paddingHorizontal: 8,
+    },
+    errorText: {
+        color: '#FF3B30',
     },
     button: {
         width: '100%',
@@ -254,10 +263,11 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: 8,
     },
     buttonText: {
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
     },
-})
+});

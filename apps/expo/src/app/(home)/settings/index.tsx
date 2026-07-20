@@ -29,8 +29,6 @@ export default function SettingsScreen() {
     const { colors } = useAppTheme();
     const profile = useQuery(api.profile.getUserProfile);
 
-    const iconColor = colors.text;
-
     const handleOpenUrl = async (url: string) => {
         const supported = await Linking.canOpenURL(url);
 
@@ -109,17 +107,8 @@ export default function SettingsScreen() {
 
     return (
         <>
-            <Stack.Screen
-                options={{
-                    headerTitle: "Settings",
-                    headerTitleStyle: {
-                        color: colors.text,
-                    }
-                }}
-            />
-
             <Stack.Toolbar placement="left">
-                <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
+                <Stack.Toolbar.Button icon="xmark" onPress={() => router.dismiss()} />
             </Stack.Toolbar>
 
             <ScrollView
@@ -129,7 +118,7 @@ export default function SettingsScreen() {
                 contentContainerStyle={styles.content}
             >
                 <Pressable
-                    onPress={() => router.push("/(home)/profile/edit")}
+                    onPress={() => router.push("/(home)/settings/edit-profile")}
                     style={({ pressed }) => [
                         styles.card,
                         styles.profileCard,
@@ -163,19 +152,12 @@ export default function SettingsScreen() {
                     />
                     <SettingsRow
                         colors={colors}
-                        title="Friends"
-                        iconName="friends"
-                        onPress={() => router.push("/(home)/friends")}
-                    />
-                    <SettingsRow
-                        colors={colors}
                         title="Shutterspace Plan"
                         icon={
                             <Image
                                 source={ASSETS.logo}
                                 style={styles.logoIcon}
                                 contentFit="contain"
-                                tintColor={iconColor}
                             />
                         }
                         disabled
@@ -198,7 +180,7 @@ export default function SettingsScreen() {
                         colors={colors}
                         title="Report a Problem"
                         iconName="help"
-                        onPress={() => router.push("/(home)/contact-us")}
+                        onPress={() => router.push("/(home)/settings/contact-us")}
                         isLast
                     />
                 </SettingsCard>
