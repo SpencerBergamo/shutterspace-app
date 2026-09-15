@@ -65,7 +65,11 @@ export default function HomePagerScreen() {
         <Stack.Toolbar.Button icon="person.circle" onPress={() => router.push("/(home)/settings")} />
       </Stack.Toolbar>
       <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button icon="plus" separateBackground style={{ backgroundColor: colors.primary }} onPress={() => router.push("/(home)/upload")} />
+        <Stack.Toolbar.Menu icon="plus" separateBackground >
+
+
+        </Stack.Toolbar.Menu>
+
         <Stack.Toolbar.Button icon="tray" onPress={() => router.push("/(home)/notifications")} />
         <Stack.Toolbar.Button icon="square.grid.2x2" onPress={() => router.push("/(home)/albums")} />
       </Stack.Toolbar>
