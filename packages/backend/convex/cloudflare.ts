@@ -1,14 +1,34 @@
 "use node";
 
 import axios from "axios";
-import { v } from "convex/values";
-import crypto from 'crypto';
+import { ConvexError, v } from "convex/values";
+import crypto from "crypto";
 import { api, internal } from "./_generated/api";
 import { action, internalAction } from "./_generated/server";
+import { MEDIA_DELIVERY_URL_TTL_SECONDS } from "./lib/mediaDelivery";
 
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const UPLOAD_BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}`;
 const DELIVERY_BASE_URL = `https://customer-${process.env.CLOUDFLARE_CUSTOMER_CODE}.cloudflarestream.com`;
+
+export type StreamDeliveryKind = "thumbnail" | "playback";
+
+/** Mint a signed Stream delivery URL. Pure CPU; safe to call in a batch. */
+export async function signStreamDeliveryUrl(
+    videoUID: string,
+    kind: StreamDeliveryKind,
+): Promise<{ url: string; expiresAt: number }> {
+    const token = await constructSig(videoUID);
+    const expiresAt = Date.now() + MEDIA_DELIVERY_URL_TTL_SECONDS * 1000;
+    const path = kind === "thumbnail"
+        ? "thumbnails/thumbnail.jpg"
+        : "manifest/video.m3u8";
+
+    return {
+        url: `${DELIVERY_BASE_URL}/${token}/${path}`,
+        expiresAt,
+    };
+}
 
 export const prepareVideoUpload = action({
     args: {
@@ -18,10 +38,9 @@ export const prepareVideoUpload = action({
     },
     handler: async (ctx, { albumId, filename, incomingSize }): Promise<{ uploadURL: string, uid: string }> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-        if (!membership || membership === 'not-a-member') throw new Error("Not a member of this album");
+        if (!membership || membership === 'not-a-member') throw new ConvexError("Not a member of this album");
 
         await ctx.runQuery(internal.albums.assertAlbumAcceptsUploads, { albumId });
-        // ADR-0004: reject over-quota users before minting a signed URL.
         await ctx.runQuery(internal.media.assertStorageWithinQuota, { incomingSize });
 
         const url = `${UPLOAD_BASE_URL}/stream/direct_upload`;
@@ -37,7 +56,7 @@ export const prepareVideoUpload = action({
 
         if (!response.data || response.status !== 200) {
             console.warn("Cloudflare video upload error: ", response.data);
-            throw new Error("Invalid response");
+            throw new ConvexError("Invalid response");
         };
 
         const { uploadURL, uid }: { uploadURL: string, uid: string } = response.data.result;
@@ -50,13 +69,13 @@ export const getVideoThumbnailURL = action({
         albumId: v.id('albums'),
         videoUID: v.string(),
     },
+    returns: v.string(),
     handler: async (ctx, { albumId, videoUID }): Promise<string> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-        if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
+        if (!membership || membership === 'not-a-member') throw new ConvexError('Unauthorized');
 
-        const token = await constructSig(videoUID);
-
-        return `${DELIVERY_BASE_URL}/${token}/thumbnails/thumbnail.jpg`;
+        const { url } = await signStreamDeliveryUrl(videoUID, "thumbnail");
+        return url;
     }
 });
 
@@ -65,29 +84,28 @@ export const getVideoPlaybackURL = action({
         albumId: v.id('albums'),
         videoUID: v.string(),
     },
+    returns: v.string(),
     handler: async (ctx, { albumId, videoUID }): Promise<string> => {
         const membership = await ctx.runQuery(api.albumMembers.getMembership, { albumId });
-        if (!membership || membership === 'not-a-member') throw new Error('Unauthorized');
+        if (!membership || membership === 'not-a-member') throw new ConvexError('Unauthorized');
 
-        const token = await constructSig(videoUID);
-
-        return `${DELIVERY_BASE_URL}/${token}/manifest/video.m3u8`;
+        const { url } = await signStreamDeliveryUrl(videoUID, "playback");
+        return url;
     }
 });
 
-// ------------ Internal ------------
-
 export const getPublicThumbnail = internalAction({
     args: { videoUID: v.string() },
-    handler: async (ctx, { videoUID }): Promise<string> => {
-        const token = await constructSig(videoUID);
-        return `${DELIVERY_BASE_URL}/${token}/thumbnails/thumbnail.jpg`;
+    returns: v.string(),
+    handler: async (_ctx, { videoUID }): Promise<string> => {
+        const { url } = await signStreamDeliveryUrl(videoUID, "thumbnail");
+        return url;
     }
 })
 
 export const deleteVideo = internalAction({
     args: { videoUID: v.string() },
-    handler: async (ctx, { videoUID }) => {
+    handler: async (_ctx, { videoUID }) => {
         const url = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/stream/${videoUID}`;
         await axios.delete(url, {
             headers: {
@@ -95,7 +113,7 @@ export const deleteVideo = internalAction({
             }
         }).catch(e => {
             console.error('Failed to delete video from Cloudflare Stream', e);
-            throw new Error('Failed to delete video');
+            throw new ConvexError('Failed to delete video');
         });
     }
 })
@@ -104,10 +122,10 @@ async function constructSig(videoUID: string) {
     const base64PEM = process.env.CLOUDFLARE_STREAM_PEM;
     const keyID = process.env.CLOUDFLARE_STREAM_KEY_ID;
 
-    if (!base64PEM || !keyID) throw new Error('Missing PEM or Key ID');
+    if (!base64PEM || !keyID) throw new ConvexError('Missing PEM or Key ID');
 
     const pem = Buffer.from(base64PEM, 'base64').toString('utf8');
-    const expiresIn = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
+    const expiresIn = Math.floor(Date.now() / 1000) + MEDIA_DELIVERY_URL_TTL_SECONDS;
 
     const header = {
         alg: 'RS256',

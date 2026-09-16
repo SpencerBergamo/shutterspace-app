@@ -10,15 +10,20 @@ export const ARCHIVE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 /** Time in trash before hard purge (ADR-0002). */
 export const PURGE_DELAY_MS = 30 * 24 * 60 * 60 * 1000;
 
+type LegacyAlbum = Doc<"albums"> & { isDeleted?: boolean };
+
 /**
  * Effective status for authorization. Readers may also defensively treat
  * `active && now >= expiresAt` as archived (ADR-0002).
+ *
+ * Falls back to legacy `isDeleted` when `status` has not been backfilled yet.
  */
 export function getEffectiveStatus(
     album: Doc<"albums">,
     now: number = Date.now(),
 ): EffectiveAlbumStatus {
-    if (album.status === "trashed") return "trashed";
+    const legacy = album as LegacyAlbum;
+    if (album.status === "trashed" || legacy.isDeleted === true) return "trashed";
     if (album.status === "archived") return "archived";
     if (album.expiresAt !== undefined && now >= album.expiresAt) return "archived";
     return "active";
@@ -33,7 +38,7 @@ export function albumAllowsEdits(album: Doc<"albums">, now?: number): boolean {
 }
 
 export function albumIsVisible(album: Doc<"albums">): boolean {
-    return album.status !== "trashed";
+    return getEffectiveStatus(album) !== "trashed";
 }
 
 /** Default `expiresAt` = event end + grace window (ADR-0002). */
@@ -65,7 +70,8 @@ export async function rescheduleArchiveJob(
         await ctx.scheduler.cancel(album.scheduledArchiveId);
     }
 
-    if (expiresAt === undefined || album.status !== "active") {
+    const effective = getEffectiveStatus(album);
+    if (expiresAt === undefined || effective !== "active") {
         await ctx.db.patch(albumId, { scheduledArchiveId: undefined });
         return;
     }

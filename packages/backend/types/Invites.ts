@@ -1,5 +1,5 @@
 import { Id } from "../convex/_generated/dataModel";
-import { MediaIdentifier } from "./Media";
+import { AlbumCover } from "./Album";
 
 export type InviteRole = 'member' | 'moderator';
 
@@ -19,7 +19,7 @@ export interface Invitation {
     avatarKey?: string;
     title: string;
     description?: string;
-    cover?: MediaIdentifier;
+    cover?: AlbumCover;
     role: InviteRole;
     created: number;
     message?: string;

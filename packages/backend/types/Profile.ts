@@ -13,6 +13,8 @@ export interface Profile {
     // ADR-0004: per-user global storage accounting.
     storageUsedBytes?: number;
     storageLimitBytes?: number;
+    /** @deprecated Dual-read until dropLegacyProfileStorageQuota. */
+    storageQuota?: number;
 }
 
 export interface PublicProfile {

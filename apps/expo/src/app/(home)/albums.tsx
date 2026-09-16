@@ -1,287 +1,135 @@
-import AlbumDetailCard from "@/src/components/Album/AlbumDetailCard";
-import FloatingActionButton from "@/src/components/FloatingActionButton";
-import PlatformIcon from "@/src/components/PlatformIcon/platform-icon";
-import QRCodeModal from "@/src/components/QRCodeModal";
+import { AlbumsEmptyState, AlbumsList } from "@/src/components/albums";
 import { useAppTheme } from "@/src/context/AppThemeContext";
-import { HeaderButton } from "expo-router/react-navigation";
-import { FlashList } from "@shopify/flash-list";
-import { api } from "@shutterspace/backend/convex/_generated/api";
-import { Album } from "@shutterspace/backend/types/Album";
-import { usePaginatedQuery, useQuery } from "convex/react";
+import { useUserAlbums } from "@/src/hooks/use-user-albums";
 import { router, Stack } from "expo-router";
-import * as Orientation from 'expo-screen-orientation';
-import { Plus } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Platform, View } from "react-native";
 
-export default function AlbumListScreen() {
-   // Layout
-   const { colors } = useAppTheme();
-   const { width } = useWindowDimensions();
+type SortOption = "name" | "created" | "updated";
 
-   const [orientation, setOrientation] = useState<Orientation.Orientation>(Orientation.Orientation.PORTRAIT_UP);
-   const [qrModalVisible, setQrModalVisible] = useState(false);
+export default function AlbumsScreen() {
+    const { colors } = useAppTheme();
+    const { albums, status, loadMore } = useUserAlbums();
+    const [sortBy, setSortBy] = useState<SortOption>("updated");
+    const [search, setSearch] = useState("");
 
-   // Data
-   const profile = useQuery(api.profile.getUserProfile);
-   const { results: albums, status, loadMore } = usePaginatedQuery(
-      api.albums.queryUserAlbums,
-      {},
-      { initialNumItems: 12 }
-   );
+    const isLoading = status === "LoadingFirstPage";
 
-   useEffect(() => {
-      const subscription = Orientation.addOrientationChangeListener((event) => {
-         setOrientation(event.orientationInfo.orientation);
-      });
+    const displayAlbums = useMemo(() => {
+        if (!albums) return albums;
 
-      Orientation.getOrientationAsync().then(setOrientation);
+        const query = search.trim().toLowerCase();
+        const filtered = query
+            ? albums.filter((album) => album.title.toLowerCase().includes(query))
+            : albums;
 
-      return () => {
-         Orientation.removeOrientationChangeListener(subscription);
-      };
-   }, []);
-
-   useEffect(() => {
-      if (qrModalVisible) {
-         Orientation.lockAsync(Orientation.OrientationLock.PORTRAIT_UP);
-      } else {
-         Orientation.unlockAsync();
-      }
-   }, [qrModalVisible]);
-
-   const gridConfig = useMemo(() => {
-      const gap = 16;
-      const isTable = Platform.OS === 'ios'
-         ? width >= 768
-         : width >= 600;
-
-      const isPortrait = orientation === Orientation.Orientation.PORTRAIT_UP ||
-         orientation === Orientation.Orientation.PORTRAIT_DOWN;
-
-      let numColumns: number;
-
-      if (isTable) {
-         numColumns = isPortrait ? 4 : 6;
-      } else {
-         numColumns = isPortrait ? 2 : 3;
-      }
-
-      const itemSize = (width - (gap * (numColumns + 1))) / numColumns;
-
-      return {
-         itemSize,
-         numColumns,
-         gap,
-      }
-   }, [width, orientation]);
-
-   const handleLoadMore = useCallback(() => {
-      if (status === 'CanLoadMore') {
-         loadMore(12);
-      }
-   }, [status]);
-
-   const renderItem = useCallback(({ item }: { item: Album }) => (
-      <Pressable onPress={() => router.push(`/album/${item._id}`)} >
-         <AlbumDetailCard album={item} height={gridConfig.itemSize} width={gridConfig.itemSize} />
-      </Pressable>
-   ), [gridConfig.itemSize]);
-
-   const renderFooter = useCallback(() => {
-      return (
-         <View style={{ paddingVertical: 16 }}>
-            {status === 'CanLoadMore' || status === 'LoadingMore' || status === 'LoadingFirstPage' && (
-               <ActivityIndicator size="small" color={colors.text} />
-            )}
-         </View>
-      )
-   }, [status, colors.text]);
-
-   return (
-      <View style={[styles.container]}>
-         <Stack.Screen options={{
-            title: 'Albums',
-            headerLargeTitleEnabled: true,
-            headerRight: () => (
-               <HeaderButton onPress={() => router.push('/friends')}>
-                  <PlatformIcon name="add" size={28} />
-               </HeaderButton>
-            )
-         }} />
-
-         <FlashList
-            key={gridConfig.numColumns}
-            contentInsetAdjustmentBehavior="automatic"
-            data={albums}
-            keyExtractor={(item) => item._id}
-            numColumns={gridConfig.numColumns}
-            contentContainerStyle={{
-               paddingVertical: 16,
-               paddingHorizontal: gridConfig.gap / 2,
-            }}
-            ListEmptyComponent={
-               <View style={styles.emptyContainer} >
-                  <View style={[styles.emptyCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                     <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                        Welcome to Shutterspace!
-                     </Text>
-                     <Text style={[styles.emptySubtitle, { color: colors.text }]}>
-                        You don't have any albums yet.
-                     </Text>
-                     <Text style={[styles.emptyDescription, { color: colors.text }]}>
-                        Create your first album to start sharing photos with friends and family.
-                     </Text>
-                     <View style={[styles.ctaContainer, { backgroundColor: colors.background }]}>
-                        <Plus size={20} color={colors.primary} />
-                        <Text style={[styles.ctaText, { color: colors.primary }]}>
-                           Tap the button below to get started
-                        </Text>
-                     </View>
-                  </View>
-               </View >
+        return [...filtered].sort((a, b) => {
+            switch (sortBy) {
+                case "name":
+                    return a.title.localeCompare(b.title);
+                case "created":
+                    return b._creationTime - a._creationTime;
+                case "updated":
+                    return b.updatedAt - a.updatedAt;
             }
-            onEndReachedThreshold={0.3}
-            onEndReached={handleLoadMore}
-            ListFooterComponent={renderFooter}
-            renderItem={renderItem}
-         />
+        });
+    }, [albums, sortBy, search]);
 
-         <FloatingActionButton
-            selectIcon="add"
-            onPress={() => router.push('/new-album')}
-         />
+    const trimmedSearch = search.trim();
 
-         <QRCodeModal
-            visible={qrModalVisible}
-            onClose={() => setQrModalVisible(false)}
-            value={`https://shutterspace.app/shareId/${profile?.shareCode}`}
-            displayValue={profile?.shareCode}
-            title="Share Profile"
-            description="Share this code with your friends!"
-            showCopyButton={true}
-         />
-      </View >
-   );
+    const renderEmptyComponent = useCallback(() => {
+        if (isLoading) {
+            return (
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    <ActivityIndicator size="large" color={colors.text} />
+                </View>
+            );
+        }
+        if (trimmedSearch) {
+            return <AlbumsEmptyState variant="search" query={trimmedSearch} />;
+        }
+        return <AlbumsEmptyState />;
+    }, [isLoading, trimmedSearch, colors.text]);
+
+    const handleSearchChange = useCallback((event: { nativeEvent: { text: string } }) => {
+        setSearch(event.nativeEvent.text);
+    }, []);
+
+    const handleSearchCancel = useCallback(() => {
+        setSearch("");
+    }, []);
+
+    const handleEndReached = useCallback(() => {
+        if (status === "CanLoadMore") {
+            loadMore();
+        }
+    }, [status, loadMore]);
+
+    return (
+        <>
+            <Stack.Screen options={{
+                headerTitle: "Albums",
+                headerLargeTitleEnabled: true,
+                headerTitleStyle: {
+                    color: colors.text,
+                },
+            }} />
+
+            <Stack.Toolbar placement="right">
+                <Stack.Toolbar.Menu icon="line.3.horizontal.decrease" >
+                    <Stack.Toolbar.Menu inline title="Sort By">
+                        <Stack.Toolbar.MenuAction
+                            icon="textformat"
+                            isOn={sortBy === "name"}
+                            onPress={() => setSortBy("name")}
+                        >
+                            Name
+                        </Stack.Toolbar.MenuAction>
+                        <Stack.Toolbar.MenuAction
+                            icon="calendar"
+                            isOn={sortBy === "created"}
+                            onPress={() => setSortBy("created")}
+                        >
+                            Date Created
+                        </Stack.Toolbar.MenuAction>
+                        <Stack.Toolbar.MenuAction
+                            icon="clock"
+                            isOn={sortBy === "updated"}
+                            onPress={() => setSortBy("updated")}
+                        >
+                            Last Updated
+                        </Stack.Toolbar.MenuAction>
+                    </Stack.Toolbar.Menu>
+                    <Stack.Toolbar.MenuAction
+                        icon="plus"
+                        onPress={() => router.push("/(home)/album/create")}
+                    >
+                        New Album
+                    </Stack.Toolbar.MenuAction>
+                </Stack.Toolbar.Menu>
+            </Stack.Toolbar>
+
+            <AlbumsList
+                albums={isLoading ? [] : displayAlbums}
+                onEndReached={handleEndReached}
+                ListEmptyComponent={renderEmptyComponent}
+                style={{ backgroundColor: colors.background }}
+                layoutKey={sortBy}
+            />
+
+            {/* Search Bar */}
+            <Stack.SearchBar
+                placeholder="Search albums"
+                onChangeText={handleSearchChange}
+                onCancelButtonPress={handleSearchCancel}
+            />
+            {Platform.OS === 'ios' && (
+                <Stack.Toolbar placement="bottom" >
+                    <Stack.Toolbar.SearchBarSlot />
+                    <Stack.Toolbar.Spacer />
+                    <Stack.Toolbar.Button icon="plus" onPress={() => router.push("/(home)/new-album")} />
+                </Stack.Toolbar>
+            )}
+        </>
+    );
 }
-
-const styles = StyleSheet.create({
-   container: {
-      flex: 1,
-   },
-
-   // Header
-   headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-   },
-   avatarContainer: {
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderRadius: 12,
-      width: 40,
-      height: 40,
-      overflow: 'hidden',
-   },
-   avatarInitial: {
-      fontSize: 18,
-      fontWeight: '600',
-   },
-   greetingContainer: {
-      flexDirection: 'column',
-      justifyContent: 'center',
-   },
-   greeting: {
-      fontSize: 16,
-      fontWeight: '500',
-      lineHeight: 16,
-   },
-   completeProfile: {
-      fontSize: 12,
-      fontWeight: '500',
-      lineHeight: 16,
-   },
-   headerRight: {
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderRadius: 999,
-      padding: 12,
-      borderWidth: 1,
-   },
-
-   // Album Cover
-   albumCover: {
-      flexDirection: 'column',
-      marginBottom: 16,
-   },
-   albumCoverImage: {
-      borderRadius: 16,
-      backgroundColor: '#DEDEDEFF',
-      overflow: 'hidden',
-      marginBottom: 8,
-   },
-   albumTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      marginBottom: 4,
-   },
-   albumDate: {
-      fontSize: 12,
-   },
-
-   // Fab
-   fabPosition: {
-      position: 'absolute',
-      right: 30,
-   },
-   fabButton: {
-      borderRadius: 999,
-      justifyContent: 'center',
-      alignItems: 'center',
-   },
-
-   // Empty Container Styles
-   emptyContainer: {
-      flex: 1,
-      paddingTop: 16,
-   },
-   emptyCard: {
-      borderRadius: 16,
-      padding: 32,
-      borderWidth: 1,
-      alignItems: 'center',
-      maxWidth: 400,
-      width: '100%',
-   },
-   emptyTitle: {
-      fontSize: 24,
-      fontWeight: '700',
-      textAlign: 'center',
-      marginBottom: 12,
-   },
-   emptySubtitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      textAlign: 'center',
-      marginBottom: 8,
-   },
-   emptyDescription: {
-      fontSize: 15,
-      textAlign: 'center',
-      lineHeight: 22,
-      marginBottom: 24,
-   },
-   ctaContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 12,
-   },
-   ctaText: {
-      fontSize: 14,
-      fontWeight: '600',
-   },
-});
