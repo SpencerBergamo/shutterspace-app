@@ -1,19 +1,51 @@
 .header {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  inset: 0 0 auto;
   z-index: 50;
   height: var(--header-height);
   transition:
     background-color 220ms ease,
     border-color 220ms ease,
-    backdrop-filter 220ms ease;
+    backdrop-filter 220ms ease,
+    color 220ms ease;
   border-bottom: 1px solid transparent;
+  color: #fff;
+}
+
+.header:not(.scrolled) .brandName,
+.header:not(.scrolled) .navLink {
+  color: #fff;
+}
+
+.header:not(.scrolled) .navLink:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.header:not(.scrolled) .logo {
+  filter: brightness(0) invert(1);
 }
 
 .scrolled {
-  background: color-mix(in srgb, var(--color-surface) 86%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
   border-bottom-color: var(--color-border);
   backdrop-filter: blur(12px);
+  color: var(--color-ink);
+}
+
+.scrolled .brandName {
+  color: var(--color-ink);
+}
+
+.scrolled .navLink {
+  color: var(--color-ink-muted);
+}
+
+.scrolled .navLink:hover {
+  color: var(--color-ink);
+}
+
+.scrolled .logo {
+  filter: none;
 }
 
 .inner {
@@ -34,13 +66,14 @@
 .logo {
   width: 2rem;
   height: auto;
+  transition: filter 180ms ease;
 }
 
 .brandName {
   font-family: var(--font-sansita), Georgia, serif;
   font-size: 1.35rem;
   letter-spacing: -0.01em;
-  color: var(--color-ink);
+  transition: color 180ms ease;
 }
 
 .nav {
@@ -52,12 +85,7 @@
 .navLink {
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--color-ink-muted);
   transition: color 160ms ease;
-}
-
-.navLink:hover {
-  color: var(--color-ink);
 }
 
 .cta {
