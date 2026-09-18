@@ -1,0 +1,39 @@
+.section {
+  background: var(--color-surface);
+}
+
+.muted {
+  background:
+    linear-gradient(
+      180deg,
+      var(--color-surface) 0%,
+      color-mix(in srgb, var(--color-secondary) 6%, var(--color-surface)) 100%
+    );
+}
+
+.useCaseGrid {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.feedbackGrid {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.quote {
+  min-height: 12rem;
+  text-align: left;
+  align-items: start;
+  justify-items: start;
+}
+
+@media (min-width: 768px) {
+  .useCaseGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .feedbackGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

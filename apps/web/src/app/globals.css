@@ -1,0 +1,240 @@
+:root {
+  --color-primary: #09ada9;
+  --color-primary-deep: #078a87;
+  --color-primary-soft: #d6f4f3;
+  --color-secondary: #f57f20;
+  --color-tertiary: #d9117f;
+  --color-ink: #1c1414;
+  --color-ink-muted: #5c5555;
+  --color-surface: #f7f5f2;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e2ddd6;
+  --color-placeholder: #ebe6df;
+
+  --font-display: var(--font-sansita), Georgia, serif;
+  --font-body: var(--font-sora), "Segoe UI", sans-serif;
+
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1.25rem;
+  --space-lg: 2rem;
+  --space-xl: 3.5rem;
+  --space-2xl: 5.5rem;
+  --space-3xl: 8rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+
+  --max-width: 72rem;
+  --header-height: 4.25rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  background: var(--color-surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.container {
+  width: min(100% - 2.5rem, var(--max-width));
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: var(--space-2xl);
+}
+
+.section-heading {
+  max-width: 36rem;
+  margin-bottom: var(--space-xl);
+}
+
+.section-heading h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-sm);
+}
+
+.section-heading p {
+  color: var(--color-ink-muted);
+  font-size: 1.05rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.75rem 1.35rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #000;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-ink);
+}
+
+.btn-accent {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn-accent:hover {
+  background: var(--color-primary-deep);
+}
+
+.placeholder-block {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 16rem;
+  padding: var(--space-lg);
+  border: 1.5px dashed color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-primary-soft) 70%, transparent),
+      color-mix(in srgb, var(--color-placeholder) 90%, transparent)
+    );
+  color: var(--color-ink-muted);
+  text-align: center;
+  overflow: hidden;
+}
+
+.placeholder-block::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in srgb, var(--color-primary) 18%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 18px 18px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.placeholder-block > * {
+  position: relative;
+  z-index: 1;
+}
+
+.placeholder-label {
+  display: inline-block;
+  margin-bottom: var(--space-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary-deep);
+}
+
+.placeholder-block h3 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: var(--color-ink);
+  margin-bottom: 0.35rem;
+}
+
+.placeholder-block p {
+  max-width: 28rem;
+  font-size: 0.95rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
