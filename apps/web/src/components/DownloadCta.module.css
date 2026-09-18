@@ -1,0 +1,86 @@
+.section {
+  position: relative;
+  overflow: hidden;
+  padding-block: var(--space-3xl);
+  color: #fff;
+  background:
+    linear-gradient(
+      135deg,
+      #0c4f4c 0%,
+      #0d7a76 45%,
+      #b85a1a 100%
+    );
+}
+
+.section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.14), transparent 40%),
+    radial-gradient(circle at 10% 90%, rgba(217, 17, 127, 0.2), transparent 45%);
+  pointer-events: none;
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  max-width: 36rem;
+  animation: softRise 800ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.brand {
+  font-family: var(--font-sansita), Georgia, serif;
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
+  line-height: 1;
+  margin-bottom: var(--space-md);
+}
+
+.inner h2 {
+  font-family: var(--font-sora), sans-serif;
+  font-size: clamp(1.35rem, 2.5vw, 1.7rem);
+  font-weight: 500;
+  line-height: 1.35;
+  margin-bottom: var(--space-sm);
+}
+
+.support {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: var(--space-lg);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.store {
+  cursor: default;
+  opacity: 0.95;
+}
+
+.store:hover {
+  transform: none;
+}
+
+.actions :global(.btn-primary) {
+  background: #fff;
+  color: var(--color-ink);
+}
+
+.actions :global(.btn-secondary) {
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
+
+@keyframes softRise {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

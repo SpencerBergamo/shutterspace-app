@@ -1,0 +1,71 @@
+.footer {
+  background: var(--color-ink);
+  color: rgba(255, 255, 255, 0.78);
+  padding-block: var(--space-xl) var(--space-lg);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.brandBlock p {
+  max-width: 24rem;
+  font-size: 0.95rem;
+  margin-top: var(--space-sm);
+}
+
+.brandRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.logo {
+  width: 1.5rem;
+  height: auto;
+  filter: brightness(0) invert(1);
+}
+
+.brandName {
+  font-family: var(--font-sansita), Georgia, serif;
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.35rem;
+}
+
+.links a {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.72);
+  transition: color 160ms ease;
+}
+
+.links a:hover {
+  color: #fff;
+}
+
+.copy {
+  padding-top: var(--space-md);
+}
+
+.copy p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@media (min-width: 768px) {
+  .inner {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+}

@@ -22,7 +22,9 @@
   },
   "scripts": {
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "web:dev": "npm run dev --workspace=@shutterspace/web",
+    "web:build": "npm run build --workspace=@shutterspace/web"
   },
   "dependencies": {
     "expo": "~56.0.15",
